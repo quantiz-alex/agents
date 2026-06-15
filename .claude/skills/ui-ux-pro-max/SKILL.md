@@ -1,659 +1,320 @@
 ---
 name: ui-ux-pro-max
-description: "UI/UX design intelligence for web and mobile. Includes 50+ styles, 161 color palettes, 57 font pairings, 161 product types, 99 UX guidelines, and 25 chart types across 10 stacks (React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui, and HTML/CSS). Actions: plan, build, create, design, implement, review, fix, improve, optimize, enhance, refactor, and check UI/UX code. Projects: website, landing page, dashboard, admin panel, e-commerce, SaaS, portfolio, blog, and mobile app. Elements: button, modal, navbar, sidebar, card, table, form, and chart. Styles: glassmorphism, claymorphism, minimalism, brutalism, neumorphism, bento grid, dark mode, responsive, skeuomorphism, and flat design. Topics: color systems, accessibility, animation, layout, typography, font pairing, spacing, interaction states, shadow, and gradient. Integrations: shadcn/ui MCP for component search and examples."
+description: "UI/UX design intelligence for Dash/Python business applications. Guides the frontend-builder agent during all UI phases of the Lighthouse pipeline: design system validation, screen definition, page generation, and pre-delivery review. Stack: Dash 2.14+, Dash Bootstrap Components, Dash AG Grid, Plotly. Actions: plan, design, review, validate, check. Pages: dashboard, admin panel, data table, form, report, KPI. Topics: color systems, accessibility, layout, typography, spacing, interaction states, chart type selection, AG Grid configuration, Plotly templates, callback patterns."
 ---
 
-# UI/UX Pro Max - Design Intelligence
+# UI/UX Pro Max — Design Intelligence (Dash/Python Edition)
 
-Comprehensive design guide for web and mobile applications. Contains 50+ styles, 161 color palettes, 57 font pairings, 161 product types with reasoning rules, 99 UX guidelines, and 25 chart types across 10 technology stacks. Searchable database with priority-based recommendations.
+Guia de design e UX para aplicações business em **Dash/Python puro**. Usado pelos agentes do pipeline Lighthouse para garantir qualidade visual, usabilidade e consistência em todas as telas geradas.
 
-## When to Apply
+> **Stack inegociável:** Dash 2.14+ · Dash Bootstrap Components (dbc) · Dash AG Grid · Plotly · Pandas/NumPy. Nenhuma regra deste guia deve introduzir React, Vue, HTML/CSS/JS separados ou qualquer tecnologia fora deste stack.
 
-This Skill should be used when the task involves **UI structure, visual design decisions, interaction patterns, or user experience quality control**.
+---
 
-### Must Use
+## Integração no Pipeline Lighthouse
 
-This Skill must be invoked in the following situations:
+O agente **frontend-builder** deve consultar este guia nos seguintes momentos:
 
-- Designing new pages (Landing Page, Dashboard, Admin, SaaS, Mobile App)
-- Creating or refactoring UI components (buttons, modals, forms, tables, charts, etc.)
-- Choosing color schemes, typography systems, spacing standards, or layout systems
-- Reviewing UI code for user experience, accessibility, or visual consistency
-- Implementing navigation structures, animations, or responsive behavior
-- Making product-level design decisions (style, information hierarchy, brand expression)
-- Improving perceived quality, clarity, or usability of interfaces
+| Step | Momento | O que usar neste guia |
+|------|----------|----------------------|
+| **1.5 — Design System** | Antes de gerar `docs/design-system.yaml` | §4 Seleção de Estilo, §6 Tipografia & Cor, `design-system.yaml` existente como fonte de verdade |
+| **6 — Screen Definition** | Ao definir `components[]` de cada tela | §10 Charts & Data (tipo de gráfico), §5 Layout & Dashboard (hierarquia), §9 Navegação |
+| **7 — Frontend Pages** | Durante geração dos 4 arquivos por página | §8 Forms & Feedback (formulários DBC), §7 Loading & Transições, §1 Acessibilidade |
+| **8 — App + Sidebar** | Ao montar sidebar e guard_routes | §9 Padrões de Navegação (Dash routing, dcc.Location) |
+| **Pré-entrega** | Antes de reportar `STATUS: success` | Checklist Pré-Entrega (seção final) |
 
-### Recommended
+---
 
-This Skill is recommended in the following situations:
+## Quando Aplicar
 
-- UI looks "not professional enough" but the reason is unclear
-- Receiving feedback on usability or experience
-- Pre-launch UI quality optimization
-- Aligning cross-platform design (Web / iOS / Android)
-- Building design systems or reusable component libraries
+### Obrigatório
 
-### Skip
+- Definindo componentes de tela (`components[]` no `screens_definition.yaml`)
+- Escolhendo tipo de gráfico Plotly para um conjunto de dados
+- Gerando páginas com formulários, filtros ou tabelas AG Grid
+- Revisando UI para consistência visual ou problemas de usabilidade
+- Implementando navegação (sidebar, login, guard_routes)
 
-This Skill is not needed in the following situations:
+### Recomendado
 
-- Pure backend logic development
-- Only involving API or database design
-- Performance optimization unrelated to the interface
-- Infrastructure or DevOps work
-- Non-visual scripts or automation tasks
+- UI parece "não profissional" sem causa clara
+- Feedback do cliente sobre usabilidade
+- Otimização de qualidade pré-apresentação
 
-**Decision criteria**: If the task will change how a feature **looks, feels, moves, or is interacted with**, this Skill should be used.
+### Pular
 
-## Rule Categories by Priority
+- Lógica de backend puro (FastAPI, SQLAlchemy)
+- Design do modelo de dados ou SQL
+- Configuração de infraestrutura
 
-*For human/AI reference: follow priority 1→10 to decide which rule category to focus on first; use `--domain <Domain>` to query details when needed. Scripts do not read this table.*
+---
 
-| Priority | Category | Impact | Domain | Key Checks (Must Have) | Anti-Patterns (Avoid) |
-|----------|----------|--------|--------|------------------------|------------------------|
-| 1 | Accessibility | CRITICAL | `ux` | Contrast 4.5:1, Alt text, Keyboard nav, Aria-labels | Removing focus rings, Icon-only buttons without labels |
-| 2 | Touch & Interaction | CRITICAL | `ux` | Min size 44×44px, 8px+ spacing, Loading feedback | Reliance on hover only, Instant state changes (0ms) |
-| 3 | Performance | HIGH | `ux` | WebP/AVIF, Lazy loading, Reserve space (CLS &lt; 0.1) | Layout thrashing, Cumulative Layout Shift |
-| 4 | Style Selection | HIGH | `style`, `product` | Match product type, Consistency, SVG icons (no emoji) | Mixing flat & skeuomorphic randomly, Emoji as icons |
-| 5 | Layout & Responsive | HIGH | `ux` | Mobile-first breakpoints, Viewport meta, No horizontal scroll | Horizontal scroll, Fixed px container widths, Disable zoom |
-| 6 | Typography & Color | MEDIUM | `typography`, `color` | Base 16px, Line-height 1.5, Semantic color tokens | Text &lt; 12px body, Gray-on-gray, Raw hex in components |
-| 7 | Animation | MEDIUM | `ux` | Duration 150–300ms, Motion conveys meaning, Spatial continuity | Decorative-only animation, Animating width/height, No reduced-motion |
-| 8 | Forms & Feedback | MEDIUM | `ux` | Visible labels, Error near field, Helper text, Progressive disclosure | Placeholder-only label, Errors only at top, Overwhelm upfront |
-| 9 | Navigation Patterns | HIGH | `ux` | Predictable back, Bottom nav ≤5, Deep linking | Overloaded nav, Broken back behavior, No deep links |
-| 10 | Charts & Data | LOW | `chart` | Legends, Tooltips, Accessible colors | Relying on color alone to convey meaning |
+## Categorias de Regras por Prioridade
+
+| Prioridade | Categoria | Impacto | Verificações Obrigatórias | Anti-Padrões |
+|-----------|----------|---------|--------------------------|--------------|
+| 1 | Acessibilidade | CRÍTICO | Contraste 4.5:1, Labels em inputs, Tab order | Remover focus rings, inputs sem label |
+| 2 | Interação Web | CRÍTICO | Feedback de click, Loading em callbacks async, Cursor pointer | Elementos clicáveis sem feedback visual, Botão ativo durante loading |
+| 3 | Performance Dash | ALTO | n_clicks/State sem trigger desnecessário, Callbacks mínimos, Dados via CSV | Callbacks em cadeia longa, Layout em callback |
+| 4 | Seleção de Estilo | ALTO | Consistência DBC, design-system.yaml como fonte | Inline styles para cores, misturar temas |
+| 5 | Layout & Dashboard | ALTO | Hierarquia visual, Sidebar 240px, page-wrapper raiz | dbc.Container como raiz, Layout sem hierarquia |
+| 6 | Tipografia & Cor | MÉDIO | Tokens semânticos, Contraste legível, Scale consistente | Hex raw em componentes, Texto < 12px |
+| 7 | Loading & Transições | MÉDIO | dcc.Loading em callbacks > 300ms, Empty states, Toast 3-5s | Spinner eterno, Ausência de feedback de estado |
+| 8 | Forms & Feedback | MÉDIO | Labels visíveis, Erro próximo ao campo, Confirmação destrutiva | Placeholder como único label, Erro genérico |
+| 9 | Navegação | ALTO | Rotas únicas, Back consistente, Guard de autenticação | Rota duplicada, Nav sem estado ativo |
+| 10 | Gráficos & Dados | ALTO | Tipo correto para dado, Tooltip, Legenda, Estado vazio | Gráfico de pizza com >5 categorias |
+
+---
 
 ## Quick Reference
 
-### 1. Accessibility (CRITICAL)
+### 1. Acessibilidade (CRÍTICO)
 
-- `color-contrast` - Minimum 4.5:1 ratio for normal text (large text 3:1); Material Design
-- `focus-states` - Visible focus rings on interactive elements (2–4px; Apple HIG, MD)
-- `alt-text` - Descriptive alt text for meaningful images
-- `aria-labels` - aria-label for icon-only buttons; accessibilityLabel in native (Apple HIG)
-- `keyboard-nav` - Tab order matches visual order; full keyboard support (Apple HIG)
-- `form-labels` - Use label with for attribute
-- `skip-links` - Skip to main content for keyboard users
-- `heading-hierarchy` - Sequential h1→h6, no level skip
-- `color-not-only` - Don't convey info by color alone (add icon/text)
-- `dynamic-type` - Support system text scaling; avoid truncation as text grows (Apple Dynamic Type, MD)
-- `reduced-motion` - Respect prefers-reduced-motion; reduce/disable animations when requested (Apple Reduced Motion API, MD)
-- `voiceover-sr` - Meaningful accessibilityLabel/accessibilityHint; logical reading order for VoiceOver/screen readers (Apple HIG, MD)
-- `escape-routes` - Provide cancel/back in modals and multi-step flows (Apple HIG)
-- `keyboard-shortcuts` - Preserve system and a11y shortcuts; offer keyboard alternatives for drag-and-drop (Apple HIG)
+- `color-contrast` — Mínimo 4.5:1 para texto normal; use tokens do `design-system.yaml` (heading `#1e293b` sobre branco = ✓)
+- `focus-states` — Não remover `outline` padrão do Bootstrap; inputs DBC já têm focus ring
+- `form-labels` — Todo `dcc.Input`, `dcc.Dropdown`, `dcc.DatePickerRange` deve ter um `html.Label` ou `dbc.Label` associado
+- `aria-labels` — Botões só com ícone (`html.I`) precisam de `title=` ou texto oculto: `dbc.Button([html.I(className="bi bi-download"), " Exportar"])`
+- `keyboard-nav` — Tab order segue a ordem de declaração Python; declare componentes na ordem lógica
+- `heading-hierarchy` — Use `html.H4` para título de página, `html.H5` para seções, nunca pular nível
+- `color-not-only` — Status nunca só por cor: use `dbc.Badge` com texto ("Ativo", "Pendente") + cor semântica
+- `error-clarity` — Mensagens de erro explicam causa + correção; não apenas "Erro ao salvar"
 
-### 2. Touch & Interaction (CRITICAL)
+### 2. Interação Web (CRÍTICO)
 
-- `touch-target-size` - Min 44×44pt (Apple) / 48×48dp (Material); extend hit area beyond visual bounds if needed
-- `touch-spacing` - Minimum 8px/8dp gap between touch targets (Apple HIG, MD)
-- `hover-vs-tap` - Use click/tap for primary interactions; don't rely on hover alone
-- `loading-buttons` - Disable button during async operations; show spinner or progress
-- `error-feedback` - Clear error messages near problem
-- `cursor-pointer` - Add cursor-pointer to clickable elements (Web)
-- `gesture-conflicts` - Avoid horizontal swipe on main content; prefer vertical scroll
-- `tap-delay` - Use touch-action: manipulation to reduce 300ms delay (Web)
-- `standard-gestures` - Use platform standard gestures consistently; don't redefine (e.g. swipe-back, pinch-zoom) (Apple HIG)
-- `system-gestures` - Don't block system gestures (Control Center, back swipe, etc.) (Apple HIG)
-- `press-feedback` - Visual feedback on press (ripple/highlight; MD state layers)
-- `haptic-feedback` - Use haptic for confirmations and important actions; avoid overuse (Apple HIG)
-- `gesture-alternative` - Don't rely on gesture-only interactions; always provide visible controls for critical actions
-- `safe-area-awareness` - Keep primary touch targets away from notch, Dynamic Island, gesture bar and screen edges
-- `no-precision-required` - Avoid requiring pixel-perfect taps on small icons or thin edges
-- `swipe-clarity` - Swipe actions must show clear affordance or hint (chevron, label, tutorial)
-- `drag-threshold` - Use a movement threshold before starting drag to avoid accidental drags
+- `click-feedback` — `dbc.Button` deve mostrar spinner ou mudar texto durante operação async: `[dbc.Spinner(size="sm"), " Salvando..."]`
+- `loading-states` — Envolva outputs de callbacks lentos (> 300ms) em `dcc.Loading(type="circle")`
+- `disabled-during-load` — `disabled=True` no botão enquanto callback está rodando (via `prevent_initial_call` + Output disabled)
+- `cursor-pointer` — Elementos clicáveis que não são `dbc.Button` precisam de `style={"cursor": "pointer"}`
+- `hover-not-only` — Ações primárias devem ser clicáveis; não dependa de hover para revelar controles principais
+- `error-feedback` — Erros de formulário próximos ao campo, em vermelho semântico (`color="danger"`)
+- `empty-state-action` — Estado vazio de grid deve ter mensagem + ação sugerida; não apenas grid vazio
 
-### 3. Performance (HIGH)
+### 3. Performance Dash (ALTO)
 
-- `image-optimization` - Use WebP/AVIF, responsive images (srcset/sizes), lazy load non-critical assets
-- `image-dimension` - Declare width/height or use aspect-ratio to prevent layout shift (Core Web Vitals: CLS)
-- `font-loading` - Use font-display: swap/optional to avoid invisible text (FOIT); reserve space to reduce layout shift (MD)
-- `font-preload` - Preload only critical fonts; avoid overusing preload on every variant
-- `critical-css` - Prioritize above-the-fold CSS (inline critical CSS or early-loaded stylesheet)
-- `lazy-loading` - Lazy load non-hero components via dynamic import / route-level splitting
-- `bundle-splitting` - Split code by route/feature (React Suspense / Next.js dynamic) to reduce initial load and TTI
-- `third-party-scripts` - Load third-party scripts async/defer; audit and remove unnecessary ones (MD)
-- `reduce-reflows` - Avoid frequent layout reads/writes; batch DOM reads then writes
-- `content-jumping` - Reserve space for async content to avoid layout jumps (Core Web Vitals: CLS)
-- `lazy-load-below-fold` - Use loading="lazy" for below-the-fold images and heavy media
-- `virtualize-lists` - Virtualize lists with 50+ items to improve memory efficiency and scroll performance
-- `main-thread-budget` - Keep per-frame work under ~16ms for 60fps; move heavy tasks off main thread (HIG, MD)
-- `progressive-loading` - Use skeleton screens / shimmer instead of long blocking spinners for >1s operations (Apple HIG)
-- `input-latency` - Keep input latency under ~100ms for taps/scrolls (Material responsiveness standard)
-- `tap-feedback-speed` - Provide visual feedback within 100ms of tap (Apple HIG)
-- `debounce-throttle` - Use debounce/throttle for high-frequency events (scroll, resize, input)
-- `offline-support` - Provide offline state messaging and basic fallback (PWA / mobile)
-- `network-fallback` - Offer degraded modes for slow networks (lower-res images, fewer animations)
+- `minimal-callbacks` — Prefira um callback com múltiplos Outputs a vários callbacks com saída individual no mesmo trigger
+- `prevent-initial-call` — Use `prevent_initial_call=True` apenas quando necessário; callbacks de filtro precisam rodar na carga (`False`)
+- `data-via-csv` — Páginas lêem `mock_data/<entidade>.csv` via `pd.read_csv()`; nunca consultar banco no frontend
+- `no-layout-in-callback` — Layouts são funções puras Python; não regenere componentes inteiros em callbacks (exceto modais condicionais)
+- `state-not-input` — Use `State` para valores de filtro lidos só no clique; `Input` apenas para o botão de filtrar
+- `debounce-input` — `dcc.Input(debounce=True)` para inputs de busca; evita callback a cada keystroke
+- `pagination-ag-grid` — AG Grid com `paginationPageSize=20`; nunca carregue todos os dados numa grid sem paginação
+- `mock-data-filter` — Filtragem acontece no `_queries.py` antes de passar o DataFrame para o componente; não passe DataFrames inteiros sem filtrar
 
-### 4. Style Selection (HIGH)
+### 4. Seleção de Estilo (ALTO)
 
-- `style-match` - Match style to product type (use `--design-system` for recommendations)
-- `consistency` - Use same style across all pages
-- `no-emoji-icons` - Use SVG icons (Heroicons, Lucide), not emojis
-- `color-palette-from-product` - Choose palette from product/industry (search `--domain color`)
-- `effects-match-style` - Shadows, blur, radius aligned with chosen style (glass / flat / clay etc.)
-- `platform-adaptive` - Respect platform idioms (iOS HIG vs Material): navigation, controls, typography, motion
-- `state-clarity` - Make hover/pressed/disabled states visually distinct while staying on-style (Material state layers)
-- `elevation-consistent` - Use a consistent elevation/shadow scale for cards, sheets, modals; avoid random shadow values
-- `dark-mode-pairing` - Design light/dark variants together to keep brand, contrast, and style consistent
-- `icon-style-consistent` - Use one icon set/visual language (stroke width, corner radius) across the product
-- `system-controls` - Prefer native/system controls over fully custom ones; only customize when branding requires it (Apple HIG)
-- `blur-purpose` - Use blur to indicate background dismissal (modals, sheets), not as decoration (Apple HIG)
-- `primary-action` - Each screen should have only one primary CTA; secondary actions visually subordinate (Apple HIG)
+- `design-system-source` — O `design-system.yaml` em `.claude/` é a fonte de verdade; nunca sobrescrever valores de cor, spacing ou componentes definidos lá
+- `dbc-theme` — Use `dbc.themes.BOOTSTRAP` como tema base; não importar outros temas Bootstrap
+- `consistency` — Mesmo padrão de card, filtro, grid e KPI em todas as páginas; copie o padrão do `design-system.yaml`
+- `no-inline-colors` — Nunca `style={"color": "#3b82f6"}`; use `className="text-primary"` ou tokens do design system
+- `semantic-colors` — Sempre use cores semânticas: `color="primary"`, `color="success"`, `color="danger"`; não valores hex
+- `icon-set` — Use exclusivamente Bootstrap Icons (`bi bi-*`); não misturar com FontAwesome ou emojis como ícone estrutural
+- `card-pattern` — Todo card: `dbc.Card(className="shadow-sm border-0 mb-3")`; CardHeader: `className="bg-white border-bottom fw-semibold"`
+- `kpi-pattern` — KPI cards com borda lateral: `className="shadow-sm border-0 border-start border-4 border-{color} mb-3 h-100"`
 
-### 5. Layout & Responsive (HIGH)
+### 5. Layout & Dashboard (ALTO)
 
-- `viewport-meta` - width=device-width initial-scale=1 (never disable zoom)
-- `mobile-first` - Design mobile-first, then scale up to tablet and desktop
-- `breakpoint-consistency` - Use systematic breakpoints (e.g. 375 / 768 / 1024 / 1440)
-- `readable-font-size` - Minimum 16px body text on mobile (avoids iOS auto-zoom)
-- `line-length-control` - Mobile 35–60 chars per line; desktop 60–75 chars
-- `horizontal-scroll` - No horizontal scroll on mobile; ensure content fits viewport width
-- `spacing-scale` - Use 4pt/8dp incremental spacing system (Material Design)
-- `touch-density` - Keep component spacing comfortable for touch: not cramped, not causing mis-taps
-- `container-width` - Consistent max-width on desktop (max-w-6xl / 7xl)
-- `z-index-management` - Define layered z-index scale (e.g. 0 / 10 / 20 / 40 / 100 / 1000)
-- `fixed-element-offset` - Fixed navbar/bottom bar must reserve safe padding for underlying content
-- `scroll-behavior` - Avoid nested scroll regions that interfere with the main scroll experience
-- `viewport-units` - Prefer min-h-dvh over 100vh on mobile
-- `orientation-support` - Keep layout readable and operable in landscape mode
-- `content-priority` - Show core content first on mobile; fold or hide secondary content
-- `visual-hierarchy` - Establish hierarchy via size, spacing, contrast — not color alone
+- `page-wrapper-root` — Raiz de toda página: `html.Div(className="page-wrapper px-4 py-3", style={"background": "#f8fafc", "minHeight": "100vh"})`
+- `no-container-root` — **NUNCA** usar `dbc.Container` como raiz do `layout()`
+- `sidebar-fixed` — Sidebar é fixa em 240px; `CONTENT_STYLE = {"marginLeft": "240px"}`; login usa `CONTENT_FULL_STYLE = {"marginLeft": "0"}`
+- `visual-hierarchy` — Ordem vertical de seções: Header (H4 + botões) → Filtros (card compacto) → KPIs (Row) → Grid/Chart (card principal)
+- `filter-at-top` — Filtros sempre em card compacto no topo: `dbc.Card(dbc.CardBody(className="py-2"), className="shadow-sm border-0 mb-3")`
+- `kpi-row` — KPIs em `dbc.Row([dbc.Col(kpi, md=3) for kpi in kpis])` com `id="<page>-kpis-row"` para atualização via callback
+- `grid-in-card` — AG Grid sempre dentro de `dbc.Card` com `dbc.CardHeader` descritivo
+- `column-sizing` — Filtros: `dbc.Col(md=2)` a `md=4` conforme o tipo; botão filtrar: `dbc.Col(md=1)` com `className="d-grid"`
+- `z-index-layers` — Modais (`z=1050`), Sidebar (`z=100`), conteúdo (`z=0`); nunca conflitar camadas
 
-### 6. Typography & Color (MEDIUM)
+### 6. Tipografia & Cor (MÉDIO)
 
-- `line-height` - Use 1.5-1.75 for body text
-- `line-length` - Limit to 65-75 characters per line
-- `font-pairing` - Match heading/body font personalities
-- `font-scale` - Consistent type scale (e.g. 12 14 16 18 24 32)
-- `contrast-readability` - Darker text on light backgrounds (e.g. slate-900 on white)
-- `text-styles-system` - Use platform type system: iOS 11 Dynamic Type styles / Material 5 type roles (display, headline, title, body, label) (HIG, MD)
-- `weight-hierarchy` - Use font-weight to reinforce hierarchy: Bold headings (600–700), Regular body (400), Medium labels (500) (MD)
-- `color-semantic` - Define semantic color tokens (primary, secondary, error, surface, on-surface) not raw hex in components (Material color system)
-- `color-dark-mode` - Dark mode uses desaturated / lighter tonal variants, not inverted colors; test contrast separately (HIG, MD)
-- `color-accessible-pairs` - Foreground/background pairs must meet 4.5:1 (AA) or 7:1 (AAA); use tools to verify (WCAG, MD)
-- `color-not-decorative-only` - Functional color (error red, success green) must include icon/text; avoid color-only meaning (HIG, MD)
-- `truncation-strategy` - Prefer wrapping over truncation; when truncating use ellipsis and provide full text via tooltip/expand (Apple HIG)
-- `letter-spacing` - Respect default letter-spacing per platform; avoid tight tracking on body text (HIG, MD)
-- `number-tabular` - Use tabular/monospaced figures for data columns, prices, and timers to prevent layout shift
-- `whitespace-balance` - Use whitespace intentionally to group related items and separate sections; avoid visual clutter (Apple HIG)
+- `font-family` — `system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif` do `design-system.yaml`; não importar Google Fonts adicionais
+- `heading-sizes` — H4 para título de página (`1.25rem` / `fw-semibold`), H5 para seções, `small` para labels de filtro
+- `body-text` — Cor `#374151` (body_text do design system); `font-size: 0.875rem` para conteúdo de card
+- `muted-text` — `className="text-muted small"` para metadados e labels de filtro; nunca usar `color="#6b7280"` inline
+- `contrast-heading` — `#1e293b` sobre `#ffffff` = 16:1 ✓ | `#374151` sobre `#f8fafc` = 10:1 ✓
+- `semantic-badge-text` — Sempre inclua texto no badge de status; `dbc.Badge("Ativo", color="success")`
+- `weight-hierarchy` — Headers `fw-semibold` (600), corpo `fw-normal` (400), labels `fw-medium` (500)
+- `no-raw-hex` — Nunca usar hex diretamente em `className` ou `style`; usar tokens do `design-system.yaml`
 
-### 7. Animation (MEDIUM)
+### 7. Loading & Transições de Estado (MÉDIO)
 
-- `duration-timing` - Use 150–300ms for micro-interactions; complex transitions ≤400ms; avoid >500ms (MD)
-- `transform-performance` - Use transform/opacity only; avoid animating width/height/top/left
-- `loading-states` - Show skeleton or progress indicator when loading exceeds 300ms
-- `excessive-motion` - Animate 1-2 key elements per view max
-- `easing` - Use ease-out for entering, ease-in for exiting; avoid linear for UI transitions
-- `motion-meaning` - Every animation must express a cause-effect relationship, not just be decorative (Apple HIG)
-- `state-transition` - State changes (hover / active / expanded / collapsed / modal) should animate smoothly, not snap
-- `continuity` - Page/screen transitions should maintain spatial continuity (shared element, directional slide) (Apple HIG)
-- `parallax-subtle` - Use parallax sparingly; must respect reduced-motion and not cause disorientation (Apple HIG)
-- `spring-physics` - Prefer spring/physics-based curves over linear or cubic-bezier for natural feel (Apple HIG fluid animations)
-- `exit-faster-than-enter` - Exit animations shorter than enter (~60–70% of enter duration) to feel responsive (MD motion)
-- `stagger-sequence` - Stagger list/grid item entrance by 30–50ms per item; avoid all-at-once or too-slow reveals (MD)
-- `shared-element-transition` - Use shared element / hero transitions for visual continuity between screens (MD, HIG)
-- `interruptible` - Animations must be interruptible; user tap/gesture cancels in-progress animation immediately (Apple HIG)
-- `no-blocking-animation` - Never block user input during an animation; UI must stay interactive (Apple HIG)
-- `fade-crossfade` - Use crossfade for content replacement within the same container (MD)
-- `scale-feedback` - Subtle scale (0.95–1.05) on press for tappable cards/buttons; restore on release (HIG, MD)
-- `gesture-feedback` - Drag, swipe, and pinch must provide real-time visual response tracking the finger (MD Motion)
-- `hierarchy-motion` - Use translate/scale direction to express hierarchy: enter from below = deeper, exit upward = back (MD)
-- `motion-consistency` - Unify duration/easing tokens globally; all animations share the same rhythm and feel
-- `opacity-threshold` - Fading elements should not linger below opacity 0.2; either fade fully or remain visible
-- `modal-motion` - Modals/sheets should animate from their trigger source (scale+fade or slide-in) for spatial context (HIG, MD)
-- `navigation-direction` - Forward navigation animates left/up; backward animates right/down — keep direction logically consistent (HIG)
-- `layout-shift-avoid` - Animations must not cause layout reflow or CLS; use transform for position changes
+- `dcc-loading-wrapper` — Envolva grid, charts e conteúdo dinâmico em `dcc.Loading(type="circle", color="#3b82f6")`
+- `loading-threshold` — Callbacks que podem demorar > 300ms precisam de loading state; filtros simples em CSV local não precisam
+- `button-loading-text` — Durante loading: `dbc.Button([dbc.Spinner(size="sm", className="me-2"), "Carregando..."], disabled=True)`
+- `empty-state` — Grid sem dados: `dbc.Alert("Nenhum registro encontrado. Ajuste os filtros.", color="info")` dentro do card
+- `toast-duration` — `dbc.Toast` com `duration=4000` (4s); sempre com `is_open=True` após ação
+- `toast-placement` — `dbc.Toast` posicionado em `position="top-right"` ou `position="bottom-right"`; nunca no centro
+- `alert-dismissible` — `dbc.Alert(dismissable=True)` para mensagens não críticas; `is_open` controlado por callback
+- `modal-confirm` — Ações destrutivas (deletar, limpar) sempre com `dbc.Modal` de confirmação antes de executar
 
-### 8. Forms & Feedback (MEDIUM)
+### 8. Forms & Feedback (MÉDIO)
 
-- `input-labels` - Visible label per input (not placeholder-only)
-- `error-placement` - Show error below the related field
-- `submit-feedback` - Loading then success/error state on submit
-- `required-indicators` - Mark required fields (e.g. asterisk)
-- `empty-states` - Helpful message and action when no content
-- `toast-dismiss` - Auto-dismiss toasts in 3-5s
-- `confirmation-dialogs` - Confirm before destructive actions
-- `input-helper-text` - Provide persistent helper text below complex inputs, not just placeholder (Material Design)
-- `disabled-states` - Disabled elements use reduced opacity (0.38–0.5) + cursor change + semantic attribute (MD)
-- `progressive-disclosure` - Reveal complex options progressively; don't overwhelm users upfront (Apple HIG)
-- `inline-validation` - Validate on blur (not keystroke); show error only after user finishes input (MD)
-- `input-type-keyboard` - Use semantic input types (email, tel, number) to trigger the correct mobile keyboard (HIG, MD)
-- `password-toggle` - Provide show/hide toggle for password fields (MD)
-- `autofill-support` - Use autocomplete / textContentType attributes so the system can autofill (HIG, MD)
-- `undo-support` - Allow undo for destructive or bulk actions (e.g. "Undo delete" toast) (Apple HIG)
-- `success-feedback` - Confirm completed actions with brief visual feedback (checkmark, toast, color flash) (MD)
-- `error-recovery` - Error messages must include a clear recovery path (retry, edit, help link) (HIG, MD)
-- `multi-step-progress` - Multi-step flows show step indicator or progress bar; allow back navigation (MD)
-- `form-autosave` - Long forms should auto-save drafts to prevent data loss on accidental dismissal (Apple HIG)
-- `sheet-dismiss-confirm` - Confirm before dismissing a sheet/modal with unsaved changes (Apple HIG)
-- `error-clarity` - Error messages must state cause + how to fix (not just "Invalid input") (HIG, MD)
-- `field-grouping` - Group related fields logically (fieldset/legend or visual grouping) (MD)
-- `read-only-distinction` - Read-only state should be visually and semantically different from disabled (MD)
-- `focus-management` - After submit error, auto-focus the first invalid field (WCAG, MD)
-- `error-summary` - For multiple errors, show summary at top with anchor links to each field (WCAG)
-- `touch-friendly-input` - Mobile input height ≥44px to meet touch target requirements (Apple HIG)
-- `destructive-emphasis` - Destructive actions use semantic danger color (red) and are visually separated from primary actions (HIG, MD)
-- `toast-accessibility` - Toasts must not steal focus; use aria-live="polite" for screen reader announcement (WCAG)
-- `aria-live-errors` - Form errors use aria-live region or role="alert" to notify screen readers (WCAG)
-- `contrast-feedback` - Error and success state colors must meet 4.5:1 contrast ratio (WCAG, MD)
-- `timeout-feedback` - Request timeout must show clear feedback with retry option (MD)
+- `visible-labels` — Todo campo de formulário tem `dbc.Label` acima do input; nunca usar placeholder como único identificador
+- `error-placement` — Erro abaixo do campo em `dbc.FormText(color="danger")` ou `dbc.Alert(color="danger")`
+- `required-indicator` — Campos obrigatórios com `" *"` no label ou `html.Span("*", className="text-danger")`
+- `submit-feedback` — Botão de envio: loading → sucesso/erro via `dbc.Alert` ou `dbc.Toast`
+- `filter-button-full` — Botão "Filtrar" usa `className="w-100"` dentro de `dbc.Col(className="d-grid")`
+- `date-range-clear` — `dcc.DatePickerRange` com `clearable=True` e `placeholder` explicativo
+- `dropdown-search` — `dcc.Dropdown` com `searchable=True` quando lista > 10 itens
+- `confirmation-modal` — Ações irreversíveis sempre com modal de confirmação; não confiar em `n_clicks` diretamente
+- `empty-export` — Botão exportar desabilitado quando grid está vazio; valide no callback com `if df.empty: no_update`
+- `inline-validation` — Valide após submit, não a cada keystroke; mostre todos os erros de uma vez
 
-### 9. Navigation Patterns (HIGH)
+### 9. Navegação Dash (ALTO)
 
-- `bottom-nav-limit` - Bottom navigation max 5 items; use labels with icons (Material Design)
-- `drawer-usage` - Use drawer/sidebar for secondary navigation, not primary actions (Material Design)
-- `back-behavior` - Back navigation must be predictable and consistent; preserve scroll/state (Apple HIG, MD)
-- `deep-linking` - All key screens must be reachable via deep link / URL for sharing and notifications (Apple HIG, MD)
-- `tab-bar-ios` - iOS: use bottom Tab Bar for top-level navigation (Apple HIG)
-- `top-app-bar-android` - Android: use Top App Bar with navigation icon for primary structure (Material Design)
-- `nav-label-icon` - Navigation items must have both icon and text label; icon-only nav harms discoverability (MD)
-- `nav-state-active` - Current location must be visually highlighted (color, weight, indicator) in navigation (HIG, MD)
-- `nav-hierarchy` - Primary nav (tabs/bottom bar) vs secondary nav (drawer/settings) must be clearly separated (MD)
-- `modal-escape` - Modals and sheets must offer a clear close/dismiss affordance; swipe-down to dismiss on mobile (Apple HIG)
-- `search-accessible` - Search must be easily reachable (top bar or tab); provide recent/suggested queries (MD)
-- `breadcrumb-web` - Web: use breadcrumbs for 3+ level deep hierarchies to aid orientation (MD)
-- `state-preservation` - Navigating back must restore previous scroll position, filter state, and input (HIG, MD)
-- `gesture-nav-support` - Support system gesture navigation (iOS swipe-back, Android predictive back) without conflict (HIG, MD)
-- `tab-badge` - Use badges on nav items sparingly to indicate unread/pending; clear after user visits (HIG, MD)
-- `overflow-menu` - When actions exceed available space, use overflow/more menu instead of cramming (MD)
-- `bottom-nav-top-level` - Bottom nav is for top-level screens only; never nest sub-navigation inside it (MD)
-- `adaptive-navigation` - Large screens (≥1024px) prefer sidebar; small screens use bottom/top nav (Material Adaptive)
-- `back-stack-integrity` - Never silently reset the navigation stack or unexpectedly jump to home (HIG, MD)
-- `navigation-consistency` - Navigation placement must stay the same across all pages; don't change by page type
-- `avoid-mixed-patterns` - Don't mix Tab + Sidebar + Bottom Nav at the same hierarchy level
-- `modal-vs-navigation` - Modals must not be used for primary navigation flows; they break the user's path (HIG)
-- `focus-on-route-change` - After page transition, move focus to main content region for screen reader users (WCAG)
-- `persistent-nav` - Core navigation must remain reachable from deep pages; don't hide it entirely in sub-flows (HIG, MD)
-- `destructive-nav-separation` - Dangerous actions (delete account, logout) must be visually and spatially separated from normal nav items (HIG, MD)
-- `empty-nav-state` - When a nav destination is unavailable, explain why instead of silently hiding it (MD)
+- `unique-routes` — Toda rota em `dash.register_page(__name__, path="/<slug>")` deve ser única no projeto; valide em `screens_definition.yaml`
+- `dcc-location` — Use `dcc.Location(id="url", refresh=False)` no `app.py`; único ponto de controle de URL
+- `guard-routes` — `guard_routes` callback em `app.py` redireciona para `/login` se sem auth, para `/` se autenticado tentando acessar `/login`
+- `sidebar-active` — `dbc.NavLink(active="exact")` para highlight automático de rota ativa
+- `nav-icon-label` — Cada item de sidebar tem ícone Bootstrap Icons + label textual; nunca só ícone
+- `login-fullscreen` — Página de login sem sidebar; usa `CONTENT_FULL_STYLE` com `marginLeft: 0`
+- `page-title-register` — `dash.register_page(__name__, path, title, name)` — `title` aparece na aba do browser
+- `no-output-url-login` — `Output("url", "pathname")` existe APENAS no `guard_routes`; callbacks de login NUNCA escrevem nesta Output
+- `sidebar-footer` — Footer da sidebar: "Desenvolvido por / Quantiz Pricing Solution" fixo no bottom
+- `nav-state-active` — Item de navegação da rota atual deve estar visualmente destacado (dbc `active="exact"` já trata)
 
-### 10. Charts & Data (LOW)
+### 10. Gráficos & Dados com Plotly (ALTO)
 
-- `chart-type` - Match chart type to data type (trend → line, comparison → bar, proportion → pie/donut)
-- `color-guidance` - Use accessible color palettes; avoid red/green only pairs for colorblind users (WCAG, MD)
-- `data-table` - Provide table alternative for accessibility; charts alone are not screen-reader friendly (WCAG)
-- `pattern-texture` - Supplement color with patterns, textures, or shapes so data is distinguishable without color (WCAG, MD)
-- `legend-visible` - Always show legend; position near the chart, not detached below a scroll fold (MD)
-- `tooltip-on-interact` - Provide tooltips/data labels on hover (Web) or tap (mobile) showing exact values (HIG, MD)
-- `axis-labels` - Label axes with units and readable scale; avoid truncated or rotated labels on mobile
-- `responsive-chart` - Charts must reflow or simplify on small screens (e.g. horizontal bar instead of vertical, fewer ticks)
-- `empty-data-state` - Show meaningful empty state when no data exists ("No data yet" + guidance), not a blank chart (MD)
-- `loading-chart` - Use skeleton or shimmer placeholder while chart data loads; don't show an empty axis frame
-- `animation-optional` - Chart entrance animations must respect prefers-reduced-motion; data should be readable immediately (HIG)
-- `large-dataset` - For 1000+ data points, aggregate or sample; provide drill-down for detail instead of rendering all (MD)
-- `number-formatting` - Use locale-aware formatting for numbers, dates, currencies on axes and labels (HIG, MD)
-- `touch-target-chart` - Interactive chart elements (points, segments) must have ≥44pt tap area or expand on touch (Apple HIG)
-- `no-pie-overuse` - Avoid pie/donut for >5 categories; switch to bar chart for clarity
-- `contrast-data` - Data lines/bars vs background ≥3:1; data text labels ≥4.5:1 (WCAG)
-- `legend-interactive` - Legends should be clickable to toggle series visibility (MD)
-- `direct-labeling` - For small datasets, label values directly on the chart to reduce eye travel
-- `tooltip-keyboard` - Tooltip content must be keyboard-reachable and not rely on hover alone (WCAG)
-- `sortable-table` - Data tables must support sorting with aria-sort indicating current sort state (WCAG)
-- `axis-readability` - Axis ticks must not be cramped; maintain readable spacing, auto-skip on small screens
-- `data-density` - Limit information density per chart to avoid cognitive overload; split into multiple charts if needed
-- `trend-emphasis` - Emphasize data trends over decoration; avoid heavy gradients/shadows that obscure the data
-- `gridline-subtle` - Grid lines should be low-contrast (e.g. gray-200) so they don't compete with data
-- `focusable-elements` - Interactive chart elements (points, bars, slices) must be keyboard-navigable (WCAG)
-- `screen-reader-summary` - Provide a text summary or aria-label describing the chart's key insight for screen readers (WCAG)
-- `error-state-chart` - Data load failure must show error message with retry action, not a broken/empty chart
-- `export-option` - For data-heavy products, offer CSV/image export of chart data
-- `drill-down-consistency` - Drill-down interactions must maintain a clear back-path and hierarchy breadcrumb
-- `time-scale-clarity` - Time series charts must clearly label time granularity (day/week/month) and allow switching
+**Tipo de gráfico → dado:**
 
-## How to Use
+| Dado | Gráfico Plotly | Função |
+|------|---------------|--------|
+| Tendência no tempo | Linha | `px.line` |
+| Comparação entre categorias | Barra vertical | `px.bar` |
+| Ranking / top-N | Barra horizontal | `px.bar(orientation="h")` |
+| Proporção (≤5 categorias) | Pizza/Donut | `px.pie(hole=0.4)` |
+| Proporção (>5 categorias) | Barra empilhada | `px.bar(barmode="stack")` |
+| Distribuição | Histograma | `px.histogram` |
+| Relação entre duas variáveis | Dispersão | `px.scatter` |
+| KPI único | `dbc.Card` com número grande | — |
+| Funil de processo | Funil | `px.funnel` |
 
-Search specific domains using the CLI tool below.
+- `plotly-template` — Sempre `template="plotly_white"` e `paper_bgcolor="rgba(0,0,0,0)"`, `plot_bgcolor="rgba(0,0,0,0)"`
+- `plotly-height` — Default `height=300`; gráficos de destaque podem usar `height=400`
+- `plotly-margin` — `margin=dict(l=20, r=20, t=40, b=20)` padrão; título curto no `title=`
+- `plotly-font` — `font=dict(family="system-ui, sans-serif", size=12, color="#374151")`
+- `plotly-config` — `config={"displayModeBar": False}` na maioria das telas; `True` apenas em relatórios analíticos
+- `chart-legend` — Sempre mostrar legenda para gráficos com múltiplas séries; `legend=dict(orientation="h", yanchor="bottom", y=1.02)`
+- `chart-tooltip` — Plotly já fornece tooltip por padrão; garanta `hover_data=` com campos relevantes
+- `empty-chart-state` — Quando DataFrame está vazio, não renderize o gráfico; retorne `dbc.Alert("Sem dados para o período.", color="info")`
+- `chart-color-palette` — Use `color_discrete_sequence=["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#06b6d4"]` (design system)
+- `no-pie-overuse` — Evite pizza com > 5 categorias; use barra horizontal para clareza
+- `ag-grid-column-types` — Colunas numéricas: `type="numericColumn"`, `valueFormatter: {"function": "d3.format(',.2f')(params.value)"}`
+- `ag-grid-date-format` — Datas: `valueFormatter: {"function": "params.value ? new Date(params.value).toLocaleDateString('pt-BR') : ''"}`
+- `ag-grid-status-badge` — Coluna de status: `cellRenderer: "agTextCellRenderer"` com CSS do Bootstrap Badge via `cellClass`
+- `ag-grid-export` — Botão exportar CSV usando `grid.exportDataAsCsv()` via `rowData` + `pd.DataFrame.to_csv()`
 
 ---
 
-## Prerequisites
+## Referência do Stack Dash
 
-Check if Python is installed:
+### Componentes e Equivalentes
 
-```bash
-python3 --version || python --version
+| Necessidade | Componente Correto | Proibido |
+|-------------|-------------------|---------|
+| Raiz da página | `html.Div(className="page-wrapper")` | `dbc.Container` como raiz |
+| Card de conteúdo | `dbc.Card + dbc.CardBody` | `html.Div` com border manual |
+| Tabela de dados | `dash_ag_grid.AgGrid` | `dbc.Table`, `html.Table`, `DataTable` |
+| Gráfico | `plotly.express.*` ou `go.Figure` | `matplotlib`, `seaborn`, `bokeh` |
+| Input texto | `dbc.Input` | `html.Input` raw |
+| Dropdown | `dcc.Dropdown` | `dbc.Select` para > 5 opções |
+| Data | `dcc.DatePickerSingle` / `dcc.DatePickerRange` | `html.Input(type="date")` |
+| Modal | `dbc.Modal` | `html.Dialog` |
+| Toast | `dbc.Toast` | `dbc.Alert` flutuante manual |
+| Badge | `dbc.Badge` | `html.Span` com style manual |
+| Loading | `dcc.Loading` | Spinner CSS manual |
+| Alerta | `dbc.Alert` | `html.Div` com style de cor |
+| Tabs | `dbc.Tabs + dbc.Tab` | `dcc.Tabs` (menos estilizado) |
+| Ícone | `html.I(className="bi bi-*")` | Emojis como ícone estrutural |
+
+### Padrão de IDs
+
+```
+<page>-grid               → AG Grid principal
+<page>-btn-filtrar        → Botão de aplicar filtros
+<page>-filtro-<campo>     → Inputs de filtro individuais
+<page>-chart-<tipo>       → Cada gráfico (bar, line, pie)
+<page>-kpis-row           → Row dos KPI cards
+<page>-btn-<acao>         → Outros botões de ação
+<page>-modal-<nome>       → Modais
+<page>-toast-<nome>       → Toasts/alertas
 ```
 
-If Python is not installed, install it based on user's OS:
+### Estrutura de Callback Padrão
 
-**macOS:**
-```bash
-brew install python3
-```
-
-**Ubuntu/Debian:**
-```bash
-sudo apt update && sudo apt install python3
-```
-
-**Windows:**
-```powershell
-winget install Python.Python.3.12
+```python
+@callback(
+    Output("<page>-grid", "rowData"),
+    Output("<page>-kpis-row", "children"),
+    Input("<page>-btn-filtrar", "n_clicks"),
+    State("<page>-filtro-campo1", "value"),
+    State("<page>-filtro-campo2", "value"),
+    prevent_initial_call=False,
+)
+def filtrar(n_clicks, campo1, campo2):
+    df = carregar_entidade(campo1=campo1, campo2=campo2)
+    return df.to_dict("records"), build_kpis(df)
 ```
 
 ---
 
-## How to Use This Skill
-
-Use this skill when the user requests any of the following:
-
-| Scenario | Trigger Examples | Start From |
-|----------|-----------------|------------|
-| **New project / page** | "Build a landing page", "Build a dashboard" | Step 1 → Step 2 (design system) |
-| **New component** | "Create a pricing card", "Add a modal" | Step 3 (domain search: style, ux) |
-| **Choose style / color / font** | "What style fits a fintech app?", "Recommend a color palette" | Step 2 (design system) |
-| **Review existing UI** | "Review this page for UX issues", "Check accessibility" | Quick Reference checklist above |
-| **Fix a UI bug** | "Button hover is broken", "Layout shifts on load" | Quick Reference → relevant section |
-| **Improve / optimize** | "Make this faster", "Improve mobile experience" | Step 3 (domain search: ux, react) |
-| **Implement dark mode** | "Add dark mode support" | Step 3 (domain: style "dark mode") |
-| **Add charts / data viz** | "Add an analytics dashboard chart" | Step 3 (domain: chart) |
-| **Stack best practices** | "React performance tips"、"SwiftUI navigation" | Step 4 (stack search) |
-
-Follow this workflow:
-
-### Step 1: Analyze User Requirements
-
-Extract key information from user request:
-- **Product type**: Entertainment (social, video, music, gaming), Tool (scanner, editor, converter), Productivity (task manager, notes, calendar), or hybrid
-- **Target audience**: C-end consumer users; consider age group, usage context (commute, leisure, work)
-- **Style keywords**: playful, vibrant, minimal, dark mode, content-first, immersive, etc.
-- **Stack**: React Native (this project's only tech stack)
-
-### Step 2: Generate Design System (REQUIRED)
-
-**Always start with `--design-system`** to get comprehensive recommendations with reasoning:
-
-```bash
-python3 skills/ui-ux-pro-max/scripts/search.py "<product_type> <industry> <keywords>" --design-system [-p "Project Name"]
-```
-
-This command:
-1. Searches domains in parallel (product, style, color, landing, typography)
-2. Applies reasoning rules from `ui-reasoning.csv` to select best matches
-3. Returns complete design system: pattern, style, colors, typography, effects
-4. Includes anti-patterns to avoid
-
-**Example:**
-```bash
-python3 skills/ui-ux-pro-max/scripts/search.py "beauty spa wellness service" --design-system -p "Serenity Spa"
-```
-
-### Step 2b: Persist Design System (Master + Overrides Pattern)
-
-To save the design system for **hierarchical retrieval across sessions**, add `--persist`:
-
-```bash
-python3 skills/ui-ux-pro-max/scripts/search.py "<query>" --design-system --persist -p "Project Name"
-```
-
-This creates:
-- `design-system/MASTER.md` — Global Source of Truth with all design rules
-- `design-system/pages/` — Folder for page-specific overrides
-
-**With page-specific override:**
-```bash
-python3 skills/ui-ux-pro-max/scripts/search.py "<query>" --design-system --persist -p "Project Name" --page "dashboard"
-```
-
-This also creates:
-- `design-system/pages/dashboard.md` — Page-specific deviations from Master
-
-**How hierarchical retrieval works:**
-1. When building a specific page (e.g., "Checkout"), first check `design-system/pages/checkout.md`
-2. If the page file exists, its rules **override** the Master file
-3. If not, use `design-system/MASTER.md` exclusively
-
-**Context-aware retrieval prompt:**
-```
-I am building the [Page Name] page. Please read design-system/MASTER.md.
-Also check if design-system/pages/[page-name].md exists.
-If the page file exists, prioritize its rules.
-If not, use the Master rules exclusively.
-Now, generate the code...
-```
-
-### Step 3: Supplement with Detailed Searches (as needed)
-
-After getting the design system, use domain searches to get additional details:
-
-```bash
-python3 skills/ui-ux-pro-max/scripts/search.py "<keyword>" --domain <domain> [-n <max_results>]
-```
-
-**When to use detailed searches:**
-
-| Need | Domain | Example |
-|------|--------|---------|
-| Product type patterns | `product` | `--domain product "entertainment social"` |
-| More style options | `style` | `--domain style "glassmorphism dark"` |
-| Color palettes | `color` | `--domain color "entertainment vibrant"` |
-| Font pairings | `typography` | `--domain typography "playful modern"` |
-| Chart recommendations | `chart` | `--domain chart "real-time dashboard"` |
-| UX best practices | `ux` | `--domain ux "animation accessibility"` |
-| Alternative fonts | `typography` | `--domain typography "elegant luxury"` |
-| Individual Google Fonts | `google-fonts` | `--domain google-fonts "sans serif popular variable"` |
-| Landing structure | `landing` | `--domain landing "hero social-proof"` |
-| React Native perf | `react` | `--domain react "rerender memo list"` |
-| App interface a11y | `web` | `--domain web "accessibilityLabel touch safe-areas"` |
-| AI prompt / CSS keywords | `prompt` | `--domain prompt "minimalism"` |
-
-### Step 4: Stack Guidelines (React Native)
-
-Get React Native implementation-specific best practices:
-
-```bash
-python3 skills/ui-ux-pro-max/scripts/search.py "<keyword>" --stack react-native
-```
-
----
-
-## Search Reference
-
-### Available Domains
-
-| Domain | Use For | Example Keywords |
-|--------|---------|------------------|
-| `product` | Product type recommendations | SaaS, e-commerce, portfolio, healthcare, beauty, service |
-| `style` | UI styles, colors, effects | glassmorphism, minimalism, dark mode, brutalism |
-| `typography` | Font pairings, Google Fonts | elegant, playful, professional, modern |
-| `color` | Color palettes by product type | saas, ecommerce, healthcare, beauty, fintech, service |
-| `landing` | Page structure, CTA strategies | hero, hero-centric, testimonial, pricing, social-proof |
-| `chart` | Chart types, library recommendations | trend, comparison, timeline, funnel, pie |
-| `ux` | Best practices, anti-patterns | animation, accessibility, z-index, loading |
-| `google-fonts` | Individual Google Fonts lookup | sans serif, monospace, japanese, variable font, popular |
-| `react` | React/Next.js performance | waterfall, bundle, suspense, memo, rerender, cache |
-| `web` | App interface guidelines (iOS/Android/React Native) | accessibilityLabel, touch targets, safe areas, Dynamic Type |
-| `prompt` | AI prompts, CSS keywords | (style name) |
-
-### Available Stacks
-
-| Stack | Focus |
-|-------|-------|
-| `react-native` | Components, Navigation, Lists |
-
----
-
-## Example Workflow
-
-**User request:** "Make an AI search homepage."
-
-### Step 1: Analyze Requirements
-- Product type: Tool (AI search engine)
-- Target audience: C-end users looking for fast, intelligent search
-- Style keywords: modern, minimal, content-first, dark mode
-- Stack: React Native
-
-### Step 2: Generate Design System (REQUIRED)
-
-```bash
-python3 skills/ui-ux-pro-max/scripts/search.py "AI search tool modern minimal" --design-system -p "AI Search"
-```
-
-**Output:** Complete design system with pattern, style, colors, typography, effects, and anti-patterns.
-
-### Step 3: Supplement with Detailed Searches (as needed)
-
-```bash
-# Get style options for a modern tool product
-python3 skills/ui-ux-pro-max/scripts/search.py "minimalism dark mode" --domain style
-
-# Get UX best practices for search interaction and loading
-python3 skills/ui-ux-pro-max/scripts/search.py "search loading animation" --domain ux
-```
-
-### Step 4: Stack Guidelines
-
-```bash
-python3 skills/ui-ux-pro-max/scripts/search.py "list performance navigation" --stack react-native
-```
-
-**Then:** Synthesize design system + detailed searches and implement the design.
-
----
-
-## Output Formats
-
-The `--design-system` flag supports two output formats:
-
-```bash
-# ASCII box (default) - best for terminal display
-python3 skills/ui-ux-pro-max/scripts/search.py "fintech crypto" --design-system
-
-# Markdown - best for documentation
-python3 skills/ui-ux-pro-max/scripts/search.py "fintech crypto" --design-system -f markdown
-```
-
----
-
-## Tips for Better Results
-
-### Query Strategy
-
-- Use **multi-dimensional keywords** — combine product + industry + tone + density: `"entertainment social vibrant content-dense"` not just `"app"`
-- Try different keywords for the same need: `"playful neon"` → `"vibrant dark"` → `"content-first minimal"`
-- Use `--design-system` first for full recommendations, then `--domain` to deep-dive any dimension you're unsure about
-- Always add `--stack react-native` for implementation-specific guidance
-
-### Common Sticking Points
-
-| Problem | What to Do |
-|---------|------------|
-| Can't decide on style/color | Re-run `--design-system` with different keywords |
-| Dark mode contrast issues | Quick Reference §6: `color-dark-mode` + `color-accessible-pairs` |
-| Animations feel unnatural | Quick Reference §7: `spring-physics` + `easing` + `exit-faster-than-enter` |
-| Form UX is poor | Quick Reference §8: `inline-validation` + `error-clarity` + `focus-management` |
-| Navigation feels confusing | Quick Reference §9: `nav-hierarchy` + `bottom-nav-limit` + `back-behavior` |
-| Layout breaks on small screens | Quick Reference §5: `mobile-first` + `breakpoint-consistency` |
-| Performance / jank | Quick Reference §3: `virtualize-lists` + `main-thread-budget` + `debounce-throttle` |
-
-### Pre-Delivery Checklist
-
-- Run `--domain ux "animation accessibility z-index loading"` as a UX validation pass before implementation
-- Run through Quick Reference **§1–§3** (CRITICAL + HIGH) as a final review
-- Test on 375px (small phone) and landscape orientation
-- Verify behavior with **reduced-motion** enabled and **Dynamic Type** at largest size
-- Check dark mode contrast independently (don't assume light mode values work)
-- Confirm all touch targets ≥44pt and no content hidden behind safe areas
-
----
-
-## Common Rules for Professional UI
-
-These are frequently overlooked issues that make UI look unprofessional:
-Scope notice: The rules below are for App UI (iOS/Android/React Native/Flutter), not desktop-web interaction patterns.
-
-### Icons & Visual Elements
-
-| Rule | Standard | Avoid | Why It Matters |
-|------|----------|--------|----------------|
-| **No Emoji as Structural Icons** | Use vector-based icons (e.g., Lucide, react-native-vector-icons, @expo/vector-icons). | Using emojis (🎨 🚀 ⚙️) for navigation, settings, or system controls. | Emojis are font-dependent, inconsistent across platforms, and cannot be controlled via design tokens. |
-| **Vector-Only Assets** | Use SVG or platform vector icons that scale cleanly and support theming. | Raster PNG icons that blur or pixelate. | Ensures scalability, crisp rendering, and dark/light mode adaptability. |
-| **Stable Interaction States** | Use color, opacity, or elevation transitions for press states without changing layout bounds. | Layout-shifting transforms that move surrounding content or trigger visual jitter. | Prevents unstable interactions and preserves smooth motion/perceived quality on mobile. |
-| **Correct Brand Logos** | Use official brand assets and follow their usage guidelines (spacing, color, clear space). | Guessing logo paths, recoloring unofficially, or modifying proportions. | Prevents brand misuse and ensures legal/platform compliance. |
-| **Consistent Icon Sizing** | Define icon sizes as design tokens (e.g., icon-sm, icon-md = 24pt, icon-lg). | Mixing arbitrary values like 20pt / 24pt / 28pt randomly. | Maintains rhythm and visual hierarchy across the interface. |
-| **Stroke Consistency** | Use a consistent stroke width within the same visual layer (e.g., 1.5px or 2px). | Mixing thick and thin stroke styles arbitrarily. | Inconsistent strokes reduce perceived polish and cohesion. |
-| **Filled vs Outline Discipline** | Use one icon style per hierarchy level. | Mixing filled and outline icons at the same hierarchy level. | Maintains semantic clarity and stylistic coherence. |
-| **Touch Target Minimum** | Minimum 44×44pt interactive area (use hitSlop if icon is smaller). | Small icons without expanded tap area. | Meets accessibility and platform usability standards. |
-| **Icon Alignment** | Align icons to text baseline and maintain consistent padding. | Misaligned icons or inconsistent spacing around them. | Prevents subtle visual imbalance that reduces perceived quality. |
-| **Icon Contrast** | Follow WCAG contrast standards: 4.5:1 for small elements, 3:1 minimum for larger UI glyphs. | Low-contrast icons that blend into the background. | Ensures accessibility in both light and dark modes. |
-
-
-### Interaction (App)
-
-| Rule | Do | Don't |
-|------|----|----- |
-| **Tap feedback** | Provide clear pressed feedback (ripple/opacity/elevation) within 80-150ms | No visual response on tap |
-| **Animation timing** | Keep micro-interactions around 150-300ms with platform-native easing | Instant transitions or slow animations (>500ms) |
-| **Accessibility focus** | Ensure screen reader focus order matches visual order and labels are descriptive | Unlabeled controls or confusing focus traversal |
-| **Disabled state clarity** | Use disabled semantics (`disabled`/native disabled props), reduced emphasis, and no tap action | Controls that look tappable but do nothing |
-| **Touch target minimum** | Keep tap areas >=44x44pt (iOS) or >=48x48dp (Android), expand hit area when icon is smaller | Tiny tap targets or icon-only hit areas without padding |
-| **Gesture conflict prevention** | Keep one primary gesture per region and avoid nested tap/drag conflicts | Overlapping gestures causing accidental actions |
-| **Semantic native controls** | Prefer native interactive primitives (`Button`, `Pressable`, platform equivalents) with proper accessibility roles | Generic containers used as primary controls without semantics |
-
-### Light/Dark Mode Contrast
-
-| Rule | Do | Don't |
-|------|----|----- |
-| **Surface readability (light)** | Keep cards/surfaces clearly separated from background with sufficient opacity/elevation | Overly transparent surfaces that blur hierarchy |
-| **Text contrast (light)** | Maintain body text contrast >=4.5:1 against light surfaces | Low-contrast gray body text |
-| **Text contrast (dark)** | Maintain primary text contrast >=4.5:1 and secondary text >=3:1 on dark surfaces | Dark mode text that blends into background |
-| **Border and divider visibility** | Ensure separators are visible in both themes (not just light mode) | Theme-specific borders disappearing in one mode |
-| **State contrast parity** | Keep pressed/focused/disabled states equally distinguishable in light and dark themes | Defining interaction states for one theme only |
-| **Token-driven theming** | Use semantic color tokens mapped per theme across app surfaces/text/icons | Hardcoded per-screen hex values |
-| **Scrim and modal legibility** | Use a modal scrim strong enough to isolate foreground content (typically 40-60% black) | Weak scrim that leaves background visually competing |
-
-### Layout & Spacing
-
-| Rule | Do | Don't |
-|------|----|----- |
-| **Safe-area compliance** | Respect top/bottom safe areas for all fixed headers, tab bars, and CTA bars | Placing fixed UI under notch, status bar, or gesture area |
-| **System bar clearance** | Add spacing for status/navigation bars and gesture home indicator | Let tappable content collide with OS chrome |
-| **Consistent content width** | Keep predictable content width per device class (phone/tablet) | Mixing arbitrary widths between screens |
-| **8dp spacing rhythm** | Use a consistent 4/8dp spacing system for padding/gaps/section spacing | Random spacing increments with no rhythm |
-| **Readable text measure** | Keep long-form text readable on large devices (avoid edge-to-edge paragraphs on tablets) | Full-width long text that hurts readability |
-| **Section spacing hierarchy** | Define clear vertical rhythm tiers (e.g., 16/24/32/48) by hierarchy | Similar UI levels with inconsistent spacing |
-| **Adaptive gutters by breakpoint** | Increase horizontal insets on larger widths and in landscape | Same narrow gutter on all device sizes/orientations |
-| **Scroll and fixed element coexistence** | Add bottom/top content insets so lists are not hidden behind fixed bars | Scroll content obscured by sticky headers/footers |
-
----
-
-## Pre-Delivery Checklist
-
-Before delivering UI code, verify these items:
-Scope notice: This checklist is for App UI (iOS/Android/React Native/Flutter).
-
-### Visual Quality
-- [ ] No emojis used as icons (use SVG instead)
-- [ ] All icons come from a consistent icon family and style
-- [ ] Official brand assets are used with correct proportions and clear space
-- [ ] Pressed-state visuals do not shift layout bounds or cause jitter
-- [ ] Semantic theme tokens are used consistently (no ad-hoc per-screen hardcoded colors)
-
-### Interaction
-- [ ] All tappable elements provide clear pressed feedback (ripple/opacity/elevation)
-- [ ] Touch targets meet minimum size (>=44x44pt iOS, >=48x48dp Android)
-- [ ] Micro-interaction timing stays in the 150-300ms range with native-feeling easing
-- [ ] Disabled states are visually clear and non-interactive
-- [ ] Screen reader focus order matches visual order, and interactive labels are descriptive
-- [ ] Gesture regions avoid nested/conflicting interactions (tap/drag/back-swipe conflicts)
-
-### Light/Dark Mode
-- [ ] Primary text contrast >=4.5:1 in both light and dark mode
-- [ ] Secondary text contrast >=3:1 in both light and dark mode
-- [ ] Dividers/borders and interaction states are distinguishable in both modes
-- [ ] Modal/drawer scrim opacity is strong enough to preserve foreground legibility (typically 40-60% black)
-- [ ] Both themes are tested before delivery (not inferred from a single theme)
-
-### Layout
-- [ ] Safe areas are respected for headers, tab bars, and bottom CTA bars
-- [ ] Scroll content is not hidden behind fixed/sticky bars
-- [ ] Verified on small phone, large phone, and tablet (portrait + landscape)
-- [ ] Horizontal insets/gutters adapt correctly by device size and orientation
-- [ ] 4/8dp spacing rhythm is maintained across component, section, and page levels
-- [ ] Long-form text measure remains readable on larger devices (no edge-to-edge paragraphs)
-
-### Accessibility
-- [ ] All meaningful images/icons have accessibility labels
-- [ ] Form fields have labels, hints, and clear error messages
-- [ ] Color is not the only indicator
-- [ ] Reduced motion and dynamic text size are supported without layout breakage
-- [ ] Accessibility traits/roles/states (selected, disabled, expanded) are announced correctly
+## Checklist Pré-Entrega
+
+Execute antes de reportar `STATUS: success`.
+
+### Estrutura e Layout
+- [ ] Toda página usa `html.Div(className="page-wrapper px-4 py-3", style={"background": "#f8fafc", "minHeight": "100vh"})` como raiz
+- [ ] Nenhuma página usa `dbc.Container` como raiz de `layout()`
+- [ ] Hierarquia de seções: Header → Filtros → KPIs → Grid/Chart
+- [ ] Sidebar com `width: 240px` e `CONTENT_STYLE` com `marginLeft: 240px`
+- [ ] Login com `CONTENT_FULL_STYLE` sem sidebar
+
+### Estilo e Tokens
+- [ ] Nenhuma cor hex inline em componentes (usar tokens do `design-system.yaml` ou `className`)
+- [ ] Todos os cards com `className="shadow-sm border-0 mb-3"`
+- [ ] KPI cards com `border-start border-4 border-{color}`
+- [ ] Ícones exclusivamente Bootstrap Icons (`bi bi-*`); sem emoji como ícone estrutural
+- [ ] Badges de status com texto + cor semântica
+
+### Interação e Feedback
+- [ ] Callbacks lentos (> 300ms) envolvidos em `dcc.Loading`
+- [ ] Botão "Filtrar" desabilitado e com spinner durante execução
+- [ ] Estado vazio de grid com `dbc.Alert` explicativo (não grid em branco)
+- [ ] Ações destrutivas com `dbc.Modal` de confirmação
+- [ ] Toasts de sucesso/erro após ações de formulário
+
+### Formulários
+- [ ] Todo `dcc.Input` / `dcc.Dropdown` / `dcc.DatePickerRange` tem `dbc.Label` visível acima
+- [ ] Campos obrigatórios sinalizados com `*` no label
+- [ ] Erros exibidos abaixo do campo em vermelho semântico
+- [ ] Botão de submit mostra loading state
+
+### Navegação e Rotas
+- [ ] Sem rotas duplicadas em `screens_definition.yaml`
+- [ ] `guard_routes` implementado em `app.py` com redirecionamento correto
+- [ ] Nenhum callback de login escreve em `Output("url", "pathname")`
+- [ ] Todos os `dbc.NavLink` com `active="exact"`
+- [ ] Footer da sidebar com "Desenvolvido por / Quantiz Pricing Solution"
+
+### Gráficos Plotly
+- [ ] Todo gráfico com `template="plotly_white"` e fundos transparentes
+- [ ] Tipo de gráfico adequado ao dado (tabela §10 acima)
+- [ ] Gráfico de pizza com no máximo 5 categorias
+- [ ] Estado vazio retorna `dbc.Alert`, não figura vazia
+- [ ] Paleta de cores alinhada ao design system
+
+### AG Grid
+- [ ] Tema `ag-theme-alpine` em todas as grids
+- [ ] `floatingFilter=True`, `suppressMenu=True`, `rowHeight=44`
+- [ ] Paginação com `paginationPageSize=20`
+- [ ] Colunas numéricas com `valueFormatter` formatado (`d3.format`)
+- [ ] Datas com `valueFormatter` em `pt-BR`
+
+### Acessibilidade
+- [ ] Contraste de texto ≥ 4.5:1 (use tokens do design system, já validados)
+- [ ] Tab order segue ordem lógica de declaração
+- [ ] Botões com apenas ícone têm `title=` ou texto auxiliar
+- [ ] Status nunca comunicado só por cor (usar Badge com texto)
+
+### Python
+- [ ] Tipagem Python em todas as funções (`def carregar_entidade(campo: str | None = None) -> pd.DataFrame:`)
+- [ ] Cada arquivo passa `python -m py_compile <arquivo>`
+- [ ] Nenhum import de biblioteca fora do stack (sem `matplotlib`, `flask`, `streamlit`, etc.)
