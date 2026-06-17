@@ -23,7 +23,7 @@ cd ../nome-do-projeto
 
 | Projeto | Slug | Status | Última Atividade |
 |---------|------|--------|-----------------|
-| _(nenhum projeto ainda — use `/project-init` para criar)_ | — | — | — |
+| GM Argentina — Precificação Inteligente | gm-teste | 🟢 Build concluído | 2026-06-15 |
 
 ---
 

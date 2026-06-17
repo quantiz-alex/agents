@@ -532,40 +532,87 @@ def register_callbacks() -> None:
 
 ### `frontend/app.py`
 
+**NÃO usar `dash.page_container`** — usar render callback explícito:
+
 ```python
-import dash, dash_bootstrap_components as dbc
-from dash import html, dcc, Input, Output, callback, no_update
-from frontend.components.sidebar import build_sidebar, CONTENT_STYLE, CONTENT_FULL_STYLE, register_sidebar_callbacks
+import dash
+import dash_bootstrap_components as dbc
+from dash import Input, Output, callback, dcc, html, no_update
+from frontend.components.sidebar import (
+    CONTENT_FULL_STYLE, CONTENT_STYLE, build_sidebar, register_sidebar_callbacks,
+)
 
-app = dash.Dash(__name__, use_pages=True,
+# 1. Instanciar app PRIMEIRO
+app = dash.Dash(__name__, use_pages=True, pages_folder="pages",
     external_stylesheets=[dbc.themes.BOOTSTRAP,
-        "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"],
-    suppress_callback_exceptions=True)
+        "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"],
+    suppress_callback_exceptions=True, title="<nome>")
+server = app.server
 
-# registrar callbacks de sidebar, login e todas as páginas
-register_sidebar_callbacks()
-rc_login(); rc_dashboard(); rc_atendimentos(); ...
+# 2. Importar layouts APÓS app (aciona dash.register_page())
+from frontend.pages.login.login_page import layout as login_layout          # noqa: E402
+from frontend.pages.<page>.<page>_page import layout as <page>_layout       # noqa: E402
+# ... uma linha por página
 
+_PAGE_LAYOUTS: dict = {
+    "/": login_layout, "/login": login_layout,
+    "/<page>": <page>_layout,  # ... uma entrada por rota
+}
+
+# 3. Imports de callbacks
+from frontend.pages.login.login_callbacks import register_callbacks as login_register  # noqa: E402
+from frontend.pages.<page>.<page>_callbacks import register_callbacks as <page>_register  # noqa: E402
+
+# 4. Layout — html.Div(id="page-content") no lugar de dash.page_container
 app.layout = html.Div([
     dcc.Store(id="current-user", storage_type="session"),
     dcc.Location(id="url", refresh=False),
     html.Div(id="sidebar-wrapper"),
-    html.Div(dash.page_container, id="main-content"),
+    html.Div(html.Div(id="page-content"), id="main-content"),
 ])
 
-@callback(Output("url","pathname"), Input("url","pathname"), Input("current-user","data"))
-def guard_routes(pathname, user):
-    if pathname == "/login": return "/" if user else no_update
-    return "/login" if not user else no_update
+# 5. Registrar todos os callbacks
+login_register(); <page>_register(); register_sidebar_callbacks()
 
-@callback(Output("sidebar-wrapper","children"), Output("main-content","style"),
-          Input("url","pathname"), Input("current-user","data"))
-def toggle_sidebar(pathname, user):
-    if pathname == "/login" or not user: return [], CONTENT_FULL_STYLE
+# 6. Render de página
+@callback(Output("page-content", "children"), Input("url", "pathname"),
+          prevent_initial_call=False)
+def render_page_content(pathname: str):
+    layout_fn = _PAGE_LAYOUTS.get(pathname)
+    if layout_fn is None:
+        return dbc.Alert(f"Página não encontrada: {pathname}", color="warning", className="m-4")
+    return layout_fn() if callable(layout_fn) else layout_fn
+
+# 7. Guard routes — ÚNICO callback com Output("url","pathname")
+# Input("current-user","data") é obrigatório para disparar redirect pós-login
+@callback(Output("url", "pathname"),
+          Input("url", "pathname"), Input("current-user", "data"),
+          prevent_initial_call=False)
+def guard_routes(pathname: str, user_data):
+    _PROTEGIDAS = ["/<page1>", "/<page2>"]  # todas as rotas autenticadas
+    if pathname in ("/", None): return "/dashboard" if user_data else "/login"
+    if pathname == "/login": return "/dashboard" if user_data else no_update
+    if pathname in _PROTEGIDAS: return no_update if user_data else "/login"
+    return no_update
+
+# 8. Toggle sidebar — Input("current-user","data") para atualizar após login
+@callback(Output("sidebar-wrapper", "children"), Output("main-content", "style"),
+          Input("url", "pathname"), Input("current-user", "data"),
+          prevent_initial_call=False)
+def toggle_sidebar(pathname: str, user_data):
+    if pathname in ("/login", "/") or not user_data: return [], CONTENT_FULL_STYLE
     return build_sidebar(), CONTENT_STYLE
+
+if __name__ == "__main__":
+    app.run(debug=True, port=8050)
 ```
 
-Importe e chame `register_callbacks()` de cada página gerada na Etapa 7.
+**Regras críticas:**
+- `dash.page_container` **PROIBIDO** — substituído por `render_page_content`
+- Layouts importados APÓS `app = dash.Dash(...)` (`register_page` exige app instanciado)
+- `guard_routes` e `toggle_sidebar` usam `Input("current-user","data")` para disparar ao fazer login
+- `Output("url","pathname")` SOMENTE em `guard_routes`, nunca em `login_callbacks`
+- Executar com `python -m frontend.app` (não `python frontend/app.py`)
 
 ---
 
