@@ -1,4 +1,4 @@
-# KC Pricing System
+﻿# KC Pricing System
 
 ## Descrição
 Sistema proprietário de formação de preços regulares (Sell In) e simulação de impactos em toda a cadeia de valor, parametrizado pelas regras da Reforma Tributária brasileira (transição 2026–2033). Substitui planilhas Excel/Alteryx/KNIME por um motor auditável que permite decisões de preço ágeis sob incerteza tributária, com base na metodologia do Projeto Harmonização. Usuários-alvo: time de Pricing e área fiscal/comercial da empresa.
@@ -14,8 +14,8 @@ Sistema proprietário de formação de preços regulares (Sell In) e simulação
 
 ## Perfis de Acesso
 - **admin**: acesso total — gerenciar usuários, configurações, parâmetros tributários e todos os módulos
-- **supervisor**: visualizar tudo, simular cenários, aprovar e rejeitar lista de preços e exportar relatórios
-- **analista**: importar bases, parametrizar regras, executar simulações, exportar resultados e enviar para aprovação — não aprova nem exclui
+- **gestor_pricing**: visualizar tudo, simular cenários, aprovar e rejeitar lista de preços e exportar relatórios
+- **analista_pricing**: importar bases, parametrizar regras, executar simulações, exportar resultados e enviar para aprovação — não aprova nem exclui
 
 ---
 
@@ -46,8 +46,8 @@ Sistema proprietário de formação de preços regulares (Sell In) e simulação
 
 **Acesso por role:**
 - admin: full
-- supervisor: [visualizar]
-- analista: [importar-csv, visualizar, exportar-excel]
+- gestor_pricing: [visualizar]
+- analista_pricing: [importar-csv, visualizar, exportar-excel]
 
 ---
 
@@ -77,8 +77,8 @@ Sistema proprietário de formação de preços regulares (Sell In) e simulação
 
 **Acesso por role:**
 - admin: full
-- supervisor: [visualizar]
-- analista: [criar, editar, visualizar]
+- gestor_pricing: [visualizar]
+- analista_pricing: [criar, editar, visualizar]
 
 ---
 
@@ -110,8 +110,8 @@ Sistema proprietário de formação de preços regulares (Sell In) e simulação
 
 **Acesso por role:**
 - admin: full
-- supervisor: [visualizar]
-- analista: [criar, editar, excluir, visualizar]
+- gestor_pricing: [visualizar]
+- analista_pricing: [criar, editar, excluir, visualizar]
 
 ---
 
@@ -147,8 +147,8 @@ Sistema proprietário de formação de preços regulares (Sell In) e simulação
 
 **Acesso por role:**
 - admin: full
-- supervisor: [visualizar, exportar-excel, aprovar, rejeitar]
-- analista: [visualizar, exportar-excel, enviar-para-aprovacao, drill-down]
+- gestor_pricing: [visualizar, exportar-excel, aprovar, rejeitar]
+- analista_pricing: [visualizar, exportar-excel, enviar-para-aprovacao, drill-down]
 
 ---
 
@@ -180,8 +180,8 @@ Sistema proprietário de formação de preços regulares (Sell In) e simulação
 
 **Acesso por role:**
 - admin: full
-- supervisor: [visualizar, exportar-excel]
-- analista: [visualizar, exportar-excel]
+- gestor_pricing: [visualizar, exportar-excel]
+- analista_pricing: [visualizar, exportar-excel]
 
 ---
 
