@@ -96,8 +96,7 @@ projetos/
 │   ├── templates/
 │   │   └── roadmap-template.md    ← fonte única do template de roadmap
 │   ├── design-system.yaml         ← tokens de design centralizados
-│   ├── PROJECTS.md                ← registro de todos os projetos
-│   └── README.md                  ← este arquivo
+│   └── PROJECTS.md                ← registro de todos os projetos
 │
 ├── <projeto-a>/                   ← cada projeto é um diretório irmão
 │   ├── roadmap.md                 ← ÚNICO arquivo escrito manualmente

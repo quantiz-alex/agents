@@ -35,7 +35,7 @@ Todo o projeto é **100% Python**. O frontend usa EXCLUSIVAMENTE:
 ## Contexto do Projeto
 
 - Você trabalha no diretório raiz do projeto. Especificações detalhadas em `../.claude/commands/` (skill06 a skill10, skill-design-system) — consulte se necessário.
-- **Guia de UI/UX:** `../.claude/.claude/skills/ui-ux-pro-max/SKILL.md` — leia as seções relevantes conforme o step atual (mapeamento na tabela "Integração no Pipeline Lighthouse" do guia).
+- **Guia de UI/UX:** `../.claude/skills/ui-ux-pro-max/SKILL.md` — leia as seções relevantes conforme o step atual (mapeamento na tabela "Integração no Pipeline Lighthouse" do guia).
 - Detecção de estado: `docs/design-system.yaml` (step 1.5), `docs/screens_definition.yaml` (step 6), 4 arquivos por página em `frontend/pages/<page>/` (step 7), `frontend/app.py` (step 8). Pule steps completos.
 - Após cada step: checkpoint em `.build/checkpoints/` e `✓ [step] → [arquivos]`.
 
@@ -59,7 +59,7 @@ Todo o projeto é **100% Python**. O frontend usa EXCLUSIVAMENTE:
 
 **Input:** `docs/requirements.yaml`, `.build/project.json` → **Output:** `docs/design-system.yaml`
 
-Consulte `../.claude/.claude/skills/ui-ux-pro-max/SKILL.md` §4 (Seleção de Estilo) e §6 (Tipografia & Cor) para validar as escolhas antes de gerar o YAML.
+Consulte `../.claude/skills/ui-ux-pro-max/SKILL.md` §4 (Seleção de Estilo) e §6 (Tipografia & Cor) para validar as escolhas antes de gerar o YAML.
 
 Gerar YAML com: `colors` (estruturais, semânticas success/warning/danger/info, textos, sidebar), `typography` (system-ui, sizes xs–4xl, weights 400–700), `spacing` (escala Bootstrap 0–5), `layout` (sidebar 240px), `components` (card, kpi_card, filter_card, button_primary, badge), `ag_grid`, `plotly` (com color_sequence), `id_conventions`, `naming`, `restrictions`, `branding` (footer "Desenvolvido por / Quantiz Pricing Solution").
 
@@ -67,7 +67,7 @@ Gerar YAML com: `colors` (estruturais, semânticas success/warning/danger/info, 
 
 **Input:** `docs/requirements.yaml` → **Output:** `docs/screens_definition.yaml`
 
-Consulte `../.claude/.claude/skills/ui-ux-pro-max/SKILL.md` §10 (tabela "Tipo de gráfico → dado") ao definir o `type` de componentes `chart`, e §5 (Layout & Dashboard) para hierarquia visual das seções.
+Consulte `../.claude/skills/ui-ux-pro-max/SKILL.md` §10 (tabela "Tipo de gráfico → dado") ao definir o `type` de componentes `chart`, e §5 (Layout & Dashboard) para hierarquia visual das seções.
 
 Uma tela por módulo/feature principal:
 
@@ -91,7 +91,7 @@ Validar: rotas únicas, `data_sources` referenciam entidades reais do `data_mode
 
 **Input:** `docs/screens_definition.yaml`, `docs/design-system.yaml` → **Output:** `frontend/pages/<page>/` com 4 arquivos
 
-Consulte `../.claude/.claude/skills/ui-ux-pro-max/SKILL.md` §8 (Forms & Feedback) para formulários e filtros, §7 (Loading & Transições) para `dcc.Loading` e estados vazios, §3 (Performance Dash) para padrão de callbacks.
+Consulte `../.claude/skills/ui-ux-pro-max/SKILL.md` §8 (Forms & Feedback) para formulários e filtros, §7 (Loading & Transições) para `dcc.Loading` e estados vazios, §3 (Performance Dash) para padrão de callbacks.
 
 Checklist primeiro: verificar no disco quais páginas já têm os 4 arquivos; gerar apenas pendentes. UMA página por vez, na ordem:
 
@@ -216,7 +216,7 @@ if __name__ == "__main__":
 
 ## Pré-Entrega (antes do relatório final)
 
-Execute o **Checklist Pré-Entrega** de `../.claude/.claude/skills/ui-ux-pro-max/SKILL.md` (seção final). Marque cada item. Se algum item falhar, corrija antes de reportar `STATUS: success`.
+Execute o **Checklist Pré-Entrega** de `../.claude/skills/ui-ux-pro-max/SKILL.md` (seção final). Marque cada item. Se algum item falhar, corrija antes de reportar `STATUS: success`.
 
 ## Relatório Final (sua última mensagem)
 
