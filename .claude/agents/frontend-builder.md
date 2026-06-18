@@ -52,7 +52,10 @@ Todo o projeto é **100% Python**. O frontend usa EXCLUSIVAMENTE:
 | AG Grid | `ag-theme-alpine`, `floatingFilter=True`, `suppressMenu=True`, `rowHeight=44`, paginação 20 |
 | Plotly | `template="plotly_white"`, `paper_bgcolor="rgba(0,0,0,0)"`, `plot_bgcolor="rgba(0,0,0,0)"`, `height=300` |
 | IDs | Padrão `<page>-<component>` (ex.: `aprovacao-grid`, `aprovacao-btn-filtrar`) |
-| Cores | sidebar `#1e293b`, page `#f8fafc`, primary `#3b82f6` |
+| Sidebar | bg `#ffffff`, `border-right: 1px solid #e2e8f0`, box-shadow sutil |
+| Sidebar texto | `#4b5563` (inativo), cor primária (ativo) com bg `{primary}14` e `border-left: 3px solid {primary}` |
+| Page bg | `#f8fafc` |
+| Primary | lido de `.build/project.json` → `branding.primary` (fallback `#3b82f6`) |
 | Tipagem | Python typing obrigatório em todas as funções |
 
 ## Step 1.5 — Design System
@@ -61,7 +64,20 @@ Todo o projeto é **100% Python**. O frontend usa EXCLUSIVAMENTE:
 
 Consulte `../.claude/skills/ui-ux-pro-max/SKILL.md` §4 (Seleção de Estilo) e §6 (Tipografia & Cor) para validar as escolhas antes de gerar o YAML.
 
-Gerar YAML com: `colors` (estruturais, semânticas success/warning/danger/info, textos, sidebar), `typography` (system-ui, sizes xs–4xl, weights 400–700), `spacing` (escala Bootstrap 0–5), `layout` (sidebar 240px), `components` (card, kpi_card, filter_card, button_primary, badge), `ag_grid`, `plotly` (com color_sequence), `id_conventions`, `naming`, `restrictions`, `branding` (footer "Desenvolvido por / Quantiz Pricing Solution").
+**Leia `.build/project.json` e extraia `branding`** antes de gerar o YAML:
+- `primary_color` = `branding.primary` (fallback `#3b82f6`)
+- `logo_path` = `branding.logo` (pode ser `null`)
+- `display_name` = `branding.display_name`
+
+Gerar YAML com:
+- `colors`: `page` `#f8fafc`, `sidebar_bg` `#ffffff`, `sidebar_border` `#e2e8f0`, `sidebar_text` `#4b5563`, `primary` = primary_color do branding, semânticas success/warning/danger/info, textos
+- `typography`: system-ui, sizes xs–4xl, weights 400–700
+- `spacing`: escala Bootstrap 0–5
+- `layout`: sidebar 240px fixo
+- `components`: card, kpi_card, filter_card, button_primary, badge
+- `ag_grid`, `plotly` (com color_sequence baseada na primary_color)
+- `id_conventions`, `naming`, `restrictions`
+- `branding`: `primary` = primary_color, `logo` = logo_path, `display_name` = display_name, `footer` "Desenvolvido por / Quantiz Pricing Solution"
 
 ## Step 6 — Screen Definition
 
@@ -69,23 +85,31 @@ Gerar YAML com: `colors` (estruturais, semânticas success/warning/danger/info, 
 
 Consulte `../.claude/skills/ui-ux-pro-max/SKILL.md` §10 (tabela "Tipo de gráfico → dado") ao definir o `type` de componentes `chart`, e §5 (Layout & Dashboard) para hierarquia visual das seções.
 
-Uma tela por módulo/feature principal:
+**Use os campos estruturados de `requirements.yaml`** — `screen_type`, `icon`, `kpis`, `charts`, `filters`, `actions` — para gerar a definição com alta fidelidade ao roadmap, sem inferências desnecessárias.
+
+Uma tela por módulo:
 
 ```yaml
 screens:
-  - id: <slug>            # kebab-case
-    title: string
-    route: /<slug>        # rotas ÚNICAS
+  - id: <slug>               # kebab-case do nome do módulo
+    title: string            # título legível para o header da página
+    route: /<slug>           # rotas ÚNICAS
     module: string
-    icon: bi-<icone>      # Bootstrap Icons
+    screen_type: dashboard|grid|form|report|mixed
+    icon: <nome-bootstrap>   # sem prefixo "bi-" — ex: speedometer2, tag, people
     data_sources: [<entidades do data_model>]
+    access: [{role, permissions: full|[string]}]  # de requirements.yaml
+    kpis:                    # apenas para screen_type: dashboard
+      - {id: <screen>-kpi-<slug>, label, metric, format: number|currency|percent}
+    charts:
+      - {id: <screen>-chart-<n>, type: bar|line|area|pie|scatter, title, x_field, y_field}
     components:
       - {type: filter|grid|chart|modal|form|kpi|tabs|card, id: <screen>-<tipo>, label, config}
     actions: [{id, label, type: button|export|import, color}]
     filters: [{field, label, type: text|select|date|date_range|number, options}]
 ```
 
-Validar: rotas únicas, `data_sources` referenciam entidades reais do `data_model.yaml`.
+Validar: rotas únicas, `data_sources` referenciam entidades reais do `data_model.yaml`, roles em `access` existem em `requirements.yaml`.
 
 ## Step 7 — Frontend Pages (4 arquivos por página)
 
@@ -110,10 +134,79 @@ Após cada página: `✓ <page> → 4 arquivos`. Validar sintaxe Python de cada 
 **Output:** `frontend/components/sidebar.py`, `frontend/pages/login/login_page.py`, `frontend/pages/login/login_callbacks.py`, `frontend/app.py`
 
 ### `sidebar.py`
-Sidebar fixa (240px, bg `#1e293b`, flex column): topo com logo `●` azul + nome do projeto (de `.build/project.json`); nav com `dbc.NavLink` por página (ícone `bi`, cor `#cbd5e1`, active="exact"); rodapé fixo "Desenvolvido por / Quantiz Pricing Solution". Exportar `build_sidebar()`, `CONTENT_STYLE` (marginLeft 240px), `CONTENT_FULL_STYLE` (marginLeft 0), `register_sidebar_callbacks()`.
+
+**Leia `.build/project.json` e `docs/design-system.yaml` para obter `primary_color`, `logo_path` e `display_name`.**
+
+Sidebar fixa (240px, bg `#ffffff`, `border-right: 1px solid #e2e8f0`, `box-shadow: 1px 0 4px rgba(0,0,0,0.04)`, flex column):
+
+**Topo (logo + nome):**
+- Se `logo_path` não for `null` e o arquivo existir em `assets/`: `html.Img(src=app.get_asset_url(logo_path), height=32, style={"objectFit":"contain","maxWidth":"140px"})`
+- Caso contrário: `html.Span("●", style={"color": primary_color, "fontSize": "1.4rem", "lineHeight": "1"})` + `html.Span(display_name, ...)`
+- Fundo do topo: `#ffffff`, separador `border-bottom: 1px solid #e2e8f0`, padding `1.25rem 1.5rem`
+
+**Nav links:**
+```python
+html.Style(f"""
+.sidebar-nav .nav-link {{
+    color: #4b5563;
+    padding: 0.55rem 1.5rem;
+    border-radius: 0;
+    border-left: 3px solid transparent;
+    font-size: 0.875rem;
+    transition: background 0.15s;
+}}
+.sidebar-nav .nav-link:hover:not(.active) {{
+    background: #f8fafc;
+    color: #1e293b;
+}}
+.sidebar-nav .nav-link.active {{
+    color: {primary_color};
+    background: {primary_color}14;
+    border-left: 3px solid {primary_color};
+    font-weight: 600;
+    padding-left: 1.25rem;
+}}
+""")
+```
+`dbc.NavLink` por página com `active="exact"`, ícone `html.I(className="bi bi-{icon} me-2")`, className `"nav-link"`, encapsulados em `html.Nav(className="sidebar-nav flex-grow-1 py-2")`.
+
+**Indicador de tela ativa** (entre o header e a nav):
+```python
+# No topo de sidebar.py, definir mapeamento pathname → (ícone, título)
+_PAGE_INFO: dict[str, tuple[str, str]] = {
+    "/dashboard": ("speedometer2", "Dashboard"),
+    "/<page1>": ("<icon1>", "<Title1>"),
+    # ... uma entrada por rota autenticada, usando os ícones e títulos do screens_definition.yaml
+}
+
+# Dentro de build_sidebar(pathname: str = "/"):
+icon, title = _PAGE_INFO.get(pathname, ("", ""))
+active_indicator = html.Div(
+    [
+        html.I(className=f"bi bi-{icon} me-1", style={"fontSize": "0.65rem"}),
+        title,
+    ],
+    style={
+        "padding": "0.375rem 1.5rem",
+        "fontSize": "0.7rem",
+        "fontWeight": "700",
+        "textTransform": "uppercase",
+        "letterSpacing": "0.07em",
+        "color": primary_color,
+        "background": f"{primary_color}08",
+        "borderBottom": "1px solid #e2e8f0",
+    }
+) if title else html.Div(style={"borderBottom": "1px solid #e2e8f0"})
+```
+
+A assinatura muda para `def build_sidebar(pathname: str = "/") -> html.Div:`. O `_PAGE_INFO` é construído a partir dos dados de `docs/screens_definition.yaml` (ícones e títulos definidos nos módulos do roadmap).
+
+**Rodapé:** `"Desenvolvido por"` + `html.Br()` + `"Quantiz Pricing Solution"` em `color: #9ca3af`, `font-size: 0.75rem`, `padding: 1rem 1.5rem`, `border-top: 1px solid #e2e8f0`.
+
+Exportar `build_sidebar(pathname)`, `CONTENT_STYLE` (`marginLeft: "240px"`), `CONTENT_FULL_STYLE` (`marginLeft: "0"`), `register_sidebar_callbacks()`.
 
 ### `login_page.py`
-Fullscreen com gradiente `linear-gradient(135deg, #1e293b, #0f172a)`, card centralizado 400px: título, input email (`id="login-email"`), input senha (`id="login-senha"`, `n_submit=0`), botão Entrar (`id="login-btn"`), `dbc.Alert(id="login-alert", is_open=False)`, dica de modo dev. SEM sidebar.
+Fullscreen com gradiente `linear-gradient(135deg, #1e293b, #0f172a)`, card centralizado 400px: título, input email (`id="login-email"`), input senha (`id="login-senha"`, `n_submit=0`), botão Entrar (`id="login-btn"`, `color="primary"` = primary_color via `style`), `dbc.Alert(id="login-alert", is_open=False)`, dica de modo dev. SEM sidebar.
 
 ### `login_callbacks.py`
 `register_callbacks()` com callback: Outputs `current-user.data`, `login-alert.children`, `login-alert.is_open`; Inputs btn n_clicks + n_submit dos inputs; States dos valores. Valida email contra `mock_data/usuarios.csv` (case-insensitive); qualquer senha aceita em modo mock. **REGRA CRÍTICA:** `Output("url", "pathname")` existe APENAS no `guard_routes` de `app.py` — nunca duplicar aqui.
@@ -194,14 +287,14 @@ def guard_routes(pathname: str, user_data):
         return no_update if user_data else "/login"
     return no_update
 
-# 8. Toggle sidebar
+# 8. Toggle sidebar — passa pathname para build_sidebar() exibir a tela ativa
 @callback(Output("sidebar-wrapper", "children"), Output("main-content", "style"),
           Input("url", "pathname"), Input("current-user", "data"),
           prevent_initial_call=False)
 def toggle_sidebar(pathname: str, user_data):
     if pathname in ("/login", "/") or not user_data:
         return [], CONTENT_FULL_STYLE
-    return build_sidebar(), CONTENT_STYLE
+    return build_sidebar(pathname), CONTENT_STYLE
 
 if __name__ == "__main__":
     app.run(debug=True, port=8050)

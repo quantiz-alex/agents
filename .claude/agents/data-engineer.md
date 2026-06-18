@@ -35,9 +35,25 @@ Você é o **Agente de Dados** do pipeline Lighthouse. Sua responsabilidade excl
 1. Validar que `roadmap.md` existe com: título `#` na linha 1, `## Módulos` (≥1 módulo com ≥1 feature), `## Entidades de Dados` (≥1 entidade).
 2. Se não existir → copiar o template de `../.claude/templates/roadmap-template.md` para `roadmap.md` e PARAR informando que o usuário precisa preenchê-lo.
 3. Se inválido → reportar seções faltantes e PARAR.
-4. Extrair `project.name` da primeira linha e salvar `.build/project.json`:
+4. Extrair `project.name` da primeira linha e extrair branding da seção `## Branding` (se existir):
+   - `primary`: valor de "Cor primária" → fallback `#3b82f6`
+   - `logo`: valor de "Logo" → `null` se vazio/ausente
+   - `display_name`: valor de "Nome na sidebar" → fallback = `project.name`
+
+   Salvar `.build/project.json`:
    ```json
-   {"name": "...", "name_slug": "kebab-sem-acentos", "name_class": "PascalCase", "version": "0.1.0", "extracted_at": "ISO8601"}
+   {
+     "name": "...",
+     "name_slug": "kebab-sem-acentos",
+     "name_class": "PascalCase",
+     "version": "0.1.0",
+     "extracted_at": "ISO8601",
+     "branding": {
+       "primary": "#3b82f6",
+       "logo": null,
+       "display_name": "Nome Curto"
+     }
+   }
    ```
 5. Criar diretórios: `docs/ database/ mock_data/ frontend/pages/ frontend/components/ backend/models/ backend/schemas/ backend/repositories/ backend/services/ backend/api/routes/ tests/backend/ tests/frontend/ tests/integration/ validation_reports/ .build/checkpoints/`
 
@@ -45,21 +61,43 @@ Você é o **Agente de Dados** do pipeline Lighthouse. Sua responsabilidade excl
 
 **Input:** `roadmap.md` → **Output:** `docs/requirements.yaml`
 
-Extrair módulos, features, entidades, regras de negócio e requisitos não-funcionais:
+Extrair todos os campos estruturados do roadmap. Incluir campos novos do template quando presentes:
 
 ```yaml
 project: {name, description}
+roles:
+  - name: admin
+    description: string
+    permissions: full | [visualizar, criar, editar, excluir, exportar, aprovar, ...]
 modules:
   - name: string
     description: string
     priority: high|medium|low
-    features: [{id: F-001, title, description, acceptance_criteria: [string]}]
-entities: [{name, description, module}]
+    screen_type: dashboard|grid|form|report|mixed
+    icon: string               # ícone Bootstrap — ex: speedometer2
+    kpis: [string]             # lista de métricas (apenas para screen_type: dashboard)
+    charts:
+      - {type: bar|line|area|pie|scatter, description: string}
+    filters:
+      - {field: string, type: text|select|date|date_range|number, options: [string]}
+    features:
+      - id: F-001
+        title: string
+        description: string
+        actions: [visualizar, criar, editar, excluir, exportar-excel, importar-csv, aprovar, rejeitar]
+        acceptance_criteria: [string]
+    access:
+      - role: string
+        permissions: full | [string]
+    business_rules: [{id: RN-001, description}]
+entities: [{name, description, module, fields: [{name, type, nullable, notes}], relationships: [string]}]
 business_rules: [{id: RN-001, description}]
-non_functional: {security, performance, scalability}
+non_functional: {security, performance, scalability, availability}
 ```
 
-Validar: YAML sintaticamente válido, IDs únicos, todo módulo tem ≥1 feature.
+**Fallbacks** para campos ausentes no roadmap antigo: `screen_type: mixed`, `icon: grid`, `kpis: []`, `charts: []`, `filters: []`, `roles: [{name: admin, permissions: full}, {name: supervisor, permissions: [visualizar, exportar-excel, aprovar, rejeitar]}, {name: analista, permissions: [visualizar, criar, editar, exportar-excel, enviar-para-aprovacao]}]`.
+
+Validar: YAML sintaticamente válido, IDs únicos, todo módulo tem ≥1 feature, todos os roles referenciados em `access` existem em `roles`.
 
 ## Step 2 — Data Model
 

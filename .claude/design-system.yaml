@@ -1,15 +1,17 @@
 # Design System — Centralizado
 # Referenciado por todas as skills de frontend (skill07, skill09, skill10)
 
-version: "1.0.0"
-last_updated: "2024-06-03"
+version: "1.1.0"
+last_updated: "2026-06-18"
 
 colors:
-  # Sidebar
-  sidebar_bg: "#1e293b"           # slate-800
-  sidebar_active: "#334155"       # slate-700
-  sidebar_text: "#cbd5e1"         # slate-300
-  sidebar_highlight: "#3b82f6"    # blue-500
+  # Sidebar — light clean (branding dinâmico via .build/project.json)
+  sidebar_bg: "#ffffff"           # branco — separado do page_bg por border-right
+  sidebar_border: "#e2e8f0"       # slate-200
+  sidebar_text: "#4b5563"         # gray-600 (inativo)
+  sidebar_active_bg: "{primary}14" # 8% opacity da cor primária (gerado pelo frontend-builder)
+  sidebar_active_text: "{primary}" # cor primária do cliente (gerado pelo frontend-builder)
+  sidebar_footer: "#9ca3af"       # gray-400 — discreto
   
   # Page
   page_bg: "#f8fafc"              # slate-50

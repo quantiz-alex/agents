@@ -24,6 +24,7 @@ cd ../nome-do-projeto
 | Projeto | Slug | Status | Última Atividade |
 |---------|------|--------|-----------------|
 | GM Argentina — Precificação Inteligente | gm-teste | 🟢 Build concluído | 2026-06-15 |
+| KC Pricing System | kc-pricing-system | 🟡 Aguardando roadmap | 2026-06-18 |
 
 ---
 
@@ -66,6 +67,7 @@ cd ../nome-do-projeto
 | Comando | Descrição |
 |---------|-----------|
 | `/project-init <nome>` | Cria novo projeto com estrutura completa e roadmap template |
+| `/roadmap-import <arquivo>` | Analisa documento do cliente e gera roadmap.md preenchido automaticamente |
 | `/lighthouse` | Orquestrador: Fase 1 (dados) → Fase 2 (front+back em paralelo). NÃO inclui testes |
 | `/lighthouse data\|frontend\|backend` | Executa apenas uma fase específica |
 | "gere os testes do projeto" | test-writer standalone: pytest + cypress, cobertura ≥85% (após validação com cliente) |
