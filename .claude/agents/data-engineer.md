@@ -36,7 +36,7 @@ Você é o **Agente de Dados** do pipeline Lighthouse. Sua responsabilidade excl
 2. Se não existir → copiar o template de `../.claude/templates/roadmap-template.md` para `roadmap.md` e PARAR informando que o usuário precisa preenchê-lo.
 3. Se inválido → reportar seções faltantes e PARAR.
 4. Extrair `project.name` da primeira linha e extrair branding da seção `## Branding` (se existir):
-   - `primary`: valor de "Cor primária" → fallback `#3b82f6`
+   - `primary`: valor de "Cor primária" → fallback `#1045C8`
    - `logo`: valor de "Logo" → `null` se vazio/ausente
    - `display_name`: valor de "Nome na sidebar" → fallback = `project.name`
 
@@ -49,7 +49,7 @@ Você é o **Agente de Dados** do pipeline Lighthouse. Sua responsabilidade excl
      "version": "0.1.0",
      "extracted_at": "ISO8601",
      "branding": {
-       "primary": "#3b82f6",
+       "primary": "#1045C8",
        "logo": null,
        "display_name": "Nome Curto"
      }

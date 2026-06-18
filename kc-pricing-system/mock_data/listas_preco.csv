@@ -1,0 +1,6 @@
+id,descricao,data_geracao,usuario_id,parametro_tributario_id,status,total_skus,pct_dentro_cap,aprovado_por,data_aprovacao,created_at,updated_at
+1,Lista Sell In Jan/2026 - Regime Legado,2026-01-25T14:00:00,4,1,Aprovada,30,94.50,2,2026-01-26T10:00:00,2026-01-25T14:00:00,2026-01-26T10:00:00
+2,Lista Sell In Jan/2026 - Simulacao Reforma,2026-01-25T15:00:00,4,2,Arquivada,30,91.20,,2026-01-25T15:00:00,2026-01-25T15:00:00
+3,Lista Sell In Fev/2026 - Regime Legado,2026-02-25T14:00:00,5,1,Aprovada,30,96.10,3,2026-02-26T09:30:00,2026-02-25T14:00:00,2026-02-26T09:30:00
+4,Lista Sell In Mar/2026 - Regime Legado,2026-03-25T14:00:00,8,1,PendenteAprovacao,30,93.80,,2026-03-25T14:00:00,2026-03-25T14:00:00
+5,Lista Sell In Mar/2026 - Projecao 2027 Reforma,2026-03-25T16:00:00,5,4,Gerada,30,88.50,,2026-03-25T16:00:00,2026-03-25T16:00:00

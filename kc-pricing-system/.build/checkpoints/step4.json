@@ -1,0 +1,26 @@
+{
+  "step": 4,
+  "timestamp": "2026-06-18T19:05:00Z",
+  "files": {
+    "mock_data/usuarios.csv": "189f986b174c1978a471a3b6b4c0b6839076cc7a7e82f24dd9e238a4d62610ec",
+    "mock_data/usuarios.json": "68c6851c9dc24923e624925c6f8641ad6ad094b817b4527fa52235a73b839942",
+    "mock_data/produtos.csv": "63f335558a62f991ad7d39c99c7950736a3ecd48ff1c530b9bc4d44e7475bb68",
+    "mock_data/produtos.json": "7bd30e4eba47c5fda50ba2ebd9b147298ccd17be5413088dd25fecc6a02b73ba",
+    "mock_data/margens_cadeia.csv": "4c6ead926b1449e0d6703189e4ad0c07d417e0bae551bb9b5712e259c8ef76db",
+    "mock_data/margens_cadeia.json": "5897fbd59866f42a032fa971a76ee302374e2d326377a0b5d3c6813991c32ecd",
+    "mock_data/parametros_tributarios.csv": "f0bc10f556e9086d5b0390023c45dccb9780e16b2d44567b72a0c5e2e69e01f6",
+    "mock_data/parametros_tributarios.json": "ceabdf6e3ce9d6e929f6c4f1fa7195c5f20c3c05d0b7738970e1b5a77c5fe3a7",
+    "mock_data/importacoes_base.csv": "d16879489cc8d2ec9181dfe6088458b39cb399fa4bc2f373bbe3d73595bd5099",
+    "mock_data/importacoes_base.json": "a27bcabc10117dcd1e80c7dcd5b23c66671b3637c0c5f751770b361c89f92aba",
+    "mock_data/listas_preco.csv": "f0932364b5f45ec7b152fd8190a68ef559ba793941f0670678043d8e9219b5b4",
+    "mock_data/listas_preco.json": "9421d055e32011daae8906286acd16909e5be0ecbcb280c2e94d3366093c56ba",
+    "mock_data/listas_preco_itens.csv": "d71c7d465208868404da251376905ea71a0ad8a9ee3aaa8c947f411d7e2b3cf1",
+    "mock_data/listas_preco_itens.json": "9e19324b50380cf3ae1ef803905b7c853f636c40a7e22374ec3d1b9596b906db",
+    "mock_data/cenarios_simulacao.csv": "0cca3b219264036eda8b325539648ec067d1ef4a44152a3607bdf474e3e4295e",
+    "mock_data/cenarios_simulacao.json": "4722490f0c02903d279e61db43bb2a8b60a49cf511b2bd3bf56ca1729eee5c0b",
+    "mock_data/cenarios_simulacao_itens.csv": "0a74b9c42ef7b5a70ec4316ca2cdc03bc89c01c6104eb650912f0e22a763fc87",
+    "mock_data/cenarios_simulacao_itens.json": "e6a893d6f4b3147a6aec7322e10a4f5952f848093e1254a062a2db926d82ded9"
+  },
+  "validation": "9 entities x 2 files = 18 files confirmed on disk. Topological order respected. FKs point to valid IDs. Enums valid. admin user: admin@kc-pricing-system.com (id=1). Row counts: usuarios=10, produtos=30, margens_cadeia=15, parametros_tributarios=12, importacoes_base=15, listas_preco=5, listas_preco_itens=30, cenarios_simulacao=8, cenarios_simulacao_itens=25.",
+  "duration_seconds": 15
+}

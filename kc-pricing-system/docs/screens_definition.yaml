@@ -1,0 +1,367 @@
+screens:
+  - id: importacao
+    title: "Importacao de Bases"
+    route: /importacao
+    module: "Importacao de Bases"
+    screen_type: form
+    icon: cloud-upload
+    data_sources:
+      - importacoes_base
+      - usuarios
+    access:
+      - role: admin
+        permissions: full
+      - role: gestor_pricing
+        permissions: [visualizar]
+      - role: analista_pricing
+        permissions: [importar-csv, visualizar, exportar-excel]
+    kpis: []
+    charts: []
+    components:
+      - type: filter
+        id: importacao-filtros
+        label: "Filtros"
+        config:
+          fields:
+            - {field: fonte, label: "Fonte", type: select, options: [Nielsen Retail, Nielsen Scantrack, Precos ERP, PL, Cadastros, DePara]}
+            - {field: data_importacao, label: "Periodo", type: date_range}
+            - {field: status, label: "Status", type: select, options: [Sucesso, Erro, Processando]}
+      - type: grid
+        id: importacao-grid
+        label: "Historico de Importacoes"
+        config:
+          entity: importacoes_base
+          columns: [id, fonte, nome_arquivo, data_importacao, total_linhas, status, hash_arquivo, observacao]
+      - type: modal
+        id: importacao-modal-upload
+        label: "Upload de Arquivo"
+        config:
+          fields:
+            - {field: fonte, label: "Fonte *", type: select, required: true, options: [Nielsen Retail, Nielsen Scantrack, Precos ERP, PL, Cadastros, DePara]}
+            - {field: arquivo, label: "Arquivo (.xlsx / .xls) *", type: file, required: true}
+            - {field: observacao, label: "Observacao", type: textarea, required: false}
+    actions:
+      - {id: importacao-btn-upload, label: "Importar Arquivo", type: button, color: primary}
+      - {id: importacao-btn-exportar, label: "Exportar Historico", type: export, color: secondary}
+    filters:
+      - {field: fonte, label: "Fonte", type: select, options: [Nielsen Retail, Nielsen Scantrack, Precos ERP, PL, Cadastros, DePara]}
+      - {field: data_importacao, label: "Periodo", type: date_range}
+      - {field: status, label: "Status", type: select, options: [Sucesso, Erro, Processando]}
+
+  - id: tributario
+    title: "Parametrizacao Tributaria"
+    route: /tributario
+    module: "Parametrizacao Tributaria"
+    screen_type: form
+    icon: calculator
+    data_sources:
+      - parametros_tributarios
+      - usuarios
+    access:
+      - role: admin
+        permissions: full
+      - role: gestor_pricing
+        permissions: [visualizar]
+      - role: analista_pricing
+        permissions: [criar, editar, visualizar]
+    kpis: []
+    charts: []
+    components:
+      - type: filter
+        id: tributario-filtros
+        label: "Filtros"
+        config:
+          fields:
+            - {field: ano_transicao, label: "Ano de Vigencia", type: select, options: [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]}
+            - {field: regime, label: "Regime", type: select, options: [Legado, Reforma]}
+      - type: grid
+        id: tributario-grid
+        label: "Parametros Tributarios"
+        config:
+          entity: parametros_tributarios
+          columns: [id, ano_vigencia, regime, aliquota_ibs, aliquota_cbs, aliquota_icms, aliquota_pis, aliquota_cofins, aliquota_is, credito_pis_cofins, debito_icms, ativo]
+      - type: modal
+        id: tributario-modal-form
+        label: "Novo Parametro Tributario"
+        config:
+          fields:
+            - {field: ano_vigencia, label: "Ano de Vigencia *", type: select, required: true, options: [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]}
+            - {field: regime, label: "Regime *", type: select, required: true, options: [Legado, Reforma]}
+            - {field: aliquota_ibs, label: "Aliquota IBS *", type: number, required: true}
+            - {field: aliquota_cbs, label: "Aliquota CBS *", type: number, required: true}
+            - {field: aliquota_icms, label: "Aliquota ICMS *", type: number, required: true}
+            - {field: aliquota_pis, label: "Aliquota PIS *", type: number, required: true}
+            - {field: aliquota_cofins, label: "Aliquota COFINS *", type: number, required: true}
+            - {field: aliquota_is, label: "Imposto Seletivo *", type: number, required: true}
+            - {field: credito_pis_cofins, label: "Credito PIS/COFINS", type: number, required: false}
+            - {field: debito_icms, label: "Debito ICMS", type: number, required: false}
+    actions:
+      - {id: tributario-btn-novo, label: "Novo Parametro", type: button, color: primary}
+      - {id: tributario-btn-exportar, label: "Exportar", type: export, color: secondary}
+    filters:
+      - {field: ano_vigencia, label: "Ano de Vigencia", type: select, options: [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]}
+      - {field: regime, label: "Regime", type: select, options: [Legado, Reforma]}
+
+  - id: pricing
+    title: "Parametrizacao de Pricing"
+    route: /pricing
+    module: "Parametrizacao de Pricing"
+    screen_type: form
+    icon: gear
+    data_sources:
+      - produtos
+      - margens_cadeia
+    access:
+      - role: admin
+        permissions: full
+      - role: gestor_pricing
+        permissions: [visualizar]
+      - role: analista_pricing
+        permissions: [criar, editar, excluir, visualizar]
+    kpis: []
+    charts: []
+    components:
+      - type: tabs
+        id: pricing-tabs
+        label: "Abas de Configuracao"
+        config:
+          tabs:
+            - id: produtos
+              label: "Produtos / Capitaes"
+            - id: margens
+              label: "Margens da Cadeia"
+      - type: filter
+        id: pricing-filtros
+        label: "Filtros"
+        config:
+          fields:
+            - {field: canal, label: "Canal", type: select, options: []}
+            - {field: regiao, label: "Regiao", type: select, options: []}
+            - {field: familia, label: "Familia", type: select, options: []}
+            - {field: classificacao, label: "Classificacao", type: select, options: [Capitao, MainOffender, Seguidor]}
+      - type: grid
+        id: pricing-grid
+        label: "Produtos"
+        config:
+          entity: produtos
+          columns: [id, sku, descricao, familia, embalagem, classificacao, canal, regiao, preco_atual, ativo]
+      - type: modal
+        id: pricing-modal-produto
+        label: "Editar Produto"
+        config:
+          fields:
+            - {field: classificacao, label: "Classificacao *", type: select, required: true, options: [Capitao, MainOffender, Seguidor]}
+            - {field: canal, label: "Canal *", type: text, required: true}
+            - {field: regiao, label: "Regiao", type: text, required: false}
+            - {field: preco_atual, label: "Preco Atual", type: number, required: false}
+      - type: modal
+        id: pricing-modal-margem
+        label: "Editar Margem da Cadeia"
+        config:
+          fields:
+            - {field: familia, label: "Familia *", type: text, required: true}
+            - {field: canal, label: "Canal *", type: text, required: true}
+            - {field: margem_industria, label: "Margem Industria *", type: number, required: true}
+            - {field: margem_distribuidor, label: "Margem Distribuidor *", type: number, required: true}
+            - {field: margem_varejo, label: "Margem Varejo *", type: number, required: true}
+            - {field: price_index, label: "Price Index *", type: number, required: true}
+            - {field: relatividade, label: "Relatividade *", type: number, required: true}
+            - {field: vigencia_inicio, label: "Vigencia Inicio *", type: date, required: true}
+            - {field: vigencia_fim, label: "Vigencia Fim", type: date, required: false}
+    actions:
+      - {id: pricing-btn-exportar, label: "Exportar", type: export, color: secondary}
+    filters:
+      - {field: canal, label: "Canal", type: select, options: []}
+      - {field: regiao, label: "Regiao", type: select, options: []}
+      - {field: familia, label: "Familia", type: select, options: []}
+      - {field: classificacao, label: "Classificacao", type: select, options: [Capitao, MainOffender, Seguidor]}
+
+  - id: lista-preco
+    title: "Lista de Precos Sell In"
+    route: /lista-preco
+    module: "Geracao de Lista de Precos Sell In"
+    screen_type: mixed
+    icon: tag
+    data_sources:
+      - listas_preco
+      - listas_preco_itens
+      - produtos
+      - parametros_tributarios
+    access:
+      - role: admin
+        permissions: full
+      - role: gestor_pricing
+        permissions: [visualizar, exportar-excel, aprovar, rejeitar]
+      - role: analista_pricing
+        permissions: [visualizar, exportar-excel, enviar-para-aprovacao, drill-down]
+    kpis:
+      - {id: lista-preco-kpi-total-skus, label: "Total de SKUs", metric: total_skus, format: number}
+      - {id: lista-preco-kpi-pct-cap, label: "Dentro dos CAPs", metric: pct_dentro_cap, format: percent}
+      - {id: lista-preco-kpi-variacao-media, label: "Variacao Media vs. Base", metric: variacao_pct_media, format: percent}
+      - {id: lista-preco-kpi-impacto-receita, label: "Impacto Receita NIV", metric: impacto_receita_niv, format: currency}
+    charts:
+      - {id: lista-preco-chart-1, type: bar, title: "Preco Atual vs. Preco Gerado por Familia", x_field: familia, y_field: sell_in_niv}
+      - {id: lista-preco-chart-2, type: bar, title: "Distribuicao de Variacao de Preco", x_field: faixa_variacao, y_field: quantidade}
+    components:
+      - type: kpi
+        id: lista-preco-kpis-row
+        label: "KPIs"
+        config: {}
+      - type: filter
+        id: lista-preco-filtros
+        label: "Filtros"
+        config:
+          fields:
+            - {field: familia, label: "Familia", type: select, options: []}
+            - {field: canal, label: "Canal", type: select, options: []}
+            - {field: status_cap, label: "Status CAP", type: select, options: [Dentro, Limitado pelo CAP]}
+            - {field: status_aprovacao, label: "Status Aprovacao", type: select, options: [Pendente, Aprovada, Rejeitada]}
+      - type: chart
+        id: lista-preco-chart-1
+        label: "Comparativo de Precos por Familia"
+        config:
+          type: bar
+          x_field: familia
+          y_field: sell_in_niv
+      - type: chart
+        id: lista-preco-chart-2
+        label: "Distribuicao de Variacao"
+        config:
+          type: bar
+          x_field: faixa_variacao
+          y_field: quantidade
+      - type: grid
+        id: lista-preco-grid
+        label: "Itens da Lista de Precos"
+        config:
+          entity: listas_preco_itens
+          columns: [id, produto_id, ptc_sell_out, margem_cadeia_pct, sell_in_nf, sell_in_niv, custo_aquisicao, markup, cap_aplicado, variacao_pct]
+      - type: modal
+        id: lista-preco-modal-aprovacao
+        label: "Aprovar / Rejeitar Lista"
+        config:
+          fields:
+            - {field: observacao, label: "Observacao", type: textarea, required: false}
+    actions:
+      - {id: lista-preco-btn-exportar, label: "Exportar Excel", type: export, color: secondary}
+      - {id: lista-preco-btn-aprovar, label: "Aprovar Lista", type: button, color: success}
+      - {id: lista-preco-btn-rejeitar, label: "Rejeitar Lista", type: button, color: danger}
+    filters:
+      - {field: familia, label: "Familia", type: select, options: []}
+      - {field: canal, label: "Canal", type: select, options: []}
+      - {field: status_cap, label: "Status CAP", type: select, options: [Dentro, Limitado pelo CAP]}
+      - {field: status_aprovacao, label: "Status Aprovacao", type: select, options: [Pendente, Aprovada, Rejeitada]}
+
+  - id: simulacao
+    title: "Simulacao de Impactos"
+    route: /simulacao
+    module: "Simulacao de Impactos"
+    screen_type: mixed
+    icon: sliders
+    data_sources:
+      - cenarios_simulacao
+      - cenarios_simulacao_itens
+      - produtos
+      - listas_preco
+      - parametros_tributarios
+    access:
+      - role: admin
+        permissions: full
+      - role: gestor_pricing
+        permissions: [visualizar, exportar-excel]
+      - role: analista_pricing
+        permissions: [visualizar, exportar-excel]
+    kpis:
+      - {id: simulacao-kpi-delta-volume, label: "Delta Volume %", metric: delta_volume_pct, format: percent}
+      - {id: simulacao-kpi-delta-receita, label: "Delta Receita NIV (R$)", metric: delta_receita_niv, format: currency}
+      - {id: simulacao-kpi-delta-margem-ind, label: "Delta Margem Industria (R$)", metric: delta_margem_industria, format: currency}
+      - {id: simulacao-kpi-delta-margem-dist, label: "Delta Margem Distribuidor (%)", metric: delta_margem_distribuidor_pct, format: percent}
+      - {id: simulacao-kpi-delta-margem-var, label: "Delta Margem Varejo (%)", metric: delta_margem_varejo_pct, format: percent}
+    charts:
+      - {id: simulacao-chart-1, type: bar, title: "Impacto em Margem por Elo da Cadeia", x_field: elo_cadeia, y_field: delta_margem}
+      - {id: simulacao-chart-2, type: bar, title: "Variacao de Volume e Receita NIV por Familia/Canal", x_field: familia, y_field: receita_niv_simulada}
+    components:
+      - type: kpi
+        id: simulacao-kpis-row
+        label: "KPIs"
+        config: {}
+      - type: filter
+        id: simulacao-filtros
+        label: "Filtros"
+        config:
+          fields:
+            - {field: cenario, label: "Cenario", type: select, options: [Mantem Margem, Mantem PPC]}
+            - {field: familia, label: "Familia", type: select, options: []}
+            - {field: canal, label: "Canal", type: select, options: []}
+            - {field: regiao, label: "Regiao", type: select, options: []}
+            - {field: ano_transicao, label: "Ano de Transicao", type: select, options: [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]}
+      - type: chart
+        id: simulacao-chart-1
+        label: "Impacto em Margem por Elo da Cadeia"
+        config:
+          type: bar
+          x_field: elo_cadeia
+          y_field: delta_margem
+      - type: chart
+        id: simulacao-chart-2
+        label: "Variacao de Volume e Receita NIV"
+        config:
+          type: bar
+          x_field: familia
+          y_field: receita_niv_simulada
+      - type: grid
+        id: simulacao-grid
+        label: "Resultados por SKU"
+        config:
+          entity: cenarios_simulacao_itens
+          columns: [id, cenario_id, produto_id, volume_simulado, receita_niv_simulada, margem_industria, margem_distribuidor, margem_varejo]
+    actions:
+      - {id: simulacao-btn-exportar, label: "Exportar Excel", type: export, color: secondary}
+    filters:
+      - {field: cenario, label: "Cenario", type: select, options: [Mantem Margem, Mantem PPC]}
+      - {field: familia, label: "Familia", type: select, options: []}
+      - {field: canal, label: "Canal", type: select, options: []}
+      - {field: regiao, label: "Regiao", type: select, options: []}
+      - {field: ano_transicao, label: "Ano de Transicao", type: select, options: [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]}
+
+  - id: administracao
+    title: "Administracao"
+    route: /administracao
+    module: "Administracao"
+    screen_type: grid
+    icon: people
+    data_sources:
+      - usuarios
+    access:
+      - role: admin
+        permissions: full
+    kpis: []
+    charts: []
+    components:
+      - type: filter
+        id: administracao-filtros
+        label: "Filtros"
+        config:
+          fields:
+            - {field: role, label: "Perfil", type: select, options: [admin, gestor_pricing, analista_pricing]}
+            - {field: ativo, label: "Status", type: select, options: [Sim, Nao]}
+      - type: grid
+        id: administracao-grid
+        label: "Usuarios"
+        config:
+          entity: usuarios
+          columns: [id, nome, email, role, ativo, created_at]
+      - type: modal
+        id: administracao-modal-usuario
+        label: "Novo Usuario"
+        config:
+          fields:
+            - {field: nome, label: "Nome Completo *", type: text, required: true}
+            - {field: email, label: "Email *", type: text, required: true}
+            - {field: role, label: "Perfil *", type: select, required: true, options: [admin, gestor_pricing, analista_pricing]}
+    actions:
+      - {id: administracao-btn-novo, label: "Novo Usuario", type: button, color: primary}
+      - {id: administracao-btn-exportar, label: "Exportar", type: export, color: secondary}
+    filters:
+      - {field: role, label: "Perfil", type: select, options: [admin, gestor_pricing, analista_pricing]}
+      - {field: ativo, label: "Status", type: select, options: [Sim, Nao]}

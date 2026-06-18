@@ -455,7 +455,7 @@ def build_sidebar() -> html.Div:
 
         # ── Topo: logo/nome do projeto ────────────────────────────────────
         html.Div([
-            html.Span("●", style={"color": "#3b82f6", "fontSize": "1.2rem"}),
+            html.Span("●", style={"color": "#1045C8", "fontSize": "1.2rem"}),
             html.Span(f" {project_name}", style={"color": "white", "fontWeight": "700", "fontSize": "1rem"}),  # project_name lido de .build/project.json
         ], style={"padding": "20px 16px 16px", "borderBottom": "1px solid #334155", "flexShrink": "0"}),
 

@@ -154,7 +154,7 @@ TODO: Quem são os usuários? (ex: analistas de pricing, gestores comerciais, co
 
 ## Branding
 <!-- Identidade visual do cliente — personaliza design system e sidebar -->
-- **Cor primária**: #3b82f6
+- **Cor primária**: #1045C8
 - **Logo**: (caminho relativo ex: assets/logo.png — deixar vazio se não tiver)
 - **Nome na sidebar**: (nome curto — padrão: nome do projeto)
 

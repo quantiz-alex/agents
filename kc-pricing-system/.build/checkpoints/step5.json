@@ -1,0 +1,9 @@
+{
+  "step": 5,
+  "timestamp": "2026-06-18T19:10:00Z",
+  "files": {
+    "database/seed.sql": "f0c9dcfc8a6a21b657ebde0e0504087a0201e91ee4c96ced6625898408348739"
+  },
+  "validation": "9 entities in topological FK order. All INSERTs conditional (IF NOT EXISTS). IDENTITY_INSERT ON/OFF per table. Total rows: usuarios=10, produtos=30, margens_cadeia=15, parametros_tributarios=12, importacoes_base=15, listas_preco=5, listas_preco_itens=30, cenarios_simulacao=8, cenarios_simulacao_itens=25. Idempotent: safe to run multiple times.",
+  "duration_seconds": 8
+}

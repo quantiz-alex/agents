@@ -105,7 +105,7 @@ O agente **frontend-builder** deve consultar este guia nos seguintes momentos:
 - `design-system-source` — O `design-system.yaml` em `.claude/` é a fonte de verdade; nunca sobrescrever valores de cor, spacing ou componentes definidos lá
 - `dbc-theme` — Use `dbc.themes.BOOTSTRAP` como tema base; não importar outros temas Bootstrap
 - `consistency` — Mesmo padrão de card, filtro, grid e KPI em todas as páginas; copie o padrão do `design-system.yaml`
-- `no-inline-colors` — Nunca `style={"color": "#3b82f6"}`; use `className="text-primary"` ou tokens do design system
+- `no-inline-colors` — Nunca `style={"color": "#1045C8"}`; use `className="text-primary"` ou tokens do design system
 - `semantic-colors` — Sempre use cores semânticas: `color="primary"`, `color="success"`, `color="danger"`; não valores hex
 - `icon-set` — Use exclusivamente Bootstrap Icons (`bi bi-*`); não misturar com FontAwesome ou emojis como ícone estrutural
 - `card-pattern` — Todo card: `dbc.Card(className="shadow-sm border-0 mb-3")`; CardHeader: `className="bg-white border-bottom fw-semibold"`
@@ -136,7 +136,7 @@ O agente **frontend-builder** deve consultar este guia nos seguintes momentos:
 
 ### 7. Loading & Transições de Estado (MÉDIO)
 
-- `dcc-loading-wrapper` — Envolva grid, charts e conteúdo dinâmico em `dcc.Loading(type="circle", color="#3b82f6")`
+- `dcc-loading-wrapper` — Envolva grid, charts e conteúdo dinâmico em `dcc.Loading(type="circle", color="#1045C8")`
 - `loading-threshold` — Callbacks que podem demorar > 300ms precisam de loading state; filtros simples em CSV local não precisam
 - `button-loading-text` — Durante loading: `dbc.Button([dbc.Spinner(size="sm", className="me-2"), "Carregando..."], disabled=True)`
 - `empty-state` — Grid sem dados: `dbc.Alert("Nenhum registro encontrado. Ajuste os filtros.", color="info")` dentro do card
@@ -195,7 +195,7 @@ O agente **frontend-builder** deve consultar este guia nos seguintes momentos:
 - `chart-legend` — Sempre mostrar legenda para gráficos com múltiplas séries; `legend=dict(orientation="h", yanchor="bottom", y=1.02)`
 - `chart-tooltip` — Plotly já fornece tooltip por padrão; garanta `hover_data=` com campos relevantes
 - `empty-chart-state` — Quando DataFrame está vazio, não renderize o gráfico; retorne `dbc.Alert("Sem dados para o período.", color="info")`
-- `chart-color-palette` — Use `color_discrete_sequence=["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#06b6d4"]` (design system)
+- `chart-color-palette` — Use `color_discrete_sequence=["#1045C8", "#10b981", "#f59e0b", "#ef4444", "#06b6d4"]` (design system)
 - `no-pie-overuse` — Evite pizza com > 5 categorias; use barra horizontal para clareza
 - `ag-grid-column-types` — Colunas numéricas: `type="numericColumn"`, `valueFormatter: {"function": "d3.format(',.2f')(params.value)"}`
 - `ag-grid-date-format` — Datas: `valueFormatter: {"function": "params.value ? new Date(params.value).toLocaleDateString('pt-BR') : ''"}`

@@ -270,8 +270,8 @@ Sistema proprietário de formação de preços regulares (Sell In) e simulação
 ---
 
 ## Branding
-- **Cor primária**: TODO: #3b82f6
-- **Logo**: TODO: (caminho relativo ex: assets/logo_kc.png)
+- **Cor primária**: #1045C8
+- **Logo**:kc-pricing-system\assets\logo.png
 - **Nome na sidebar**: KC Pricing
 
 ---

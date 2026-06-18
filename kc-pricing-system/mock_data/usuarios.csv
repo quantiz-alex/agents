@@ -1,0 +1,11 @@
+id,nome,email,senha_hash,role,ativo,created_at,updated_at
+1,Administrador Sistema,admin@kc-pricing-system.com,$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMXNFp02T3V2X9dWwZ3J1V1B7W,admin,1,2026-01-10T08:00:00,2026-01-10T08:00:00
+2,Carlos Mendes,carlos.mendes@kc-pricing-system.com,$2b$12$AbC1defGH2IJkLmNoP3QrS4TuVwXyZ5678abcdefghijklmnopqrstu,gestor_pricing,1,2026-01-10T08:05:00,2026-01-10T08:05:00
+3,Ana Paula Ferreira,ana.ferreira@kc-pricing-system.com,$2b$12$BcD2efgHI3JKlMnOp4QrS5TuVwXyZ6789bcdefghijklmnopqrstuv,gestor_pricing,1,2026-01-10T08:10:00,2026-01-10T08:10:00
+4,Rodrigo Alves,rodrigo.alves@kc-pricing-system.com,$2b$12$CdE3fghIJ4KLmNop5QrS6TuVwXyZ7890cdefghijklmnopqrstuvwx,analista_pricing,1,2026-01-15T09:00:00,2026-01-15T09:00:00
+5,Mariana Costa,mariana.costa@kc-pricing-system.com,$2b$12$DeF4ghiJK5LMnOpq6RsT7UvWxYz8901defghijklmnopqrstuvwxyZ,analista_pricing,1,2026-01-15T09:05:00,2026-01-15T09:05:00
+6,Felipe Santos,felipe.santos@kc-pricing-system.com,$2b$12$EfG5hijKL6MNoPqr7StU8VwXyZa9012efghijklmnopqrstuvwxyzA,analista_pricing,1,2026-01-20T10:00:00,2026-01-20T10:00:00
+7,Juliana Lima,juliana.lima@kc-pricing-system.com,$2b$12$FgH6ijkLM7NOPqrs8TuV9WxYzAb0123fghijklmnopqrstuvwxyzAB,gestor_pricing,1,2026-02-01T08:00:00,2026-02-01T08:00:00
+8,Bruno Carvalho,bruno.carvalho@kc-pricing-system.com,$2b$12$GhI7jklMN8OPQrst9UvW0XyZaBc1234ghijklmnopqrstuvwxyzABC,analista_pricing,1,2026-02-01T08:15:00,2026-02-01T08:15:00
+9,Patricia Rocha,patricia.rocha@kc-pricing-system.com,$2b$12$HiJ8klmNO9PQRstu0VwX1YzAbCd2345hijklmnopqrstuvwxyzABCD,analista_pricing,0,2026-02-10T11:00:00,2026-03-01T14:30:00
+10,Thiago Barbosa,thiago.barbosa@kc-pricing-system.com,$2b$12$IjK9lmnOP0QRStuv1WxY2ZaBcDe3456ijklmnopqrstuvwxyzABCDE,gestor_pricing,1,2026-03-01T08:00:00,2026-03-01T08:00:00

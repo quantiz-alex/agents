@@ -1,0 +1,16 @@
+id,fonte,nome_arquivo,data_importacao,usuario_id,total_linhas,status,hash_arquivo,observacao,created_at,updated_at
+1,NielsenRetail,nielsen_retail_jan2026.xlsx,2026-01-20T09:00:00,4,2540,Sucesso,a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2,Carga inicial janeiro 2026,2026-01-20T09:00:00,2026-01-20T09:00:00
+2,NielsenScantrack,nielsen_scantrack_jan2026.xlsx,2026-01-20T09:30:00,4,1820,Sucesso,b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3,Carga inicial janeiro 2026,2026-01-20T09:30:00,2026-01-20T09:30:00
+3,PrecosERP,precos_erp_jan2026.xlsx,2026-01-20T10:00:00,4,850,Sucesso,c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4,Preços vigentes em 2026-01,2026-01-20T10:00:00,2026-01-20T10:00:00
+4,PL,pl_sap_jan2026.xlsx,2026-01-20T10:30:00,5,1250,Sucesso,d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5,P&L SAP Hana janeiro 2026,2026-01-20T10:30:00,2026-01-20T10:30:00
+5,Cadastros,cadastros_gerais_jan2026.xlsx,2026-01-20T11:00:00,4,320,Sucesso,e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6,Hierarquias de produtos e canais,2026-01-20T11:00:00,2026-01-20T11:00:00
+6,DePara,depara_canais_jan2026.xlsx,2026-01-20T11:30:00,4,180,Sucesso,f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1,Mapeamento de canais ERP x Nielsen,2026-01-20T11:30:00,2026-01-20T11:30:00
+7,NielsenRetail,nielsen_retail_fev2026.xlsx,2026-02-20T09:00:00,4,2610,Sucesso,a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3,Carga fevereiro 2026,2026-02-20T09:00:00,2026-02-20T09:00:00
+8,NielsenScantrack,nielsen_scantrack_fev2026.xlsx,2026-02-20T09:30:00,5,1890,Sucesso,b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4,Carga fevereiro 2026,2026-02-20T09:30:00,2026-02-20T09:30:00
+9,PrecosERP,precos_erp_fev2026_v1.xlsx,2026-02-20T10:00:00,4,855,Erro,c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5,Coluna preco_nf ausente — arquivo rejeitado,2026-02-20T10:00:00,2026-02-20T10:00:00
+10,PrecosERP,precos_erp_fev2026_v2.xlsx,2026-02-20T11:00:00,4,855,Sucesso,d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6,Reenvio com correção de colunas,2026-02-20T11:00:00,2026-02-20T11:00:00
+11,PL,pl_sap_fev2026.xlsx,2026-02-20T11:30:00,5,1280,Sucesso,e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7,P&L SAP Hana fevereiro 2026,2026-02-20T11:30:00,2026-02-20T11:30:00
+12,NielsenRetail,nielsen_retail_mar2026.xlsx,2026-03-20T09:00:00,8,2590,Sucesso,f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2,Carga março 2026,2026-03-20T09:00:00,2026-03-20T09:00:00
+13,NielsenScantrack,nielsen_scantrack_mar2026.xlsx,2026-03-20T09:30:00,8,1910,Sucesso,a3b4c5d6e7f8a3b4c5d6e7f8a3b4c5d6e7f8a3b4c5d6e7f8a3b4c5d6e7f8a3b4,Carga março 2026,2026-03-20T09:30:00,2026-03-20T09:30:00
+14,PrecosERP,precos_erp_mar2026.xlsx,2026-03-20T10:00:00,8,860,Sucesso,b4c5d6e7f8a3b4c5d6e7f8a3b4c5d6e7f8a3b4c5d6e7f8a3b4c5d6e7f8a3b4c5,Preços março 2026,2026-03-20T10:00:00,2026-03-20T10:00:00
+15,Cadastros,cadastros_gerais_mar2026.xlsx,2026-03-20T11:00:00,8,325,Sucesso,c5d6e7f8a3b4c5d6e7f8a3b4c5d6e7f8a3b4c5d6e7f8a3b4c5d6e7f8a3b4c5d6,Atualização de hierarquias março 2026,2026-03-20T11:00:00,2026-03-20T11:00:00

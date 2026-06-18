@@ -28,7 +28,7 @@ Consulte esse arquivo para cores, espaçamentos, componentes e convenções de n
 Sidebar bg:        #1e293b   (slate-800)
 Sidebar active:    #334155   (slate-700)
 Sidebar text:      #cbd5e1   (slate-300)
-Sidebar highlight: #3b82f6   (blue-500)
+Sidebar highlight: #1045C8   (blue-500)
 Page bg:           #f8fafc   (slate-50)
 Card bg:           #ffffff
 Card border:       #e2e8f0   (slate-200)

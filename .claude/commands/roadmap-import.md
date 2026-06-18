@@ -99,7 +99,7 @@ Para cada entidade inferida:
 **SEMPRE incluir a entidade `Usuarios`** com campos padrão do pipeline.
 
 ### 2.5 Branding
-- Se cores forem mencionadas → usar; senão → `TODO: #3b82f6`
+- Se cores forem mencionadas → usar; senão → `TODO: #1045C8`
 - Logo → sempre `TODO:` (é um arquivo, não pode ser inferido de texto)
 - Nome na sidebar → usar a abreviação do projeto se disponível (ex: "KC Pricing")
 

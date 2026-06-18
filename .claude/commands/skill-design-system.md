@@ -41,7 +41,7 @@ colors:
     200: "#bfdbfe"
     300: "#93c5fd"
     400: "#60a5fa"
-    500: "#3b82f6"   # padrão — usar em botões, links, destaques
+    500: "#1045C8"   # padrão — usar em botões, links, destaques
     600: "#2563eb"
     700: "#1d4ed8"
     800: "#1e40af"
@@ -71,7 +71,7 @@ colors:
   sidebar_bg:        "#1e293b"
   sidebar_hover:     "#334155"
   sidebar_text:      "#cbd5e1"
-  sidebar_highlight: "#3b82f6"
+  sidebar_highlight: "#1045C8"
   sidebar_border:    "#334155"
   page_bg:           "#f8fafc"
   card_bg:           "#ffffff"
@@ -185,7 +185,7 @@ plotly:
     r: 20
     t: 40
     b: 20
-  color_sequence:      ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#06b6d4", "#8b5cf6"]
+  color_sequence:      ["#1045C8", "#22c55e", "#f59e0b", "#ef4444", "#06b6d4", "#8b5cf6"]
 
 login_page:
   bg_gradient_start:   "#1e293b"
@@ -213,7 +213,7 @@ branding:
   footer_size:     "0.68rem"
   footer_weight2:  500          # ligeiramente mais pesado que o texto auxiliar
   footer_border:   "#334155"    # slate-700 — separador sutil
-  sidebar_logo_color: "#3b82f6" # cor do ícone/bullet do logo
+  sidebar_logo_color: "#1045C8" # cor do ícone/bullet do logo
 ```
 
 ---

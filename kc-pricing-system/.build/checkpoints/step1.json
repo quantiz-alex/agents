@@ -1,0 +1,9 @@
+{
+  "step": 1,
+  "timestamp": "2026-06-18T18:57:00Z",
+  "files": {
+    "docs/requirements.yaml": "8c4c8e71cc99ade5df0cfc67d10b230cf0f10dc6d3ce9fd939377e0bd86937fa"
+  },
+  "validation": "6 modules, 9 entities, 3 roles, 20 business rules. All feature IDs unique (F-001..F-017). All roles in access exist in roles list.",
+  "duration_seconds": 5
+}

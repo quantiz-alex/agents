@@ -1,0 +1,521 @@
+project:
+  name: KC Pricing System
+  description: >
+    Sistema proprietário de formação de preços regulares (Sell In) e simulação de impactos
+    em toda a cadeia de valor, parametrizado pelas regras da Reforma Tributária brasileira
+    (transição 2026–2033). Substitui planilhas Excel/Alteryx/KNIME por um motor auditável
+    que permite decisões de preço ágeis sob incerteza tributária, com base na metodologia
+    do Projeto Harmonização.
+
+roles:
+  - name: admin
+    description: Acesso total — gerenciar usuários, configurações, parâmetros tributários e todos os módulos
+    permissions: full
+  - name: gestor_pricing
+    description: Visualizar tudo, simular cenários, aprovar e rejeitar lista de preços e exportar relatórios
+    permissions: [visualizar, exportar-excel, aprovar, rejeitar]
+  - name: analista_pricing
+    description: Importar bases, parametrizar regras, executar simulações, exportar resultados e enviar para aprovação
+    permissions: [visualizar, criar, editar, excluir, importar-csv, exportar-excel, enviar-para-aprovacao, drill-down]
+
+modules:
+  - name: Importacao de Bases
+    description: >
+      Ingestão manual de arquivos Excel com as bases de dados operacionais — Nielsen (Retail e Scantrack),
+      Preços ERP, P&L SAP Hana, Cadastros Gerais (Produtos, Clientes) e De-Paras.
+    priority: high
+    screen_type: form
+    icon: cloud-upload
+    kpis:
+      - Total de registros importados por base
+      - Data da última carga por fonte
+      - Status de validação (OK / Erros)
+    charts: []
+    filters:
+      - {field: fonte, type: select, options: [Nielsen Retail, Nielsen Scantrack, Precos ERP, PL, Cadastros, DePara]}
+      - {field: data_importacao, type: date_range, options: []}
+      - {field: status, type: select, options: [Sucesso, Erro, Processando]}
+    features:
+      - id: F-001
+        title: Importacao de bases via Excel
+        description: Upload de arquivos para cada fonte de dados, com validação de estrutura de colunas obrigatórias e feedback imediato de erros
+        actions: [importar-csv, visualizar]
+        acceptance_criteria:
+          - Upload aceita apenas .xlsx e .xls
+          - Valida colunas obrigatórias antes de persistir
+          - Exibe erros de validação com detalhamento por coluna
+          - Gera registro auditável com hash do arquivo
+      - id: F-002
+        title: Historico e rastreabilidade de cargas
+        description: Listagem de todas as importações realizadas com metadados da carga
+        actions: [visualizar, exportar-excel]
+        acceptance_criteria:
+          - Lista todas importações com fonte, arquivo, data, usuário, linhas, status
+          - Permite exportação do histórico para Excel
+    access:
+      - role: admin
+        permissions: full
+      - role: gestor_pricing
+        permissions: [visualizar]
+      - role: analista_pricing
+        permissions: [importar-csv, visualizar, exportar-excel]
+    business_rules:
+      - id: RN-001
+        description: Cada arquivo importado deve ter estrutura de colunas validada contra o schema esperado para aquela fonte antes de ser persistido
+      - id: RN-002
+        description: Toda importação gera registro auditável com usuário, timestamp e hash do arquivo — rastreabilidade obrigatória
+      - id: RN-003
+        description: Bases Nielsen (Retail e Scantrack), Preços ERP, P&L SAP Hana, Cadastros e De-Paras são as fontes suportadas no MVP; outras fontes são rejeitadas com mensagem explicativa
+
+  - name: Parametrizacao Tributaria
+    description: >
+      Configuração de todas as variáveis do motor tributário — alíquotas e regimes de transição
+      IBS/CBS (2026–2033), PIS/COFINS, ICMS, Imposto Seletivo.
+    priority: high
+    screen_type: form
+    icon: calculator
+    kpis: []
+    charts: []
+    filters:
+      - {field: ano_transicao, type: select, options: []}
+      - {field: regime, type: select, options: [Legado, Reforma]}
+      - {field: canal, type: select, options: []}
+    features:
+      - id: F-003
+        title: Configuracao de aliquotas e transicao tributaria
+        description: Parametrizar cronograma de transição 2026–2033 com IBS, CBS, ICMS, PIS/COFINS e Imposto Seletivo por ano
+        actions: [criar, editar, visualizar]
+        acceptance_criteria:
+          - Permite criar conjunto de alíquotas por ano de vigência
+          - Valida que alíquotas estão dentro de limites válidos (0–1)
+          - Versionamento: não sobrescreve histórico
+      - id: F-004
+        title: Configuracao de creditos e debitos de PIS/COFINS e ICMS
+        description: Definição dos créditos apropriáveis e débitos incidentes por regime e canal
+        actions: [criar, editar, visualizar]
+        acceptance_criteria:
+          - Permite definir credito_pis_cofins e debito_icms por parametro
+          - Associado ao regime (Legado/Reforma)
+      - id: F-005
+        title: Reproducao da cadeia tributaria PTC Medio e PTC High
+        description: Cálculo de Sell In NF, Sell In NIV, custo de aquisição e markup de acordo com a metodologia Harmonização
+        actions: [visualizar]
+        acceptance_criteria:
+          - Exibe a cascata completa para os parâmetros ativos
+          - Reconcilia com metodologia Harmonização dentro de tolerância contábil
+    access:
+      - role: admin
+        permissions: full
+      - role: gestor_pricing
+        permissions: [visualizar]
+      - role: analista_pricing
+        permissions: [criar, editar, visualizar]
+    business_rules:
+      - id: RN-004
+        description: Toda alteração de parâmetro tributário deve propagar recálculo no portfólio ativo imediatamente
+      - id: RN-005
+        description: Parâmetros tributários devem ser versionados — nunca sobrescrever histórico; cada conjunto referencia um período de vigência
+      - id: RN-006
+        description: Resultados tributários devem reconciliar com a metodologia Harmonização dentro de tolerância contábil definida
+
+  - name: Parametrizacao de Pricing
+    description: >
+      Configuração da metodologia de pricing — Capitães e Main-Offenders por canal/região,
+      Price Index e Relatividades, Arquitetura de Produtos e Margem da Cadeia.
+    priority: high
+    screen_type: form
+    icon: gear
+    kpis: []
+    charts: []
+    filters:
+      - {field: canal, type: select, options: []}
+      - {field: regiao, type: select, options: []}
+      - {field: familia, type: select, options: []}
+      - {field: classificacao, type: select, options: [Capitao, MainOffender, Seguidor]}
+    features:
+      - id: F-006
+        title: Definicao de Capitaes e Main-Offenders
+        description: Classificar produtos por canal e região como âncoras de preço para aplicação de Price Index
+        actions: [criar, editar, excluir, visualizar]
+        acceptance_criteria:
+          - Cada produto pode ser classificado em cada combinação canal/região
+          - Validação: canal deve ter ao menos um Capitão
+      - id: F-007
+        title: Configuracao de Price Index e Relatividades
+        description: Parametrizar os índices e relatividades de preço entre canais de distribuição
+        actions: [criar, editar, visualizar]
+        acceptance_criteria:
+          - price_index e relatividade são decimais com 4 casas
+          - Validação de guardrails de consistência
+      - id: F-008
+        title: Configuracao de Arquitetura de Produtos
+        description: Definir hierarquias de famílias, embalagens e agrupamentos que estruturam o portfólio
+        actions: [criar, editar, excluir, visualizar]
+        acceptance_criteria:
+          - Permite criar/editar hierarquia família → embalagem
+          - Alteração dispara reprocessamento de margens vinculadas
+      - id: F-009
+        title: Configuracao de Margem da Cadeia
+        description: Parametrizar margens esperadas por família de produto e canal de venda
+        actions: [criar, editar, visualizar]
+        acceptance_criteria:
+          - Margem industria, distribuidor e varejo por família/canal
+          - Vigência com data início e fim
+    access:
+      - role: admin
+        permissions: full
+      - role: gestor_pricing
+        permissions: [visualizar]
+      - role: analista_pricing
+        permissions: [criar, editar, excluir, visualizar]
+    business_rules:
+      - id: RN-007
+        description: Cada canal deve ter ao menos um produto classificado como Capitão antes da geração do Sell In
+      - id: RN-008
+        description: Relatividades entre canais devem respeitar guardrails de consistência da metodologia Harmonização
+      - id: RN-009
+        description: Alterações na Arquitetura de Produtos geram reprocessamento das margens da cadeia vinculadas
+
+  - name: Geracao de Lista de Precos Sell In
+    description: >
+      Motor de geração da lista de preços Sell In seguindo a sequência metodológica
+      PTC (Sell Out) → Margem da Cadeia → Sell In, com aplicação de CAPs e guardrails.
+    priority: high
+    screen_type: mixed
+    icon: tag
+    kpis:
+      - Total de SKUs precificados
+      - Percentual dentro dos CAPs
+      - Variação média de preço vs. base atual
+      - Impacto estimado em Receita NIV
+    charts:
+      - {type: bar, description: Comparativo Preco Atual vs. Preco Gerado por familia de produto}
+      - {type: bar, description: Distribuicao de variacao de preco em faixas}
+    filters:
+      - {field: familia, type: select, options: []}
+      - {field: canal, type: select, options: []}
+      - {field: status_cap, type: select, options: [Dentro, Limitado pelo CAP]}
+      - {field: variacao_pct, type: number, options: []}
+      - {field: status_aprovacao, type: select, options: [Pendente, Aprovada, Rejeitada]}
+    features:
+      - id: F-010
+        title: Geracao da lista de precos Sell In
+        description: Executar o motor de pricing na sequência PTC → Margem Cadeia → Sell In para o portfólio completo, respeitando CAPs
+        actions: [visualizar, exportar-excel, enviar-para-aprovacao]
+        acceptance_criteria:
+          - Sequência de cálculo obrigatória PTC → Margem Cadeia → Sell In
+          - Requer parâmetros tributários válidos, Capitães e Margem da Cadeia configurados
+          - CAPs sinalizados explicitamente
+      - id: F-011
+        title: Visualizacao da cascata de formacao de preco
+        description: Detalhar passo a passo o cálculo para cada SKU
+        actions: [visualizar, drill-down]
+        acceptance_criteria:
+          - Exibe PTC, Margem Cadeia, Sell In NF, Sell In NIV, Custo Aquisição, Markup
+          - Rastreável até os parâmetros originadores
+      - id: F-012
+        title: Aprovacao de lista de precos
+        description: Supervisor revisa e aprova ou rejeita a lista enviada pelo analista
+        actions: [aprovar, rejeitar]
+        acceptance_criteria:
+          - Somente gestor_pricing pode aprovar ou rejeitar
+          - Registra aprovado_por e data_aprovacao
+      - id: F-013
+        title: Auditoria de preco gerado
+        description: Rastrear quais parâmetros originaram cada preço calculado
+        actions: [visualizar]
+        acceptance_criteria:
+          - Todo preço rastreável até parâmetros tributários e de pricing
+    access:
+      - role: admin
+        permissions: full
+      - role: gestor_pricing
+        permissions: [visualizar, exportar-excel, aprovar, rejeitar]
+      - role: analista_pricing
+        permissions: [visualizar, exportar-excel, enviar-para-aprovacao, drill-down]
+    business_rules:
+      - id: RN-010
+        description: A geração do Sell In só pode ser executada se existirem parâmetros tributários válidos, Capitães definidos e Margem da Cadeia configurada
+      - id: RN-011
+        description: Preços que atingem o CAP devem ser sinalizados explicitamente no resultado — nunca silenciosos
+      - id: RN-012
+        description: Todo preço gerado é rastreável até os parâmetros e bases que o originaram (auditabilidade crítica)
+      - id: RN-013
+        description: A sequência de cálculo é obrigatória e não pode ser reordenada: PTC → Margem Cadeia → Sell In
+      - id: RN-014
+        description: Somente supervisor pode aprovar ou rejeitar uma lista de preços
+
+  - name: Simulacao de Impactos
+    description: >
+      Painel de simulação de cenários de preço — compara impactos em Volume, Receita (NIV)
+      e Margem por elo da cadeia de valor sob os cenários "Mantém Margem" e "Mantém PPC".
+    priority: high
+    screen_type: mixed
+    icon: sliders
+    kpis:
+      - Delta Volume %
+      - Delta Receita NIV (R$)
+      - Delta Margem Industria (R$)
+      - Delta Margem Distribuidor (%)
+      - Delta Margem Varejo (%)
+    charts:
+      - {type: bar, description: Impacto em Margem por elo da cadeia comparando cenario atual vs. simulado}
+      - {type: bar, description: Variacao de Volume e Receita NIV por familia/canal no cenario simulado}
+    filters:
+      - {field: cenario, type: select, options: [Mantem Margem, Mantem PPC]}
+      - {field: familia, type: select, options: []}
+      - {field: canal, type: select, options: []}
+      - {field: regiao, type: select, options: []}
+      - {field: ano_transicao, type: select, options: [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]}
+    features:
+      - id: F-014
+        title: Simulacao de impactos em Volume, Receita NIV e Margem
+        description: Executar simulação de novos preços sobre o portfólio e calcular impactos por elo da cadeia
+        actions: [visualizar, exportar-excel]
+        acceptance_criteria:
+          - Calcula delta para Volume, Receita NIV e Margem por elo
+          - Exportação inclui todos os parâmetros utilizados
+      - id: F-015
+        title: Comparacao de cenarios Mantem Margem vs. Mantem PPC
+        description: Executar e exibir lado a lado os dois cenários estratégicos
+        actions: [visualizar, exportar-excel]
+        acceptance_criteria:
+          - Ambos os cenários exibidos simultaneamente
+          - Mantem PPC usa busca binária para encontrar Sell In
+      - id: F-016
+        title: Ajuste interativo de parametros
+        description: Modificar alíquotas ou premissas e ver recálculo em tempo real
+        actions: [visualizar]
+        acceptance_criteria:
+          - Recálculo completo em tempo interativo (segundos)
+    access:
+      - role: admin
+        permissions: full
+      - role: gestor_pricing
+        permissions: [visualizar, exportar-excel]
+      - role: analista_pricing
+        permissions: [visualizar, exportar-excel]
+    business_rules:
+      - id: RN-015
+        description: Recálculo completo de um cenário do portfólio deve concluir em tempo interativo (alvo: segundos, não minutos)
+      - id: RN-016
+        description: O cenário "Mantém PPC" utiliza busca binária para encontrar o Sell In que preserva o preço ao consumidor
+      - id: RN-017
+        description: Resultados de simulação devem poder ser exportados com todos os parâmetros utilizados anexados (auditabilidade)
+
+  - name: Administracao
+    description: Controle de usuários do sistema, com gerenciamento de roles e acesso.
+    priority: low
+    screen_type: grid
+    icon: people
+    kpis: []
+    charts: []
+    filters:
+      - {field: role, type: select, options: [admin, gestor_pricing, analista_pricing]}
+      - {field: ativo, type: select, options: [Sim, Nao]}
+    features:
+      - id: F-017
+        title: Gestao de usuarios
+        description: Criar, editar e desativar usuários com controle de role
+        actions: [criar, editar, desativar]
+        acceptance_criteria:
+          - Email único no sistema
+          - Somente admin pode criar ou desativar usuários
+          - Senha temporária enviada no cadastro
+    access:
+      - role: admin
+        permissions: full
+    business_rules:
+      - id: RN-018
+        description: Somente admin pode criar ou desativar usuários
+      - id: RN-019
+        description: Email deve ser único no sistema
+      - id: RN-020
+        description: Dados de P&L e preços são sensíveis — acesso controlado por role, sem exposição a usuários não autorizados
+
+entities:
+  - name: ImportacaoBase
+    description: Registro de cada carga de arquivo Excel realizada — histórico de importações com metadados e status para auditoria
+    module: Importacao de Bases
+    fields:
+      - {name: id, type: bigint, nullable: false, notes: PK identity}
+      - {name: fonte, type: varchar(50), nullable: false, notes: "enum: NielsenRetail/NielsenScantrack/PrecosERP/PL/Cadastros/DePara"}
+      - {name: nome_arquivo, type: varchar(255), nullable: false, notes: Nome do arquivo enviado}
+      - {name: data_importacao, type: datetime2, nullable: false, notes: Data/hora do upload}
+      - {name: usuario_id, type: bigint, nullable: false, notes: FK para Usuarios}
+      - {name: total_linhas, type: int, nullable: true, notes: Total de linhas do arquivo}
+      - {name: status, type: varchar(20), nullable: false, notes: "enum: Sucesso/Erro/Processando"}
+      - {name: hash_arquivo, type: varchar(64), nullable: false, notes: SHA-256 do arquivo para auditoria}
+      - {name: observacao, type: nvarchar(500), nullable: true, notes: Observação livre do usuário}
+    relationships:
+      - pertence a Usuarios (usuario_id)
+
+  - name: ParametroTributario
+    description: Conjunto de alíquotas e regras do motor tributário por ano de vigência
+    module: Parametrizacao Tributaria
+    fields:
+      - {name: id, type: bigint, nullable: false, notes: PK identity}
+      - {name: ano_vigencia, type: int, nullable: false, notes: Ano de 2026 a 2033}
+      - {name: regime, type: varchar(20), nullable: false, notes: "enum: Legado/Reforma"}
+      - {name: aliquota_ibs, type: decimal(5,4), nullable: false, notes: Alíquota IBS 0–1}
+      - {name: aliquota_cbs, type: decimal(5,4), nullable: false, notes: Alíquota CBS 0–1}
+      - {name: aliquota_icms, type: decimal(5,4), nullable: false, notes: Alíquota ICMS 0–1}
+      - {name: aliquota_pis, type: decimal(5,4), nullable: false, notes: Alíquota PIS 0–1}
+      - {name: aliquota_cofins, type: decimal(5,4), nullable: false, notes: Alíquota COFINS 0–1}
+      - {name: aliquota_is, type: decimal(5,4), nullable: false, notes: Alíquota Imposto Seletivo 0–1}
+      - {name: credito_pis_cofins, type: decimal(5,4), nullable: true, notes: Crédito PIS/COFINS apropriável}
+      - {name: debito_icms, type: decimal(5,4), nullable: true, notes: Débito ICMS incidente}
+      - {name: ativo, type: bit, nullable: false, notes: Indica o parâmetro vigente}
+      - {name: usuario_id, type: bigint, nullable: false, notes: FK para Usuarios — quem criou}
+    relationships:
+      - pertence a Usuarios (usuario_id)
+      - referenciado por CenarioSimulacao
+
+  - name: Produto
+    description: Catálogo de produtos (SKUs) com hierarquia de família, embalagem e classificação por canal
+    module: Parametrizacao de Pricing
+    fields:
+      - {name: id, type: bigint, nullable: false, notes: PK identity}
+      - {name: sku, type: varchar(50), nullable: false, notes: Código único do SKU}
+      - {name: descricao, type: nvarchar(200), nullable: false, notes: Descrição do produto}
+      - {name: familia, type: varchar(100), nullable: false, notes: Família de produto}
+      - {name: embalagem, type: varchar(100), nullable: true, notes: Tipo de embalagem}
+      - {name: classificacao, type: varchar(20), nullable: true, notes: "enum: Capitao/MainOffender/Seguidor"}
+      - {name: canal, type: varchar(100), nullable: true, notes: Canal de distribuição}
+      - {name: regiao, type: varchar(100), nullable: true, notes: Região geográfica}
+      - {name: preco_atual, type: decimal(15,4), nullable: true, notes: Preço Sell In atual praticado}
+      - {name: ativo, type: bit, nullable: false, notes: Produto ativo/inativo}
+    relationships:
+      - tem muitos MargemCadeia
+      - tem muitos ListaPrecoItem
+
+  - name: MargemCadeia
+    description: Margem esperada por família de produto e canal — parâmetro estruturante da metodologia de pricing
+    module: Parametrizacao de Pricing
+    fields:
+      - {name: id, type: bigint, nullable: false, notes: PK identity}
+      - {name: familia, type: varchar(100), nullable: false, notes: Família de produto}
+      - {name: canal, type: varchar(100), nullable: false, notes: Canal de distribuição}
+      - {name: margem_industria, type: decimal(5,4), nullable: false, notes: Margem esperada da indústria}
+      - {name: margem_distribuidor, type: decimal(5,4), nullable: false, notes: Margem esperada do distribuidor}
+      - {name: margem_varejo, type: decimal(5,4), nullable: false, notes: Margem esperada do varejo}
+      - {name: price_index, type: decimal(10,4), nullable: false, notes: Índice de preço do canal}
+      - {name: relatividade, type: decimal(10,4), nullable: false, notes: Relatividade entre canais}
+      - {name: vigencia_inicio, type: date, nullable: false, notes: Início da vigência}
+      - {name: vigencia_fim, type: date, nullable: true, notes: Fim da vigência (null = indefinido)}
+    relationships:
+      - referenciado por ListaPrecoItem
+
+  - name: ListaPreco
+    description: Lista de preços Sell In gerada pelo motor de pricing — agrupa os itens de preço de uma execução com status de aprovação
+    module: Geracao de Lista de Precos Sell In
+    fields:
+      - {name: id, type: bigint, nullable: false, notes: PK identity}
+      - {name: descricao, type: nvarchar(200), nullable: false, notes: Descrição da lista}
+      - {name: data_geracao, type: datetime2, nullable: false, notes: Data/hora de geração}
+      - {name: usuario_id, type: bigint, nullable: false, notes: FK para Usuarios — quem gerou}
+      - {name: parametro_tributario_id, type: bigint, nullable: false, notes: FK para ParametroTributario}
+      - {name: status, type: varchar(30), nullable: false, notes: "enum: Gerada/PendenteAprovacao/Aprovada/Rejeitada/Arquivada"}
+      - {name: total_skus, type: int, nullable: true, notes: Total de SKUs na lista}
+      - {name: pct_dentro_cap, type: decimal(5,2), nullable: true, notes: Percentual de SKUs dentro do CAP}
+      - {name: aprovado_por, type: bigint, nullable: true, notes: FK para Usuarios — quem aprovou/rejeitou}
+      - {name: data_aprovacao, type: datetime2, nullable: true, notes: Data/hora da aprovação ou rejeição}
+    relationships:
+      - pertence a Usuarios (usuario_id)
+      - pertence a ParametroTributario
+      - tem muitos ListaPrecoItem
+
+  - name: ListaPrecoItem
+    description: Linha de preço calculada para um SKU em uma lista — inclui toda a cascata de formação de preço
+    module: Geracao de Lista de Precos Sell In
+    fields:
+      - {name: id, type: bigint, nullable: false, notes: PK identity}
+      - {name: lista_preco_id, type: bigint, nullable: false, notes: FK para ListaPreco}
+      - {name: produto_id, type: bigint, nullable: false, notes: FK para Produto}
+      - {name: ptc_sell_out, type: decimal(15,4), nullable: false, notes: PTC Sell Out calculado}
+      - {name: margem_cadeia_pct, type: decimal(5,4), nullable: false, notes: Margem da cadeia aplicada}
+      - {name: sell_in_nf, type: decimal(15,4), nullable: false, notes: Sell In com impostos NF}
+      - {name: sell_in_niv, type: decimal(15,4), nullable: false, notes: Sell In líquido de impostos}
+      - {name: custo_aquisicao, type: decimal(15,4), nullable: true, notes: Custo de aquisição calculado}
+      - {name: markup, type: decimal(5,4), nullable: true, notes: Markup aplicado}
+      - {name: cap_aplicado, type: bit, nullable: false, notes: Indica se o CAP limitou o preço}
+      - {name: variacao_pct, type: decimal(8,4), nullable: true, notes: Variação percentual vs. preço atual}
+    relationships:
+      - pertence a ListaPreco
+      - pertence a Produto
+
+  - name: CenarioSimulacao
+    description: Cenário de simulação de impactos — agrega os resultados de Volume, Receita NIV e Margem por elo da cadeia
+    module: Simulacao de Impactos
+    fields:
+      - {name: id, type: bigint, nullable: false, notes: PK identity}
+      - {name: descricao, type: nvarchar(200), nullable: false, notes: Descrição do cenário}
+      - {name: tipo_cenario, type: varchar(20), nullable: false, notes: "enum: MantemMargem/MantemPPC"}
+      - {name: lista_preco_id, type: bigint, nullable: false, notes: FK para ListaPreco}
+      - {name: parametro_tributario_id, type: bigint, nullable: false, notes: FK para ParametroTributario}
+      - {name: data_simulacao, type: datetime2, nullable: false, notes: Data/hora da simulação}
+      - {name: usuario_id, type: bigint, nullable: false, notes: FK para Usuarios — quem simulou}
+      - {name: delta_volume_pct, type: decimal(8,4), nullable: true, notes: Delta percentual de volume}
+      - {name: delta_receita_niv, type: decimal(15,2), nullable: true, notes: Delta de Receita NIV em R$}
+      - {name: delta_margem_industria, type: decimal(15,2), nullable: true, notes: Delta de Margem Indústria em R$}
+    relationships:
+      - pertence a ListaPreco
+      - pertence a ParametroTributario
+      - pertence a Usuarios (usuario_id)
+      - tem muitos CenarioSimulacaoItem
+
+  - name: CenarioSimulacaoItem
+    description: Resultado de simulação por SKU — Volume, Receita NIV e Margem por elo da cadeia para cada produto do cenário
+    module: Simulacao de Impactos
+    fields:
+      - {name: id, type: bigint, nullable: false, notes: PK identity}
+      - {name: cenario_id, type: bigint, nullable: false, notes: FK para CenarioSimulacao}
+      - {name: produto_id, type: bigint, nullable: false, notes: FK para Produto}
+      - {name: volume_simulado, type: decimal(15,2), nullable: true, notes: Volume simulado para o SKU}
+      - {name: receita_niv_simulada, type: decimal(15,4), nullable: true, notes: Receita NIV simulada}
+      - {name: margem_industria, type: decimal(15,4), nullable: true, notes: Margem Indústria simulada}
+      - {name: margem_distribuidor, type: decimal(15,4), nullable: true, notes: Margem Distribuidor simulada}
+      - {name: margem_varejo, type: decimal(15,4), nullable: true, notes: Margem Varejo simulada}
+    relationships:
+      - pertence a CenarioSimulacao
+      - pertence a Produto
+
+  - name: Usuarios
+    description: Usuários do sistema com autenticação JWT
+    module: Administracao
+    fields:
+      - {name: id, type: bigint, nullable: false, notes: PK identity}
+      - {name: nome, type: varchar(100), nullable: false, notes: Nome completo do usuário}
+      - {name: email, type: varchar(150), nullable: false, notes: Email único — login do usuário}
+      - {name: senha_hash, type: varchar(255), nullable: false, notes: Hash bcrypt da senha}
+      - {name: role, type: varchar(30), nullable: false, notes: "enum: admin/gestor_pricing/analista_pricing"}
+      - {name: ativo, type: bit, nullable: false, notes: Usuário ativo/inativo}
+    relationships: []
+
+business_rules:
+  - {id: RN-001, description: Cada arquivo importado deve ter estrutura de colunas validada}
+  - {id: RN-002, description: Toda importação gera registro auditável com usuário, timestamp e hash}
+  - {id: RN-003, description: Apenas as fontes suportadas no MVP são aceitas}
+  - {id: RN-004, description: Alteração de parâmetro tributário propaga recálculo imediatamente}
+  - {id: RN-005, description: Parâmetros tributários são versionados — sem sobrescrita do histórico}
+  - {id: RN-006, description: Resultados reconciliam com metodologia Harmonização dentro de tolerância}
+  - {id: RN-007, description: Cada canal deve ter ao menos um produto classificado como Capitão}
+  - {id: RN-008, description: Relatividades entre canais respeitam guardrails de consistência}
+  - {id: RN-009, description: Alterações na Arquitetura de Produtos geram reprocessamento das margens}
+  - {id: RN-010, description: Geração do Sell In exige parâmetros tributários, Capitães e Margem configurados}
+  - {id: RN-011, description: Preços que atingem o CAP devem ser sinalizados explicitamente}
+  - {id: RN-012, description: Todo preço gerado é rastreável até os parâmetros originadores}
+  - {id: RN-013, description: "Sequência obrigatória: PTC → Margem Cadeia → Sell In"}
+  - {id: RN-014, description: Somente supervisor pode aprovar ou rejeitar uma lista de preços}
+  - {id: RN-015, description: Recálculo completo do portfólio em tempo interativo (segundos)}
+  - {id: RN-016, description: Cenário Mantém PPC usa busca binária para encontrar o Sell In}
+  - {id: RN-017, description: Exportações de simulação incluem todos os parâmetros utilizados}
+  - {id: RN-018, description: Somente admin pode criar ou desativar usuários}
+  - {id: RN-019, description: Email deve ser único no sistema}
+  - {id: RN-020, description: Dados de P&L e preços são sensíveis — acesso controlado por role}
+
+non_functional:
+  security: JWT expiração 8h, senhas bcrypt, HTTPS em produção, RBAC rigoroso
+  performance: Recálculo de cenário completo em segundos; importações com feedback imediato
+  scalability: Arquitetura de layers (API + DB) permite escalar horizontalmente
+  availability: MVP sem SLA formal definido — escopo v1

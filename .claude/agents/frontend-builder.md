@@ -55,7 +55,7 @@ Todo o projeto é **100% Python**. O frontend usa EXCLUSIVAMENTE:
 | Sidebar | bg `#ffffff`, `border-right: 1px solid #e2e8f0`, box-shadow sutil |
 | Sidebar texto | `#4b5563` (inativo), cor primária (ativo) com bg `{primary}14` e `border-left: 3px solid {primary}` |
 | Page bg | `#f8fafc` |
-| Primary | lido de `.build/project.json` → `branding.primary` (fallback `#3b82f6`) |
+| Primary | lido de `.build/project.json` → `branding.primary` (fallback `#1045C8`) |
 | Tipagem | Python typing obrigatório em todas as funções |
 
 ## Step 1.5 — Design System
@@ -65,7 +65,7 @@ Todo o projeto é **100% Python**. O frontend usa EXCLUSIVAMENTE:
 Consulte `../.claude/skills/ui-ux-pro-max/SKILL.md` §4 (Seleção de Estilo) e §6 (Tipografia & Cor) para validar as escolhas antes de gerar o YAML.
 
 **Leia `.build/project.json` e extraia `branding`** antes de gerar o YAML:
-- `primary_color` = `branding.primary` (fallback `#3b82f6`)
+- `primary_color` = `branding.primary` (fallback `#1045C8`)
 - `logo_path` = `branding.logo` (pode ser `null`)
 - `display_name` = `branding.display_name`
 
@@ -137,71 +137,85 @@ Após cada página: `✓ <page> → 4 arquivos`. Validar sintaxe Python de cada 
 
 **Leia `.build/project.json` e `docs/design-system.yaml` para obter `primary_color`, `logo_path` e `display_name`.**
 
-Sidebar fixa (240px, bg `#ffffff`, `border-right: 1px solid #e2e8f0`, `box-shadow: 1px 0 4px rgba(0,0,0,0.04)`, flex column):
+Sidebar fixa (240px, bg `#ffffff`, `border-right: 1px solid #e2e8f0`, `box-shadow: 2px 0 8px rgba(0,0,0,0.04)`, flex column).
 
-**Topo (logo + nome):**
-- Se `logo_path` não for `null` e o arquivo existir em `assets/`: `html.Img(src=app.get_asset_url(logo_path), height=32, style={"objectFit":"contain","maxWidth":"140px"})`
-- Caso contrário: `html.Span("●", style={"color": primary_color, "fontSize": "1.4rem", "lineHeight": "1"})` + `html.Span(display_name, ...)`
-- Fundo do topo: `#ffffff`, separador `border-bottom: 1px solid #e2e8f0`, padding `1.25rem 1.5rem`
+**REGRA CRÍTICA — `html.Style()` NÃO EXISTE em Dash.** Todo CSS da sidebar vai em `assets/sidebar.css` (Dash carrega automaticamente).
 
-**Nav links:**
+---
+
+**Topo (logo mark + nome):**
+
+Verificar se o arquivo de logo existe em disco com `os.path.isfile(...)` durante o import do módulo (avaliação única):
+
 ```python
-html.Style(f"""
-.sidebar-nav .nav-link {{
-    color: #4b5563;
-    padding: 0.55rem 1.5rem;
-    border-radius: 0;
-    border-left: 3px solid transparent;
+import os
+_ASSETS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "assets")
+_LOGO_EXISTS = os.path.isfile(os.path.join(_ASSETS_DIR, logo_path)) if logo_path else False
+```
+
+- Se `_LOGO_EXISTS`: `html.Img(src=f"/assets/{logo_path}", height=30, style={"objectFit":"contain","maxWidth":"110px"})`
+- Senão: badge quadrado arredondado com iniciais do projeto:
+  ```python
+  html.Div(display_name[:2].upper(), style={
+      "width":"30px","height":"30px","borderRadius":"8px",
+      "background":primary_color,"color":"#ffffff",
+      "fontSize":"0.75rem","fontWeight":"800",
+      "display":"flex","alignItems":"center","justifyContent":"center","flexShrink":"0"
+  })
+  ```
+- Nome do projeto: `fontWeight:700, fontSize:"1rem", color:"#0f172a", letterSpacing:"-0.02em"`, `marginLeft:"0.625rem"`
+- Padding topo: `1.25rem 1.25rem 1rem`
+- Separador após o topo: `html.Hr(style={"margin":"0 0.75rem 0.5rem","borderColor":"#e2e8f0","opacity":"1"})`
+
+---
+
+**Nav links — estilo pill (active item com fundo cheio):**
+
+Escrever `assets/sidebar.css` com o conteúdo abaixo, substituindo `{PRIMARY_COLOR}` pelo valor literal da cor primária (ex: `#3b82f6`):
+
+```css
+/* assets/sidebar.css */
+.sidebar-nav .nav-link {
+    color: #64748b;
+    padding: 0.6rem 0.875rem;
+    border-radius: 8px;
+    border-left: none;
     font-size: 0.875rem;
-    transition: background 0.15s;
-}}
-.sidebar-nav .nav-link:hover:not(.active) {{
-    background: #f8fafc;
-    color: #1e293b;
-}}
-.sidebar-nav .nav-link.active {{
-    color: {primary_color};
-    background: {primary_color}14;
-    border-left: 3px solid {primary_color};
-    font-weight: 600;
-    padding-left: 1.25rem;
-}}
-""")
-```
-`dbc.NavLink` por página com `active="exact"`, ícone `html.I(className="bi bi-{icon} me-2")`, className `"nav-link"`, encapsulados em `html.Nav(className="sidebar-nav flex-grow-1 py-2")`.
-
-**Indicador de tela ativa** (entre o header e a nav):
-```python
-# No topo de sidebar.py, definir mapeamento pathname → (ícone, título)
-_PAGE_INFO: dict[str, tuple[str, str]] = {
-    "/dashboard": ("speedometer2", "Dashboard"),
-    "/<page1>": ("<icon1>", "<Title1>"),
-    # ... uma entrada por rota autenticada, usando os ícones e títulos do screens_definition.yaml
+    font-weight: 500;
+    transition: background 0.12s, color 0.12s;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin: 2px 0.75rem;
 }
-
-# Dentro de build_sidebar(pathname: str = "/"):
-icon, title = _PAGE_INFO.get(pathname, ("", ""))
-active_indicator = html.Div(
-    [
-        html.I(className=f"bi bi-{icon} me-1", style={"fontSize": "0.65rem"}),
-        title,
-    ],
-    style={
-        "padding": "0.375rem 1.5rem",
-        "fontSize": "0.7rem",
-        "fontWeight": "700",
-        "textTransform": "uppercase",
-        "letterSpacing": "0.07em",
-        "color": primary_color,
-        "background": f"{primary_color}08",
-        "borderBottom": "1px solid #e2e8f0",
-    }
-) if title else html.Div(style={"borderBottom": "1px solid #e2e8f0"})
+.sidebar-nav .nav-link i {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.sidebar-nav .nav-link:hover:not(.active) {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+.sidebar-nav .nav-link.active {
+    background: {PRIMARY_COLOR};
+    color: #ffffff;
+    font-weight: 600;
+}
+.sidebar-nav .nav-link.active i {
+    color: #ffffff;
+}
 ```
 
-A assinatura muda para `def build_sidebar(pathname: str = "/") -> html.Div:`. O `_PAGE_INFO` é construído a partir dos dados de `docs/screens_definition.yaml` (ícones e títulos definidos nos módulos do roadmap).
+`dbc.NavLink` por página: `[html.I(className="bi bi-{icon}"), label]`, `active="exact"`, `className="nav-link"`. Encapsular em `html.Nav(className="sidebar-nav flex-grow-1 py-2")`.
 
-**Rodapé:** `"Desenvolvido por"` + `html.Br()` + `"Quantiz Pricing Solution"` em `color: #9ca3af`, `font-size: 0.75rem`, `padding: 1rem 1.5rem`, `border-top: 1px solid #e2e8f0`.
+**Sem indicador de tela ativa em strip separado** — o item ativo na nav já comunica a tela atual.
+
+A assinatura é `def build_sidebar(pathname: str = "/") -> html.Div:` (pathname aceito para compatibilidade com callbacks, mas não usado para gerar strip).
+
+---
+
+**Rodapé:** duas linhas — "Desenvolvido por" e "Quantiz Pricing Solution" (`fontWeight:500`). `color: #94a3b8`, `fontSize: 0.72rem`, `padding: 0.875rem 1.25rem`, `border-top: 1px solid #e2e8f0`, `lineHeight: 1.6`.
 
 Exportar `build_sidebar(pathname)`, `CONTENT_STYLE` (`marginLeft: "240px"`), `CONTENT_FULL_STYLE` (`marginLeft: "0"`), `register_sidebar_callbacks()`.
 
