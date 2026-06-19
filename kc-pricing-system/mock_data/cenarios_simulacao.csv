@@ -1,9 +1,0 @@
-id,descricao,tipo_cenario,lista_preco_id,parametro_tributario_id,data_simulacao,usuario_id,delta_volume_pct,delta_receita_niv,delta_margem_industria,created_at,updated_at
-1,Simulacao MantemMargem Jan2026 vs Reforma 2026,MantemMargem,1,2,2026-01-27T10:00:00,4,-2.4500,-45230.50,-18920.30,2026-01-27T10:00:00,2026-01-27T10:00:00
-2,Simulacao MantemPPC Jan2026 vs Reforma 2026,MantemPPC,1,2,2026-01-27T11:00:00,4,-4.8200,-89450.80,-32100.50,2026-01-27T11:00:00,2026-01-27T11:00:00
-3,Simulacao MantemMargem Fev2026 vs Reforma 2027,MantemMargem,3,4,2026-02-27T10:00:00,5,-3.1200,-58920.40,-24510.80,2026-02-27T10:00:00,2026-02-27T10:00:00
-4,Simulacao MantemPPC Fev2026 vs Reforma 2027,MantemPPC,3,4,2026-02-27T11:00:00,5,-6.3400,-118250.60,-45820.20,2026-02-27T11:00:00,2026-02-27T11:00:00
-5,Projecao MantemMargem 2026 vs Reforma 2028,MantemMargem,3,6,2026-03-10T14:00:00,5,-5.2800,-98540.20,-41230.60,2026-03-10T14:00:00,2026-03-10T14:00:00
-6,Projecao MantemPPC 2026 vs Reforma 2028,MantemPPC,3,6,2026-03-10T15:00:00,5,-9.8100,-183920.40,-72450.80,2026-03-10T15:00:00,2026-03-10T15:00:00
-7,Projecao MantemMargem 2026 vs Reforma 2033,MantemMargem,3,12,2026-03-15T10:00:00,5,-18.4500,-342850.60,-143120.30,2026-03-15T10:00:00,2026-03-15T10:00:00
-8,Projecao MantemPPC 2026 vs Reforma 2033,MantemPPC,3,12,2026-03-15T11:00:00,5,-28.9200,-538420.80,-224680.50,2026-03-15T11:00:00,2026-03-15T11:00:00

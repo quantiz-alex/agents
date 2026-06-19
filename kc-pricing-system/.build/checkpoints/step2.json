@@ -1,9 +1,0 @@
-{
-  "step": 2,
-  "timestamp": "2026-06-18T18:58:00Z",
-  "files": {
-    "docs/data_model.yaml": "03b9166a25f74e304cab8aa1b4cbda8999be6077f3b3e48916af94f7683244d3"
-  },
-  "validation": "9 entities, 11 relationships, 7 enums. All FKs reference existing tables. No FK cycles detected. Topological order: usuarios, produtos, parametros_tributarios, margens_cadeia, importacoes_base, listas_preco, listas_preco_itens, cenarios_simulacao, cenarios_simulacao_itens. All entities have id/created_at/updated_at.",
-  "duration_seconds": 6
-}

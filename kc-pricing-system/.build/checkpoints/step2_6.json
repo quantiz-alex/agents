@@ -1,9 +1,0 @@
-{
-  "step": 2.6,
-  "timestamp": "2026-06-18T18:59:30Z",
-  "files": {
-    "docs/api_contracts.yaml": "215b2357741f26ca36c062cc51130d71d2a40500330764a8f5554de8757cd18d"
-  },
-  "validation": "9 entities covered (usuarios, produtos, parametros_tributarios, margens_cadeia, importacoes_base, listas_preco, listas_preco_itens, cenarios_simulacao, cenarios_simulacao_itens) + auth endpoints. All have list/get/create/update/delete. Soft delete via ativo=false for usuarios/produtos/parametros_tributarios. Listas_preco archived via status=Arquivada.",
-  "duration_seconds": 5
-}

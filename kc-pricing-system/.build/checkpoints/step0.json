@@ -1,9 +1,0 @@
-{
-  "step": 0,
-  "timestamp": "2026-06-18T18:56:11Z",
-  "files": {
-    ".build/project.json": "57599c5599f4c36615508a53734d5628631228be024275da0f49ab15d8349102"
-  },
-  "validation": "roadmap.md valid: title, modules (6), entities (9), branding extracted",
-  "duration_seconds": 2
-}

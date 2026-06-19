@@ -230,6 +230,8 @@ Fullscreen com gradiente `linear-gradient(135deg, #1e293b, #0f172a)`, card centr
 Padrão obrigatório — **NÃO usar `dash.page_container`**. Usar render callback explícito:
 
 ```python
+import os
+
 import dash
 import dash_bootstrap_components as dbc
 from dash import Input, Output, callback, dcc, html, no_update
@@ -238,8 +240,12 @@ from frontend.components.sidebar import (
 )
 
 # 1. Instanciar app PRIMEIRO
+# assets_folder aponta para <projeto>/assets/ (um nível acima de frontend/)
+_ASSETS = os.path.join(os.path.dirname(__file__), "..", "assets")
+
 app = dash.Dash(__name__, use_pages=True,
     pages_folder="pages",
+    assets_folder=_ASSETS,
     external_stylesheets=[dbc.themes.BOOTSTRAP,
         "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"],
     suppress_callback_exceptions=True,
