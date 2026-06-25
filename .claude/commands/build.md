@@ -604,7 +604,7 @@ def toggle_sidebar(pathname: str, user_data):
     return build_sidebar(), CONTENT_STYLE
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8050)
+    app.run(debug=True, port=1050)
 ```
 
 **Regras críticas:**
@@ -744,7 +744,7 @@ pytest tests/backend/test_cenarios_precificacao.py -v
 
 ### Testes E2E de Frontend (Cypress)
 
-Requerem o app rodando em `http://localhost:8050`.
+Requerem o app rodando em `http://localhost:1050`.
 
 \`\`\`bash
 # 1. Iniciar o backend e o frontend
@@ -801,7 +801,7 @@ Execute `/skill13-integration-tests` (sem argumento) para gerar o setup completo
 
 Isso gera:
 - `tests/frontend/package.json` — dependência Cypress
-- `tests/frontend/cypress.config.js` — config com `baseUrl: http://localhost:8050`
+- `tests/frontend/cypress.config.js` — config com `baseUrl: http://localhost:1050`
 - `tests/frontend/cypress/fixtures/usuario.json` — e-mail real de `mock_data/usuarios.csv`
 - `tests/frontend/cypress/support/commands.js` — `cy.login()` com `cy.session()`
 - `tests/frontend/cypress/support/e2e.js`
@@ -844,5 +844,5 @@ Próximos passos:
   1. cp .env.example .env  →  preencher credenciais
   2. pip install -r requirements.txt
   3. uvicorn backend.main:app --reload  →  API em http://localhost:8000
-  4. python frontend/app.py             →  UI em http://localhost:8050
+  4. python frontend/app.py             →  UI em http://localhost:1050
 ```

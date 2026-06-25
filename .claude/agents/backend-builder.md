@@ -76,7 +76,7 @@ Verificar que `SECRET_KEY` não aparece como string literal em nenhum arquivo ge
 **Output:** `requirements.txt`, `README.md`
 
 - **`requirements.txt`**: dash, dash-bootstrap-components, dash-ag-grid, plotly, pandas, numpy, fastapi, uvicorn[standard], sqlalchemy, pydantic, pydantic-settings, python-jose[cryptography], passlib[bcrypt], python-multipart, pyodbc, python-dotenv, pytest, httpx, requests — com versões mínimas atuais.
-- **`README.md`**: nome/descrição (de `.build/project.json`), tabela de stack, estrutura de pastas, como rodar (`cp .env.example .env`, `pip install -r requirements.txt`, `uvicorn backend.main:app --reload` → :8000, `python frontend/app.py` → :8050), páginas disponíveis (de `screens_definition.yaml` se existir), seção obrigatória **Testes** (comandos pytest e cypress), próximos passos (integração SQL Server real).
+- **`README.md`**: nome/descrição (de `.build/project.json`), tabela de stack, estrutura de pastas, como rodar (`cp .env.example .env`, `pip install -r requirements.txt`, `uvicorn backend.main:app --reload` → :8000, `python frontend/app.py` → :1050), páginas disponíveis (de `screens_definition.yaml` se existir), seção obrigatória **Testes** (comandos pytest e cypress), próximos passos (integração SQL Server real).
 
 ## Relatório Final (sua última mensagem)
 

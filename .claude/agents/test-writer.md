@@ -114,7 +114,7 @@ Cobrir também `frontend/pages/login/login_callbacks.py` (email existente → us
 **Output:** suite em `tests/frontend/` (setup apenas se não existir)
 
 - `package.json` (`{name_slug}-e2e`, scripts `cy:open`/`cy:run`, cypress ^13)
-- `cypress.config.js` (`baseUrl: http://localhost:8050`, viewport 1280×800, timeout 10s, video false)
+- `cypress.config.js` (`baseUrl: http://localhost:1050`, viewport 1280×800, timeout 10s, video false)
 - `cypress/fixtures/usuario.json` (primeiro registro de `mock_data/usuarios.csv` + `"senha": "senha123"`)
 - `cypress/support/commands.js`: `cy.login()` com `cy.session(..., {cacheAcrossSpecs: true})`, `cy.visitAutenticado(path)`, `cy.aguardarGrid(selector)`
 - `cypress/e2e/login.cy.js`: formulário visível; login válido redireciona; email inválido mostra `#login-alert`

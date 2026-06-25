@@ -317,7 +317,7 @@ def toggle_sidebar(pathname: str, user_data):
     return build_sidebar(pathname), CONTENT_STYLE
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8050)
+    app.run(debug=True, port=1050)
 ```
 
 **Regras críticas do app.py:**

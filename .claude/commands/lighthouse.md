@@ -93,7 +93,7 @@ Aguardar AMBOS. Se qualquer um retornar `failed`/`blocked` → reportar os erros
     1. cp .env.example .env          → preencher credenciais
     2. pip install -r requirements.txt
     3. uvicorn backend.main:app --reload   → API :8000
-    4. python frontend/app.py              → UI  :8050
+    4. python frontend/app.py              → UI  :1050
     5. Validar o sistema com o cliente
     6. Após aprovação → pedir "gere os testes do projeto"
        (test-writer: pytest + cypress, cobertura ≥85%)

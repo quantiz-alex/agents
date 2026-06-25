@@ -75,7 +75,7 @@ const { defineConfig } = require('cypress')
 
 module.exports = defineConfig({
   e2e: {
-    baseUrl: 'http://localhost:8050',
+    baseUrl: 'http://localhost:1050',
     specPattern: 'cypress/e2e/**/*.cy.js',
     supportFile: 'cypress/support/e2e.js',
     downloadsFolder: 'cypress/downloads',
@@ -90,7 +90,7 @@ module.exports = defineConfig({
       openMode: 0,
     },
     env: {
-      dashUrl: 'http://localhost:8050',
+      dashUrl: 'http://localhost:1050',
     },
   },
 })
@@ -288,7 +288,7 @@ describe('<title>', () => {
 
 ## Regras
 
-- **App precisa estar rodando** em `http://localhost:8050` para os testes executarem
+- **App precisa estar rodando** em `http://localhost:1050` para os testes executarem
 - **Usar `cy.session()`** para reusar o login entre specs e reduzir tempo de execução
 - **Nunca usar `cy.wait(N)`** com número fixo de ms — usar `cy.get(..., {timeout: N})` para aguardar elementos
 - **IDs das páginas** seguem o padrão `<pagina>-<componente>` definido em `design-system.yaml`

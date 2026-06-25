@@ -56,14 +56,14 @@ APP_ENV=development       # development | staging | production
 APP_DEBUG=true
 APP_HOST=0.0.0.0
 APP_PORT=8000
-FRONTEND_URL=http://localhost:8050
+FRONTEND_URL=http://localhost:1050
 
 # --- CORS ---
-ALLOWED_ORIGINS=http://localhost:8050,http://127.0.0.1:8050
+ALLOWED_ORIGINS=http://localhost:1050,http://127.0.0.1:1050
 
 # --- Frontend Dash ---
 DASH_HOST=0.0.0.0
-DASH_PORT=8050
+DASH_PORT=1050
 DASH_DEBUG=true
 ```
 
@@ -102,10 +102,10 @@ class Settings(BaseSettings):
     app_debug: bool = True
     app_host: str = "0.0.0.0"
     app_port: int = 8000
-    frontend_url: str = "http://localhost:8050"
+    frontend_url: str = "http://localhost:1050"
 
     # CORS
-    allowed_origins: str = "http://localhost:8050"
+    allowed_origins: str = "http://localhost:1050"
 
     @property
     def sqlserver_url(self) -> str:
