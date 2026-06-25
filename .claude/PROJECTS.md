@@ -23,8 +23,7 @@ cd ../nome-do-projeto
 
 | Projeto | Slug | Status | Última Atividade |
 |---------|------|--------|-----------------|
-| GM Argentina — Precificação Inteligente | gm-teste | 🟢 Build concluído | 2026-06-15 |
-| KC Pricing System | kc-pricing-system | 🟢 Build concluído | 2026-06-19 |
+
 
 ---
 

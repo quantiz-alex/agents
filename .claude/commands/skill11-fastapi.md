@@ -175,9 +175,225 @@ def health() -> dict:
     return {"status": "ok", "db": health_check()}
 ```
 
+## Endpoints especializados — Simulação e Aprovação
+
+Além do CRUD básico, verificar em `docs/api_contracts.yaml` e `docs/requirements.yaml` se a entidade requer:
+- `has_simulation: true` → gerar bloco de simulação
+- `has_approval_flow: true` → gerar bloco de aprovação
+
+### Bloco de Simulação
+
+Quando `has_simulation: true`, adicionar ao `schemas/<entidade>.py`:
+
+```python
+from pydantic import BaseModel, Field
+from typing import Any
+
+class SimulacaoRequest(BaseModel):
+    """Parâmetros de entrada do cenário de simulação."""
+    margem_desejada:  float | None = Field(None, ge=0, le=100, description="Margem desejada em %")
+    desconto_maximo:  float | None = Field(None, ge=0, le=100, description="Desconto máximo em %")
+    # demais parâmetros conforme requirements.yaml
+
+class SimulacaoKpi(BaseModel):
+    label: str
+    valor: str
+
+class SimulacaoResponse(BaseModel):
+    """Resultado do cálculo de simulação — sem persistência."""
+    kpis:        list[SimulacaoKpi]
+    comparativo: list[dict[str, Any]]
+    resumo:      dict[str, float]
+```
+
+Adicionar ao `services/<entidade>.py`:
+
+```python
+def simular(
+    self,
+    db: Session,
+    params: SimulacaoRequest,
+) -> SimulacaoResponse:
+    """
+    Executa o cálculo do cenário sem persistir.
+    Regras de negócio de simulação ficam aqui.
+    """
+    registros = self.repo.get_all(db, skip=0, limit=10000)
+
+    # --- Lógica de cálculo ---
+    comparativo = []
+    receita_atual = receita_simulada = 0.0
+
+    for item in registros:
+        preco_sim = item.preco_atual
+        if params.margem_desejada is not None:
+            preco_sim = item.custo / (1 - params.margem_desejada / 100)
+        if params.desconto_maximo is not None:
+            preco_sim *= (1 - params.desconto_maximo / 100)
+
+        var_pct = ((preco_sim - item.preco_atual) / item.preco_atual * 100) if item.preco_atual else 0
+        receita_atual    += item.preco_atual * getattr(item, "volume", 1)
+        receita_simulada += preco_sim        * getattr(item, "volume", 1)
+
+        comparativo.append({
+            "id":             item.id,
+            "produto":        getattr(item, "nome", str(item.id)),
+            "preco_atual":    round(item.preco_atual, 2),
+            "preco_simulado": round(preco_sim, 2),
+            "variacao_pct":   round(var_pct, 2),
+        })
+
+    variacao_total = ((receita_simulada / receita_atual) - 1) * 100 if receita_atual else 0
+
+    return SimulacaoResponse(
+        kpis=[
+            SimulacaoKpi(label="Receita Atual",    valor=f"R$ {receita_atual:,.2f}"),
+            SimulacaoKpi(label="Receita Simulada", valor=f"R$ {receita_simulada:,.2f}"),
+            SimulacaoKpi(label="Variação Total",   valor=f"{variacao_total:+.1f}%"),
+            SimulacaoKpi(label="Itens Afetados",   valor=str(len(comparativo))),
+        ],
+        comparativo=comparativo,
+        resumo={
+            "receita_atual":    round(receita_atual, 2),
+            "receita_simulada": round(receita_simulada, 2),
+            "variacao_pct":     round(variacao_total, 2),
+        },
+    )
+```
+
+Adicionar ao `api/routes/<entidade>.py`:
+
+```python
+@router.post("/simular", response_model=SimulacaoResponse)
+def simular_cenario(
+    params: SimulacaoRequest,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+) -> SimulacaoResponse:
+    """Calcula o resultado do cenário sem persistir. Disponível para analista+."""
+    return service.simular(db, params)
+```
+
+---
+
+### Bloco de Aprovação
+
+Quando `has_approval_flow: true`, adicionar ao `schemas/<entidade>.py`:
+
+```python
+from enum import Enum
+
+class StatusAprovacaoEnum(str, Enum):
+    rascunho            = "Rascunho"
+    pendente_aprovacao  = "Pendente Aprovação"
+    aprovado            = "Aprovado"
+    rejeitado           = "Rejeitado"
+
+class EnviarAprovacaoRequest(BaseModel):
+    pass   # sem campos adicionais; o id vem na URL
+
+class AprovarRequest(BaseModel):
+    comentario: str | None = Field(None, max_length=1000)
+
+class RejeitarRequest(BaseModel):
+    comentario: str = Field(..., min_length=5, max_length=1000,
+                             description="Motivo da rejeição — obrigatório")
+```
+
+Adicionar ao `services/<entidade>.py`:
+
+```python
+from datetime import datetime, timezone
+
+def enviar_para_aprovacao(self, db: Session, id: int, solicitante: str) -> <Entidade>:
+    item = self.repo.get_by_id(db, id)
+    if not item:
+        raise HTTPException(404, "Registro não encontrado")
+    if item.status not in (StatusAprovacaoEnum.rascunho, StatusAprovacaoEnum.rejeitado):
+        raise HTTPException(409, f"Registro com status '{item.status}' não pode ser enviado para aprovação")
+    return self.repo.update(db, id, {"status": StatusAprovacaoEnum.pendente_aprovacao})
+
+
+def aprovar(self, db: Session, id: int, aprovador: str, comentario: str | None) -> <Entidade>:
+    item = self.repo.get_by_id(db, id)
+    if not item:
+        raise HTTPException(404, "Registro não encontrado")
+    if item.status != StatusAprovacaoEnum.pendente_aprovacao:
+        raise HTTPException(409, "Apenas registros com status 'Pendente Aprovação' podem ser aprovados")
+    return self.repo.update(db, id, {
+        "status":               StatusAprovacaoEnum.aprovado,
+        "aprovado_por":         aprovador,
+        "aprovado_em":          datetime.now(timezone.utc),
+        "comentario_aprovacao": comentario,
+    })
+
+
+def rejeitar(self, db: Session, id: int, aprovador: str, comentario: str) -> <Entidade>:
+    item = self.repo.get_by_id(db, id)
+    if not item:
+        raise HTTPException(404, "Registro não encontrado")
+    if item.status != StatusAprovacaoEnum.pendente_aprovacao:
+        raise HTTPException(409, "Apenas registros com status 'Pendente Aprovação' podem ser rejeitados")
+    return self.repo.update(db, id, {
+        "status":               StatusAprovacaoEnum.rejeitado,
+        "aprovado_por":         aprovador,
+        "aprovado_em":          datetime.now(timezone.utc),
+        "comentario_aprovacao": comentario,
+    })
+```
+
+Adicionar ao `api/routes/<entidade>.py`:
+
+```python
+from backend.auth import get_current_user
+
+@router.post("/{id}/enviar-aprovacao", response_model=<Entidade>Response)
+def enviar_para_aprovacao(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+) -> <Entidade>Response:
+    """Envia para aprovação. Disponível para role analista."""
+    if current_user.role not in ("analista", "supervisor", "admin"):
+        raise HTTPException(403, "Permissão insuficiente")
+    return service.enviar_para_aprovacao(db, id, solicitante=current_user.nome)
+
+
+@router.post("/{id}/aprovar", response_model=<Entidade>Response)
+def aprovar(
+    id: int,
+    body: AprovarRequest,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+) -> <Entidade>Response:
+    """Aprova o registro. Apenas supervisor e admin."""
+    if current_user.role not in ("supervisor", "admin"):
+        raise HTTPException(403, "Apenas supervisores e administradores podem aprovar")
+    return service.aprovar(db, id, aprovador=current_user.nome, comentario=body.comentario)
+
+
+@router.post("/{id}/rejeitar", response_model=<Entidade>Response)
+def rejeitar(
+    id: int,
+    body: RejeitarRequest,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+) -> <Entidade>Response:
+    """Rejeita o registro com comentário obrigatório. Apenas supervisor e admin."""
+    if current_user.role not in ("supervisor", "admin"):
+        raise HTTPException(403, "Apenas supervisores e administradores podem rejeitar")
+    return service.rejeitar(db, id, aprovador=current_user.nome, comentario=body.comentario)
+```
+
+---
+
 ## Restrições
 
 - Endpoints mínimos: GET (lista), GET (por ID), POST, PUT, DELETE.
+- Endpoints de simulação e aprovação: apenas quando sinalizados em `api_contracts.yaml` ou `requirements.yaml`.
+- `simular` nunca persiste — apenas calcula e retorna.
+- Aprovação exige role check explícito no route — não delegar somente ao JWT.
+- `RejeitarRequest.comentario` é obrigatório (validação Pydantic via `Field(...)`).
 - Tipagem Python obrigatória em todos os parâmetros e retornos.
 - Tratamento de erro com `HTTPException` e status codes corretos.
 - Separação obrigatória: route → service → repository.

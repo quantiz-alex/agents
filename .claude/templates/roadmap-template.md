@@ -103,6 +103,78 @@ TODO: Quem são os usuários? (ex: analistas de pricing, gestores comerciais, co
 
 ---
 
+### [Módulo de Simulação — ex.: Simulação de Preços]
+<!-- Usar quando o projeto requer simular cenários antes de aprovar e aplicar -->
+**Prioridade**: high
+**Tipo de tela**: simulation
+**Ícone Bootstrap**: calculator
+**Descrição**: TODO: O que o analista simula (ex: impacto de alteração de margem e desconto nos preços e receita projetada).
+
+**Parâmetros de entrada:**
+<!-- Campos que o analista preenche para configurar o cenário -->
+- TODO_param1 (number, %) — ex.: margem desejada
+- TODO_param2 (number, %) — ex.: desconto máximo
+- TODO_param3 (select) — ex.: categoria de produto
+
+**Resultado calculado:**
+<!-- KPIs e tabela que aparecem após clicar em Simular -->
+- **KPIs:** TODO — ex: Receita Atual (R$), Receita Simulada (R$), Variação Total (%), Itens Afetados
+- **Tabela comparativa:** TODO — colunas (ex: produto, preço atual, preço simulado, variação %)
+- **Gráfico:** TODO — ex: bar — agrupado Atual × Simulado por produto/categoria
+
+**Funcionalidades:**
+- [F-SIM-001] Simular cenário: preencher parâmetros → Simular → exibir resultado
+  - Ações: [simulate]
+- [F-SIM-002] Salvar cenário: nomear e gravar o resultado para consulta posterior
+  - Ações: [criar]
+- [F-SIM-003] Enviar para aprovação: promoção do cenário salvo ao fluxo de aprovação
+  - Ações: [submit_approval]
+
+**Regras de negócio:**
+- [RN-SIM-001]: TODO — ex: preço simulado não pode ser inferior ao custo + margem mínima de 10%
+- [RN-SIM-002]: TODO — ex: desconto máximo não pode exceder a política comercial vigente
+- [RN-SIM-003]: Cálculo nunca persiste automaticamente — analista escolhe explicitamente salvar
+
+**Acesso por role:**
+- admin: full
+- supervisor: [simular, visualizar, exportar-excel]
+- analista: [simular, salvar, submit_approval]
+
+---
+
+### [Módulo de Aprovações — ex.: Fila de Aprovações]
+<!-- Usar quando o projeto tem fluxo de aprovação (supervisor avalia itens enviados pelo analista) -->
+**Prioridade**: high
+**Tipo de tela**: approval_queue
+**Ícone Bootstrap**: check2-circle
+**Descrição**: TODO: Fila de itens pendentes de aprovação para o supervisor avaliar (ex: cenários de precificação enviados pelos analistas).
+
+**Componentes visuais:**
+- **KPIs:** Pendentes (number), Aprovados Hoje (number), Rejeitados Hoje (number), Tempo Médio de Aprovação (text)
+- **Grid/Tabela:** lista de itens pendentes — nome/descrição, enviado por, enviado em, status, comentário
+- **Filtros:** status (select: Pendente/Aprovado/Rejeitado), enviado por (select), data de envio (date_range)
+
+**Funcionalidades:**
+- [F-APR-001] Aprovar itens: selecionar → Aprovar → comentário opcional → confirmar
+  - Ações: [approve]
+- [F-APR-002] Rejeitar itens: selecionar → Rejeitar → comentário obrigatório → confirmar
+  - Ações: [reject]
+- [F-APR-003] Visualizar histórico: consultar itens já aprovados/rejeitados
+  - Ações: [visualizar, exportar-excel]
+
+**Regras de negócio:**
+- [RN-APR-001]: Somente supervisor e admin podem aprovar ou rejeitar
+- [RN-APR-002]: Rejeição exige comentário explicando o motivo
+- [RN-APR-003]: Analista não pode aprovar seus próprios envios
+- [RN-APR-004]: TODO — ex: aprovação de cenários com variação > 20% requer justificativa
+
+**Acesso por role:**
+- admin: full
+- supervisor: [approve, reject, visualizar, exportar-excel]
+- analista: [visualizar]
+
+---
+
 ### Administração
 **Prioridade**: low
 **Tipo de tela**: grid
@@ -143,6 +215,36 @@ TODO: Quem são os usuários? (ex: analistas de pricing, gestores comerciais, co
 **Campos principais**: TODO
 **Relacionamentos**: TODO
 **Módulo**: TODO
+
+### {EntidadeComAprovacao}
+<!-- Copiar este bloco para qualquer entidade que passa pelo fluxo de aprovação -->
+<!-- Remover este bloco se a entidade NÃO tem fluxo de aprovação -->
+**Descrição**: TODO
+**Campos principais**: TODO + os campos de aprovação abaixo são OBRIGATÓRIOS para o fluxo:
+  - status enum(Rascunho/Pendente Aprovação/Aprovado/Rejeitado) default Rascunho
+  - aprovado_por varchar(100) nullable
+  - aprovado_em datetime2 nullable
+  - comentario_aprovacao text nullable
+**Relacionamentos**: TODO
+**Módulo**: TODO (+ Módulo de Aprovações)
+
+### {EntidadeComSimulacao}
+<!-- Copiar este bloco para entidades cujos valores são simulados antes de aplicar -->
+<!-- Remover se não houver módulo de simulação -->
+**Descrição**: TODO — entidade base para a simulação (ex: precificacao, tabela_preco)
+**Campos principais**: TODO + os campos abaixo são necessários para cálculo:
+  - custo decimal(15,2) — base de cálculo
+  - preco_atual decimal(15,2) — preço vigente
+  - volume int nullable — quantidade para projeção de receita
+**Relacionamentos**: TODO
+**Módulo**: Módulo de Simulação
+
+### CenarioSimulacao
+<!-- Manter se o projeto tem módulo de simulação; remover caso contrário -->
+**Descrição**: Registra os cenários de simulação salvos pelo analista para consulta e envio para aprovação
+**Campos principais**: nome varchar(200), parametros text (JSON), receita_atual decimal(15,2), receita_simulada decimal(15,2), variacao_pct decimal(8,4), status enum(Rascunho/Pendente Aprovação/Aprovado/Rejeitado) default Rascunho, criado_por varchar(100), aprovado_por varchar(100) nullable, aprovado_em datetime2 nullable, comentario_aprovacao text nullable
+**Relacionamentos**: pertence a Usuarios (criado_por)
+**Módulo**: Módulo de Simulação + Módulo de Aprovações
 
 ### Usuarios
 **Descrição**: Usuários do sistema com autenticação JWT

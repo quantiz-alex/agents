@@ -79,6 +79,28 @@ Gerar YAML com:
 - `id_conventions`, `naming`, `restrictions`
 - `branding`: `primary` = primary_color, `logo` = logo_path, `display_name` = display_name, `footer` "Desenvolvido por / Quantiz Pricing Solution"
 
+## Skills Especializadas — Quando Invocar
+
+Após gerar os 4 arquivos padrão de uma página (step 7), verificar em `docs/screens_definition.yaml` se a página requer skills adicionais:
+
+| Condição em `screens_definition.yaml`              | Skill a aplicar (patch incremental)    |
+|----------------------------------------------------|----------------------------------------|
+| `screen_type: simulation`                          | `../.claude/commands/skill-simulation.md` |
+| `has_simulation: true`                             | `../.claude/commands/skill-simulation.md` |
+| `screen_type: approval_queue`                      | `../.claude/commands/skill-approval-flow.md` |
+| `has_approval_flow: true`                          | `../.claude/commands/skill-approval-flow.md` |
+| `actions[].type` contém `simulate`                 | Aplicar Padrão 2 de `skill08-dash-callback.md` |
+| `actions[].type` contém `submit_approval`          | Aplicar Padrão 3 de `skill08-dash-callback.md` |
+| `actions[].type` contém `approve` ou `reject`      | Aplicar Padrão 4 de `skill08-dash-callback.md` |
+
+**Ordem de aplicação por página:**
+1. Gerar os 4 arquivos padrão (step 7)
+2. Se simulation → aplicar `skill-simulation.md` (patch em todos os 4 arquivos)
+3. Se approval flow → aplicar `skill-approval-flow.md` (patch em todos os 4 arquivos)
+4. Os callbacks especializados substituem/estendem o `_callbacks.py` padrão — nunca duplicar
+
+---
+
 ## Step 6 — Screen Definition
 
 **Input:** `docs/requirements.yaml` → **Output:** `docs/screens_definition.yaml`
@@ -125,7 +147,14 @@ Checklist primeiro: verificar no disco quais páginas já têm os 4 arquivos; ge
 
 3. **`<page>_page.py`** — `dash.register_page(__name__, path="/<page>", title, name)` + `layout()` retornando `html.Div` raiz padrão com: header (H4 + botões de ação), filtros, row de KPIs (id `<page>-kpis-row`), card principal com grid/chart.
 
-4. **`<page>_callbacks.py`** — `register_callbacks()` contendo todos os `@callback`: filtrar (Output grid rowData + kpis, Input btn-filtrar, States dos filtros, `prevent_initial_call=False`), modais, export. Usa funções de `_queries.py`.
+4. **`<page>_callbacks.py`** — `register_callbacks()` contendo todos os `@callback`. Consultar `../.claude/commands/skill08-dash-callback.md` para os padrões a aplicar conforme os `actions.type` da tela:
+   - Sempre: Padrão 1 (filtrar grid)
+   - Se `simulate`: Padrão 2 (simulação)
+   - Se `submit_approval`: Padrão 3 (envio para aprovação)
+   - Se `approve`/`reject`: Padrão 4 (aprovar/rejeitar)
+   - Se row actions: Padrão 5 (cellClicked → modal)
+   - Se `download`: Padrão 6 (export Excel)
+   - Toast (Padrão 7): sempre incluir `dbc.Toast` no layout e os 3 Outputs padrão.
 
 Após cada página: `✓ <page> → 4 arquivos`. Validar sintaxe Python de cada arquivo (`python -m py_compile`).
 
