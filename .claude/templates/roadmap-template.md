@@ -26,10 +26,11 @@ TODO: Quem são os usuários? (ex: analistas de pricing, gestores comerciais, co
 ### [Módulo 1 — ex.: Dashboard Comercial]
 **Prioridade**: high
 **Tipo de tela**: dashboard
-<!-- Tipos: dashboard (KPIs+gráficos), grid (tabela+filtros), form (cadastro), report (relatório), mixed -->
+<!-- Tipos: dashboard (KPIs+gráficos), grid (tabela+filtros), form (cadastro), report (relatório), mixed, simulation, approval_queue -->
 **Ícone Bootstrap**: speedometer2
-<!-- Ícones: https://icons.getbootstrap.com — ex: speedometer2, graph-up, table, people, gear, box-seam -->
+<!-- Ícones: https://icons.getbootstrap.com — ex: speedometer2, graph-up, table, people, gear, box-seam, calculator, check2-circle -->
 **Descrição**: TODO: O que este módulo exibe e qual decisão ele apoia.
+**Participa de workflow**: TODO (opcional) — ex: "Workflow Principal" (se esta tela faz parte de uma jornada maior)
 
 **Componentes visuais:**
 - **KPIs:** TODO: liste as métricas (ex: Total pedidos do mês, Receita acumulada, Margem média %)
@@ -109,6 +110,7 @@ TODO: Quem são os usuários? (ex: analistas de pricing, gestores comerciais, co
 **Tipo de tela**: simulation
 **Ícone Bootstrap**: calculator
 **Descrição**: TODO: O que o analista simula (ex: impacto de alteração de margem e desconto nos preços e receita projetada).
+**Participa de workflow**: Workflow Principal (step: simulação → aprovação)
 
 **Parâmetros de entrada:**
 <!-- Campos que o analista preenche para configurar o cenário -->
@@ -148,6 +150,7 @@ TODO: Quem são os usuários? (ex: analistas de pricing, gestores comerciais, co
 **Tipo de tela**: approval_queue
 **Ícone Bootstrap**: check2-circle
 **Descrição**: TODO: Fila de itens pendentes de aprovação para o supervisor avaliar (ex: cenários de precificação enviados pelos analistas).
+**Participa de workflow**: Workflow Principal (step: aprovação → dashboard ou revisão)
 
 **Componentes visuais:**
 - **KPIs:** Pendentes (number), Aprovados Hoje (number), Rejeitados Hoje (number), Tempo Médio de Aprovação (text)
@@ -196,6 +199,55 @@ TODO: Quem são os usuários? (ex: analistas de pricing, gestores comerciais, co
 
 **Acesso por role:**
 - admin: full
+
+---
+
+## Workflows e Jornadas de Usuário
+<!-- NOVO: Defina os fluxos entre telas interdependentes -->
+<!-- O sistema detectará automaticamente padrões, mas você pode especificar fluxos customizados -->
+<!-- Categorias: análise | inovação | implementação | controle (metodologia Pricing & Revenue Management) -->
+
+### Workflow Principal: [Nome do Fluxo]
+**Categoria**: inovação
+**Descrição**: TODO — jornada completa do usuário (ex: desde configuração de arquitetura até aprovação e monitoramento)
+**Roles**: [analista, supervisor, admin]
+
+**Steps:**
+1. **[Tela Inicial]** → TODO: descrição do que o usuário faz
+   - Dados fornecidos: TODO — ex: arquitetura_id, regras_margem
+   - Próximo passo: [Nome da próxima tela]
+
+2. **[Tela Intermediária]** → TODO: descrição
+   - Dados recebidos: TODO — ex: arquitetura_id, regras_margem
+   - Dados fornecidos: TODO — ex: cenario_id, resultado_simulacao
+   - Próximo passo: [Nome da próxima tela] (condição: TODO — ex: após salvar cenário)
+
+3. **[Tela Final]** → TODO: descrição
+   - Dados recebidos: TODO
+   - Ações finais: TODO — ex: visualizar dashboard atualizado, nova simulação
+
+**Exemplo de fluxo comum:**
+```
+Arquitetura de Preços → Simulação de Cenário → Salvar Cenário → 
+Enviar para Aprovação → Fila de Aprovações → Aprovar/Rejeitar → 
+Dashboard (reflete mudanças)
+```
+
+### Workflow Secundário (opcional): [Nome]
+**Categoria**: análise | controle
+**Descrição**: TODO
+**Roles**: [supervisor, admin]
+
+**Steps:**
+1. TODO
+2. TODO
+
+**Notas sobre Workflows:**
+- Workflows são gerados automaticamente pelo sistema baseado nos módulos definidos
+- Telas de simulação + aprovação sempre criam um workflow automático
+- Dashboards + relatórios criam workflows de análise
+- Você pode especificar workflows customizados aqui se necessário
+- Dados fluem automaticamente entre telas do mesmo workflow
 
 ---
 

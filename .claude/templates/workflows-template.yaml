@@ -1,0 +1,225 @@
+# Workflows — Jornadas de usuário entre telas interdependentes
+# Template base para projetos de pricing e revenue management
+# Gerado automaticamente pelo frontend-builder Step 6.5
+
+workflows:
+  pricing_simulation_flow:
+    name: "Fluxo de Simulação e Aprovação de Preços"
+    description: "Jornada completa desde configuração de arquitetura até aprovação e monitoramento"
+    user_roles: [analista, supervisor, admin]
+    category: inovação
+    steps:
+      - id: config_architecture
+        screen: arquitetura-precos
+        description: "Configurar regras de margem e arquitetura"
+        icon: diagram-3
+        inputs: []
+        outputs: [arquitetura_id, regras_margem, margem_minima]
+        next_actions:
+          - label: "Simular Impacto nos Preços"
+            target: simulacao-precos
+            icon: calculator
+            primary: true
+            context_transfer: [arquitetura_id, regras_margem, margem_minima]
+            roles: [analista, supervisor, admin]
+      
+      - id: simulate_scenario
+        screen: simulacao-precos
+        description: "Executar simulação com parâmetros"
+        icon: calculator
+        inputs: [arquitetura_id, regras_margem, margem_minima]
+        outputs: [cenario_id, resultado_simulacao, variacao_receita]
+        next_actions:
+          - label: "Salvar e Enviar para Aprovação"
+            target: fila-aprovacoes
+            icon: send
+            primary: true
+            context_transfer: [cenario_id, resultado_simulacao, variacao_receita]
+            condition: "cenario_salvo"
+            roles: [analista]
+          - label: "Ajustar Arquitetura"
+            target: arquitetura-precos
+            icon: arrow-left
+            primary: false
+            context_transfer: [arquitetura_id]
+            roles: [analista, supervisor, admin]
+      
+      - id: approval_queue
+        screen: fila-aprovacoes
+        description: "Supervisor avalia cenário simulado"
+        icon: list-check
+        inputs: [cenario_id, resultado_simulacao, variacao_receita]
+        outputs: [status_aprovacao, comentario_aprovacao, aprovado_por]
+        next_actions:
+          - label: "Ver Dashboard Atualizado"
+            target: dashboard
+            icon: speedometer2
+            primary: true
+            context_transfer: [cenario_id, status_aprovacao]
+            condition: "status_aprovacao == 'Aprovado'"
+            roles: [supervisor, admin]
+          - label: "Revisar Simulação"
+            target: simulacao-precos
+            icon: pencil
+            primary: false
+            context_transfer: [cenario_id, comentario_aprovacao]
+            condition: "status_aprovacao == 'Rejeitado'"
+            roles: [analista]
+      
+      - id: dashboard_monitoring
+        screen: dashboard
+        description: "Monitorar impacto das mudanças aprovadas"
+        icon: speedometer2
+        inputs: [cenario_id, status_aprovacao]
+        outputs: []
+        next_actions:
+          - label: "Nova Simulação"
+            target: simulacao-precos
+            icon: plus-circle
+            primary: false
+            roles: [analista, supervisor, admin]
+
+  revenue_analysis_flow:
+    name: "Análise de Revenue Management"
+    description: "Diagnóstico → Oportunidades → Implementação → Controle"
+    user_roles: [analista, supervisor, admin]
+    category: análise
+    steps:
+      - id: diagnostic
+        screen: dashboard-diagnostico
+        description: "Análise estatística e identificação de oportunidades"
+        icon: graph-up
+        inputs: []
+        outputs: [key_issues, oportunidades_priorizadas, baseline_metrics]
+        next_actions:
+          - label: "Criar Plano de Ação"
+            target: plano-acoes
+            icon: clipboard-check
+            primary: true
+            context_transfer: [key_issues, oportunidades_priorizadas, baseline_metrics]
+            roles: [supervisor, admin]
+      
+      - id: action_plan
+        screen: plano-acoes
+        description: "Definir soluções, quick wins e responsáveis"
+        icon: clipboard-check
+        inputs: [key_issues, oportunidades_priorizadas, baseline_metrics]
+        outputs: [plano_id, acoes_priorizadas, quick_wins]
+        next_actions:
+          - label: "Monitorar Implementação"
+            target: dashboard-controle
+            icon: speedometer2
+            primary: true
+            context_transfer: [plano_id, acoes_priorizadas]
+            roles: [supervisor, admin]
+          - label: "Simular Impacto Financeiro"
+            target: simulacao-impacto
+            icon: calculator
+            primary: false
+            context_transfer: [plano_id, baseline_metrics]
+            roles: [analista, supervisor]
+      
+      - id: control_dashboard
+        screen: dashboard-controle
+        description: "Painel de controle contínuo com KPIs e contingências"
+        icon: speedometer2
+        inputs: [plano_id, acoes_priorizadas]
+        outputs: [metricas_atuais, desvios_identificados]
+        next_actions:
+          - label: "Ajustar Plano de Ação"
+            target: plano-acoes
+            icon: pencil
+            primary: false
+            context_transfer: [plano_id, desvios_identificados]
+            condition: "desvios_identificados > 0"
+            roles: [supervisor, admin]
+
+  quick_wins_flow:
+    name: "Implementação de Quick Wins"
+    description: "Identificação → Priorização → Execução → Validação"
+    user_roles: [supervisor, admin]
+    category: implementação
+    steps:
+      - id: identify_quick_wins
+        screen: dashboard-diagnostico
+        description: "Identificar oportunidades de ganho rápido"
+        icon: lightbulb
+        inputs: []
+        outputs: [quick_wins_identificados, impacto_estimado]
+        next_actions:
+          - label: "Priorizar Quick Wins"
+            target: priorizacao-acoes
+            icon: sort-down
+            primary: true
+            context_transfer: [quick_wins_identificados, impacto_estimado]
+            roles: [supervisor, admin]
+      
+      - id: prioritize_actions
+        screen: priorizacao-acoes
+        description: "Priorizar ações por impacto e esforço"
+        icon: sort-down
+        inputs: [quick_wins_identificados, impacto_estimado]
+        outputs: [acoes_priorizadas, cronograma]
+        next_actions:
+          - label: "Executar Quick Wins"
+            target: execucao-acoes
+            icon: play-circle
+            primary: true
+            context_transfer: [acoes_priorizadas, cronograma]
+            roles: [supervisor, admin]
+      
+      - id: execute_actions
+        screen: execucao-acoes
+        description: "Executar e registrar progresso das ações"
+        icon: play-circle
+        inputs: [acoes_priorizadas, cronograma]
+        outputs: [acoes_executadas, resultados_parciais]
+        next_actions:
+          - label: "Validar Resultados"
+            target: dashboard-controle
+            icon: check-circle
+            primary: true
+            context_transfer: [acoes_executadas, resultados_parciais]
+            roles: [supervisor, admin]
+
+# Mapeamento inverso: tela → workflows que a incluem
+screen_workflows:
+  arquitetura-precos:
+    - workflow_id: pricing_simulation_flow
+      step_id: config_architecture
+  
+  simulacao-precos:
+    - workflow_id: pricing_simulation_flow
+      step_id: simulate_scenario
+  
+  fila-aprovacoes:
+    - workflow_id: pricing_simulation_flow
+      step_id: approval_queue
+  
+  dashboard:
+    - workflow_id: pricing_simulation_flow
+      step_id: dashboard_monitoring
+  
+  dashboard-diagnostico:
+    - workflow_id: revenue_analysis_flow
+      step_id: diagnostic
+    - workflow_id: quick_wins_flow
+      step_id: identify_quick_wins
+  
+  plano-acoes:
+    - workflow_id: revenue_analysis_flow
+      step_id: action_plan
+  
+  dashboard-controle:
+    - workflow_id: revenue_analysis_flow
+      step_id: control_dashboard
+    - workflow_id: quick_wins_flow
+      step_id: execute_actions
+  
+  priorizacao-acoes:
+    - workflow_id: quick_wins_flow
+      step_id: prioritize_actions
+  
+  execucao-acoes:
+    - workflow_id: quick_wins_flow
+      step_id: execute_actions

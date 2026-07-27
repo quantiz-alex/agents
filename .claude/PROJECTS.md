@@ -24,6 +24,7 @@ cd ../nome-do-projeto
 | Projeto | Slug | Status | Última Atividade |
 |---------|------|--------|-----------------|
 | Price2Farm — Sistema de Precificação Agrícola (UPL) | price2farm | 🟢 Build concluído | 2026-06-26 |
+| pmz-agents | pmz-agents | 🟢 Build concluído | 2026-07-24 |
 
 
 ---

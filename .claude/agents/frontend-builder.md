@@ -32,10 +32,30 @@ Todo o projeto é **100% Python**. O frontend usa EXCLUSIVAMENTE:
 
 `docs/requirements.yaml` e `docs/data_model.yaml` devem existir. Se não existirem, PARE imediatamente e retorne: `STATUS: blocked — execute data-engineer primeiro`.
 
+## Step 0 — Copiar Bibliotecas do Dash Starter (executar apenas uma vez)
+
+**Verificação:** Se `frontend/components/ui_components.py` já existe, pule este step.
+
+**Output:** `frontend/components/ui_components.py`, `frontend/components/charts.py`, `assets/theme.css`
+
+1. Copiar `../.claude/templates/components-library.py` para `frontend/components/ui_components.py`
+2. Copiar `../.claude/templates/charts-library.py` para `frontend/components/charts.py`
+3. Copiar `../.claude/templates/dash-starter/assets/theme.css` para `assets/theme.css`
+4. Criar pasta `assets/icons/` (vazia, para ícones Bootstrap Icons)
+
+**Ajuste da cor primária:** Após copiar, ler `.build/project.json` → `branding.primary` e substituir `#1045C8` por essa cor em:
+- `ui_components.py`: `CHART_COLORWAY[0]`
+- `charts.py`: `CHART_COLORWAY[0]`
+- `theme.css`: variáveis CSS se houver
+
+Checkpoint: `✓ Step 0 → bibliotecas copiadas`
+
 ## Contexto do Projeto
 
 - Você trabalha no diretório raiz do projeto. Especificações detalhadas em `../.claude/commands/` (skill06 a skill10, skill-design-system) — consulte se necessário.
-- **Guia de UI/UX:** `../.claude/skills/ui-ux-pro-max/SKILL.md` — leia as seções relevantes conforme o step atual (mapeamento na tabela "Integração no Pipeline Lighthouse" do guia).
+- **Guia Visual UI/UX:** `../.claude/skills/ui-ux-pro-max/GUIA-VISUAL-PMZ.md` — princípios de UX, tokens, componentes padrão e checklist completo.
+- **Guia Técnico UI/UX:** `../.claude/skills/ui-ux-pro-max/SKILL.md` — regras técnicas detalhadas por categoria (mapeamento na tabela "Integração no Pipeline Lighthouse").
+- **Bibliotecas Reutilizáveis:** `../.claude/templates/components-library.py` e `../.claude/templates/charts-library.py` — copie para `frontend/components/` no início do projeto.
 - Detecção de estado: `docs/design-system.yaml` (step 1.5), `docs/screens_definition.yaml` (step 6), 4 arquivos por página em `frontend/pages/<page>/` (step 7), `frontend/app.py` (step 8). Pule steps completos.
 - Após cada step: checkpoint em `.build/checkpoints/` e `✓ [step] → [arquivos]`.
 
@@ -133,19 +153,110 @@ screens:
 
 Validar: rotas únicas, `data_sources` referenciam entidades reais do `data_model.yaml`, roles em `access` existem em `requirements.yaml`.
 
+## Step 6.5 — Workflows (jornadas de usuário entre telas)
+
+**Input:** `docs/screens_definition.yaml`, `docs/requirements.yaml` → **Output:** `docs/workflows.yaml`
+
+**NOVO:** Gerar definição de workflows que conectam telas interdependentes.
+
+1. **Detectar padrões de fluxo:**
+   - Telas de configuração → simulação
+   - Simulação → aprovação
+   - Aprovação → dashboard
+   - Diagnóstico → plano de ação → controle
+
+2. **Gerar workflows automáticos:**
+   - Se existir `screen_type: simulation` + `approval_queue` → criar `pricing_simulation_flow`
+   - Se existir dashboard + relatórios → criar `reporting_flow`
+   - Agrupar por categoria: análise | inovação | implementação | controle
+
+3. **Estrutura de `workflows.yaml`:**
+   ```yaml
+   workflows:
+     <workflow_id>:
+       name: string
+       description: string
+       user_roles: [string]
+       category: análise | inovação | implementação | controle
+       steps:
+         - id: string
+           screen: string  # route da tela
+           description: string
+           icon: string
+           inputs: [string]   # campos recebidos
+           outputs: [string]  # campos fornecidos
+           next_actions:
+             - label: string
+               target: string  # route próxima tela
+               icon: string
+               primary: bool
+               context_transfer: [string]
+               condition: string  # opcional
+               roles: [string]    # opcional
+   
+   screen_workflows:
+     <screen_route>:
+       - workflow_id: string
+         step_id: string
+   ```
+
+4. **Atualizar `screens_definition.yaml`:**
+   - Adicionar campo `workflow` em cada página com mapeamento reverso
+
+5. **Copiar workflow_components.py:**
+   - Copiar `.claude/templates/workflow_components.py` para `frontend/components/workflow_components.py`
+
+**Referência:** Consultar `.claude/commands/skill-workflow-definition.md` e `.claude/templates/workflows-template.yaml`
+
+Checkpoint: `✓ Step 6.5 → workflows.yaml + workflow_components.py`
+
 ## Step 7 — Frontend Pages (4 arquivos por página)
 
 **Input:** `docs/screens_definition.yaml`, `docs/design-system.yaml` → **Output:** `frontend/pages/<page>/` com 4 arquivos
 
-Consulte `../.claude/skills/ui-ux-pro-max/SKILL.md` §8 (Forms & Feedback) para formulários e filtros, §7 (Loading & Transições) para `dcc.Loading` e estados vazios, §3 (Performance Dash) para padrão de callbacks.
+Consulte `../.claude/skills/ui-ux-pro-max/GUIA-VISUAL-PMZ.md` para princípios de UX e componentes padrão. Use SEMPRE as bibliotecas copiadas no Step 0.
 
 Checklist primeiro: verificar no disco quais páginas já têm os 4 arquivos; gerar apenas pendentes. UMA página por vez, na ordem:
 
 1. **`<page>_queries.py`** — funções `carregar_<entidade>()` que leem `mock_data/<entidade>.csv` via `pd.read_csv()` (path: `Path(__file__).parent.parent.parent.parent / "mock_data"`), com parâmetros de filtro conforme a tela. NUNCA conectar ao banco.
 
-2. **`<page>_components.py`** — `build_grid(df)` com `dash_ag_grid.AgGrid` (columnDefs da tela, defaultColDef sortable/resizable, dashGridOptions com paginação 20, className ag-theme-alpine, height 500px); `build_kpis(df)` com cards de borda lateral colorida; `build_<tipo>_chart(df)` com plotly.express + layout do design system; `build_filtros()` em card compacto com botão Filtrar `color="primary" className="w-100"`.
+2. **`<page>_components.py`** — **USAR BIBLIOTECAS:**
+   - `from frontend.components.ui_components import data_table, kpi_card, card, filter_card, button`
+   - `from frontend.components.charts import bar_ranking, donut, line_chart, etc`
+   - `build_grid(df)` → usar `data_table(df, id, numeric_cols, status_col)`
+   - `build_kpis(df)` → usar `kpi_card(label, atual, simulado, delta_pct, better)` para cada KPI
+   - `build_<tipo>_chart(df)` → usar helpers de `charts.py` (bar_ranking, donut, etc)
+   - `build_filtros()` → usar `filter_card(filters, button_id)` com lista de `dbc.Col` para cada filtro
 
-3. **`<page>_page.py`** — `dash.register_page(__name__, path="/<page>", title, name)` + `layout()` retornando `html.Div` raiz padrão com: header (H4 + botões de ação), filtros, row de KPIs (id `<page>-kpis-row`), card principal com grid/chart.
+3. **`<page>_page.py`** — **USAR app_shell com workflow:**
+   - `from frontend.components.ui_components import app_shell_with_workflow, kpi_row`
+   - `dash.register_page(__name__, path="/<page>", title, name)`
+   - `layout()` retorna `app_shell_with_workflow(active_key, icon_key, title, subtitle, content, actions, workflow_context)`
+   - `content` = lista com filtros, `kpi_row(kpis)`, cards com grid/chart
+   - **workflow_context** (se a página participa de workflow):
+     ```python
+     @callback(Output("page-content", "children"), Input("workflow-context", "data"))
+     def layout(workflow_ctx):
+         workflow_context = None
+         if workflow_ctx and workflow_ctx.get("current_workflow"):
+             workflow_context = {
+                 "workflow_id": workflow_ctx["current_workflow"],
+                 "step_id": workflow_ctx["current_step"],
+                 "context_data": workflow_ctx.get("context_data", {}),
+                 "user_role": workflow_ctx.get("user_role"),
+             }
+         
+         return app_shell_with_workflow(
+             active_key="<page>",
+             icon_key="<icon>",
+             title="<title>",
+             subtitle="<subtitle>",
+             content=[...],
+             actions=[...],
+             workflow_context=workflow_context,
+         )
+     ```
+   - **NUNCA** montar header/estrutura manualmente — sempre usar `app_shell_with_workflow()`
 
 4. **`<page>_callbacks.py`** — `register_callbacks()` contendo todos os `@callback`. Consultar `../.claude/commands/skill08-dash-callback.md` para os padrões a aplicar conforme os `actions.type` da tela:
    - Sempre: Padrão 1 (filtrar grid)
@@ -155,6 +266,8 @@ Checklist primeiro: verificar no disco quais páginas já têm os 4 arquivos; ge
    - Se row actions: Padrão 5 (cellClicked → modal)
    - Se `download`: Padrão 6 (export Excel)
    - Toast (Padrão 7): sempre incluir `dbc.Toast` no layout e os 3 Outputs padrão.
+
+**REGRA CRÍTICA:** NUNCA recriar componentes que já existem nas bibliotecas. SEMPRE importar e usar `app_shell`, `kpi_card`, `data_table`, `filter_card`, helpers de charts, etc.
 
 Após cada página: `✓ <page> → 4 arquivos`. Validar sintaxe Python de cada arquivo (`python -m py_compile`).
 
@@ -358,7 +471,24 @@ if __name__ == "__main__":
 
 ## Pré-Entrega (antes do relatório final)
 
-Execute o **Checklist Pré-Entrega** de `../.claude/skills/ui-ux-pro-max/SKILL.md` (seção final). Marque cada item. Se algum item falhar, corrija antes de reportar `STATUS: success`.
+Execute AMBOS os checklists:
+
+1. **Checklist Visual:** `../.claude/skills/ui-ux-pro-max/GUIA-VISUAL-PMZ.md` (seção 8)
+   - [ ] Usa `app_shell()` em todas as páginas
+   - [ ] KPIs mostram comparação atual × simulado + delta colorido
+   - [ ] Números em mono tabular
+   - [ ] Status como badges coloridos
+   - [ ] Gráficos com paleta categórica
+   - [ ] Nenhum hex/valor solto no código
+   - [ ] Filtros em card compacto com botão `w-100`
+   - [ ] AG Grid com floatingFilter, paginação 20
+   - [ ] Raiz: `html.Div(className="page-wrapper px-4 py-3")`
+   - [ ] Nenhum `dbc.Container` como raiz
+
+2. **Checklist Técnico:** `../.claude/skills/ui-ux-pro-max/SKILL.md` (seção final)
+   - Estrutura, estilo, interação, formulários, navegação, gráficos, acessibilidade, Python
+
+Marque cada item. Se algum item falhar, corrija antes de reportar `STATUS: success`.
 
 ## Relatório Final (sua última mensagem)
 

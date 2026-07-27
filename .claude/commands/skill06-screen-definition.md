@@ -28,6 +28,13 @@ pages:
         mock_file: string     # ex.: mock_data/clientes.csv
     has_simulation:     bool  # true → gerar bloco de simulação (skill-simulation)
     has_approval_flow:  bool  # true → gerar fluxo de aprovação (skill-approval-flow)
+    
+    # NOVO: Workflow e navegação contextual
+    workflow:
+      belongs_to: [string]    # IDs dos workflows que incluem esta tela
+      step_id: string         # ID do step neste workflow
+      receives_context: [string]  # campos recebidos do step anterior
+      provides_context: [string]  # campos fornecidos para próximo step
     components:
       - id: string
         type: filter | grid | modal | form | card | chart | kpi | button | tabs | simulation_panel | approval_bar
@@ -172,8 +179,10 @@ config:
 1. Executar `/skill00-validator step6` automaticamente
 2. Verificar que todas as rotas são únicas
 3. Verificar que data_sources referenciam entidades existentes
-4. Se validação falhar → reportar erros e sugestões
-5. Se validação passar → criar checkpoint e avançar
+4. **NOVO:** Invocar `skill-workflow-definition` para gerar `docs/workflows.yaml` baseado nas telas definidas
+5. **NOVO:** Atualizar `screens_definition.yaml` com campo `workflow` em cada página (mapeamento reverso de `workflows.yaml`)
+6. Se validação falhar → reportar erros e sugestões
+7. Se validação passar → criar checkpoint e avançar
 
 ## Argumento opcional (módulo específico)
 

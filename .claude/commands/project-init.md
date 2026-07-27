@@ -56,9 +56,22 @@ Criar `../<project_slug>/` com:
         support/
     integration/
   validation_reports/
+  assets/
+    icons/
   .build/
     checkpoints/
 ```
+
+### 3.5. Copiar Bibliotecas do Dash Starter
+
+Copiar os arquivos do dash-starter template para o novo projeto:
+
+1. Copiar `.claude/templates/components-library.py` para `../<project_slug>/frontend/components/ui_components.py`
+2. Copiar `.claude/templates/charts-library.py` para `../<project_slug>/frontend/components/charts.py`
+3. Copiar `.claude/templates/dash-starter/assets/theme.css` para `../<project_slug>/assets/theme.css`
+4. Criar pasta `../<project_slug>/assets/icons/` (vazia, para ícones Bootstrap Icons)
+
+**Nota:** As cores primárias serão ajustadas pelo frontend-builder no Step 0 ao ler `.build/project.json`.
 
 ### 4. Gerar `roadmap.md` a partir do Template
 
@@ -80,6 +93,7 @@ Ler `.claude/PROJECTS.md` (criar com o cabeçalho padrão se não existir). Adic
 ✅ Projeto '{project_name}' criado!
 
 📁 Localização: ../{project_slug}/
+📚 Bibliotecas UI/UX copiadas: ui_components.py, charts.py, theme.css
 
 Próximos passos:
   1. Editar ../{project_slug}/roadmap.md — preencher todos os TODO
@@ -92,6 +106,7 @@ Próximos passos:
   "gere a camada de dados", "regenere o frontend", "crie os testes"
 
 💡 O roadmap.md é o único arquivo que você escreve — todo o resto é gerado.
+💡 As bibliotecas UI/UX garantem consistência visual automática em todas as páginas.
 ```
 
 ---

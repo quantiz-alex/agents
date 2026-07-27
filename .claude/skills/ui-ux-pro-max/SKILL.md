@@ -9,6 +9,22 @@ Guia de design e UX para aplicações business em **Dash/Python puro**. Usado pe
 
 > **Stack inegociável:** Dash 2.14+ · Dash Bootstrap Components (dbc) · Dash AG Grid · Plotly · Pandas/NumPy. Nenhuma regra deste guia deve introduzir React, Vue, HTML/CSS/JS separados ou qualquer tecnologia fora deste stack.
 
+> **Guia Visual Complementar:** Para princípios de UX, tokens detalhados, estrutura de página e exemplos de código, consulte `GUIA-VISUAL-PMZ.md` nesta mesma pasta. Este documento (SKILL.md) foca em regras técnicas categorizadas; o GUIA-VISUAL-PMZ.md foca em princípios e padrões visuais.
+
+---
+
+## Princípios de UX (do GUIA-VISUAL-PMZ.md)
+
+Estes princípios devem guiar TODAS as decisões de design:
+
+1. **O dado é o herói** — Layout, cor e tipografia existem para tornar números legíveis e comparáveis, nunca para decorar
+2. **Uma tela = um objetivo** — Cabeçalho diz o que é e o que fazer; o resto sustenta isso
+3. **Comparação em vez de valor solto** — Sempre mostrar baseline + delta % com cor semântica
+4. **Cor com significado** — Verde=positivo, vermelho=negativo, âmbar=atenção, azul=info
+5. **Densidade para uso profissional** — Tabelas compactas, KPIs generosos
+6. **Sem tela vazia e sem tela sufocada** — Respiro consistente
+7. **Estado sempre visível** — Badges coloridos, não texto simples
+
 ---
 
 ## Integração no Pipeline Lighthouse
@@ -46,6 +62,53 @@ O agente **frontend-builder** deve consultar este guia nos seguintes momentos:
 - Lógica de backend puro (FastAPI, SQLAlchemy)
 - Design do modelo de dados ou SQL
 - Configuração de infraestrutura
+
+---
+
+## Bibliotecas de Componentes Reutilizáveis
+
+**REGRA CRÍTICA:** NUNCA recriar componentes que já existem nas bibliotecas. SEMPRE importar e usar.
+
+### Disponíveis em `.claude/templates/`:
+
+**`components-library.py`** → copiar para `frontend/components/ui_components.py`
+- `app_shell(active_key, icon_key, title, subtitle, content, actions)` — Shell completo
+- `kpi_card(label, atual, simulado, delta_pct, better)` — KPI com comparação + delta
+- `kpi_row(cards)` — Row de KPI cards
+- `data_table(df, id, numeric_cols, status_col, page_size)` — AG Grid estilizada
+- `page_header(icon_key, title, subtitle, actions)` — Cabeçalho padrão
+- `card(title, body, right)` — Card genérico
+- `button(label, primary, icon_key)` — Botão padrão
+- `filter_card(filters, button_id)` — Card de filtros compacto
+- Helpers: `format_currency()`, `format_percent()`, `format_number()`, `status_badge_style()`
+
+**`charts-library.py`** → copiar para `frontend/components/charts.py`
+- `bar_ranking()`, `bar_vertical()`, `variation_bars()` — Barras
+- `donut()`, `pie()` — Pizza/rosca
+- `line_chart()`, `multi_line_chart()`, `area_chart()` — Linhas
+- `scatter_chart()`, `histogram()` — Outros
+- Helper: `set_primary_color(color)`, `get_empty_state_message()`
+
+### Exemplo de uso:
+
+```python
+from frontend.components.ui_components import app_shell, kpi_card, kpi_row, data_table
+from frontend.components.charts import bar_ranking
+
+def layout():
+    kpis = [
+        kpi_card("Faturamento", "R$ 1.899.674", "R$ 1.969.961", +3.7, "up"),
+        kpi_card("Custo", "R$ 1.181.668", "R$ 1.335.509", +13.0, "down"),
+    ]
+    
+    return app_shell(
+        active_key="dashboard",
+        icon_key="speedometer2",
+        title="Dashboard",
+        subtitle="Visão executiva",
+        content=[kpi_row(kpis), dcc.Graph(figure=bar_ranking([...], [...]))]
+    )
+```
 
 ---
 
@@ -113,13 +176,14 @@ O agente **frontend-builder** deve consultar este guia nos seguintes momentos:
 
 ### 5. Layout & Dashboard (ALTO)
 
-- `page-wrapper-root` — Raiz de toda página: `html.Div(className="page-wrapper px-4 py-3", style={"background": "#f8fafc", "minHeight": "100vh"})`
+- `use-app-shell` — **OBRIGATÓRIO:** Toda página deve usar `app_shell(active_key, icon_key, title, subtitle, content, actions)` da biblioteca. NUNCA montar estrutura manualmente.
+- `page-wrapper-root` — Raiz de toda página (quando não usar app_shell): `html.Div(className="page-wrapper px-4 py-3", style={"background": "#f8fafc", "minHeight": "100vh"})`
 - `no-container-root` — **NUNCA** usar `dbc.Container` como raiz do `layout()`
 - `sidebar-fixed` — Sidebar é fixa em 240px; `CONTENT_STYLE = {"marginLeft": "240px"}`; login usa `CONTENT_FULL_STYLE = {"marginLeft": "0"}`
 - `visual-hierarchy` — Ordem vertical de seções: Header (H4 + botões) → Filtros (card compacto) → KPIs (Row) → Grid/Chart (card principal)
-- `filter-at-top` — Filtros sempre em card compacto no topo: `dbc.Card(dbc.CardBody(className="py-2"), className="shadow-sm border-0 mb-3")`
-- `kpi-row` — KPIs em `dbc.Row([dbc.Col(kpi, md=3) for kpi in kpis])` com `id="<page>-kpis-row"` para atualização via callback
-- `grid-in-card` — AG Grid sempre dentro de `dbc.Card` com `dbc.CardHeader` descritivo
+- `filter-at-top` — Filtros sempre usando `filter_card(filters, button_id)` da biblioteca
+- `kpi-row` — KPIs usando `kpi_row([kpi_card(...), kpi_card(...)])` da biblioteca
+- `grid-in-card` — AG Grid sempre usando `data_table(df, id, numeric_cols, status_col)` da biblioteca dentro de `card(title, body)`
 - `column-sizing` — Filtros: `dbc.Col(md=2)` a `md=4` conforme o tipo; botão filtrar: `dbc.Col(md=1)` com `className="d-grid"`
 - `z-index-layers` — Modais (`z=1050`), Sidebar (`z=100`), conteúdo (`z=0`); nunca conflitar camadas
 
@@ -318,3 +382,28 @@ Execute antes de reportar `STATUS: success`.
 - [ ] Tipagem Python em todas as funções (`def carregar_entidade(campo: str | None = None) -> pd.DataFrame:`)
 - [ ] Cada arquivo passa `python -m py_compile <arquivo>`
 - [ ] Nenhum import de biblioteca fora do stack (sem `matplotlib`, `flask`, `streamlit`, etc.)
+
+### Uso de Bibliotecas (CRÍTICO)
+- [ ] Todas as páginas usam `app_shell()` da biblioteca (não montam estrutura manualmente)
+- [ ] KPIs usam `kpi_card()` com comparação atual×simulado (não valores soltos)
+- [ ] Tabelas usam `data_table()` da biblioteca (não AG Grid manual)
+- [ ] Gráficos usam helpers de `charts.py` (não Plotly manual)
+- [ ] Filtros usam `filter_card()` da biblioteca
+- [ ] Nenhum componente recriado que já existe na biblioteca
+
+---
+
+## Anti-Padrões Críticos (NUNCA FAZER)
+
+❌ **Valor solto sem comparação** — sempre usar `kpi_card(label, atual, simulado, delta_pct, better)`  
+❌ **Estrutura manual de página** — sempre usar `app_shell()`  
+❌ **Hex/style inline** — usar tokens e className  
+❌ **Status como texto** — usar badge colorido  
+❌ **Gráfico monocromático** — usar paleta categórica  
+❌ **Coluna truncada** — dar largura adequada ou scroll  
+❌ **dbc.Container como raiz** — usar html.Div com page-wrapper  
+❌ **Números sem mono tabular** — sempre usar font mono para números  
+❌ **Filtro sem botão** — sempre ter botão "Filtrar" explícito  
+❌ **Grid sem paginação** — sempre paginar com 20 itens  
+❌ **Callback sem loading** — envolver em dcc.Loading se > 300ms  
+❌ **Recriar componente da biblioteca** — sempre importar e usar
