@@ -32,6 +32,8 @@ Todo o projeto é **100% Python**. O frontend usa EXCLUSIVAMENTE:
 
 `docs/requirements.yaml` e `docs/data_model.yaml` devem existir. Se não existirem, PARE imediatamente e retorne: `STATUS: blocked — execute data-engineer primeiro`.
 
+`docs/business_logic.yaml` também deve existir (gerado no Step 2.7 do data-engineer). Se não existir — ex.: projeto antigo gerado antes desta skill existir — trate como "nenhuma regra classificada" (nenhum `screen_type: simulation` será atribuído por falta de fórmula declarada) e registre um aviso no relatório final sugerindo rodar `/skill-business-logic` antes de regenerar o frontend.
+
 ## Step 0 — Copiar Bibliotecas do Dash Starter (executar apenas uma vez)
 
 **Verificação:** Se `frontend/components/ui_components.py` já existe, pule este step.
@@ -52,7 +54,7 @@ Checkpoint: `✓ Step 0 → bibliotecas copiadas`
 
 ## Contexto do Projeto
 
-- Você trabalha no diretório raiz do projeto. Especificações detalhadas em `../.claude/commands/` (skill06 a skill10, skill-design-system) — consulte se necessário.
+- Você trabalha no diretório raiz do projeto. Especificações detalhadas em `../.claude/commands/` (skill06 a skill10, skill-design-system, skill-business-logic) — consulte se necessário. **`skill06-screen-definition.md` é a fonte autoritativa do schema de `screens_definition.yaml`** — o Step 6 abaixo é um resumo operacional.
 - **Guia Visual UI/UX:** `../.claude/skills/ui-ux-pro-max/GUIA-VISUAL-PMZ.md` — princípios de UX, tokens, componentes padrão e checklist completo.
 - **Guia Técnico UI/UX:** `../.claude/skills/ui-ux-pro-max/SKILL.md` — regras técnicas detalhadas por categoria (mapeamento na tabela "Integração no Pipeline Lighthouse").
 - **Bibliotecas Reutilizáveis:** `../.claude/templates/components-library.py` e `../.claude/templates/charts-library.py` — copie para `frontend/components/` no início do projeto.
@@ -123,13 +125,19 @@ Após gerar os 4 arquivos padrão de uma página (step 7), verificar em `docs/sc
 
 ## Step 6 — Screen Definition
 
-**Input:** `docs/requirements.yaml` → **Output:** `docs/screens_definition.yaml`
+**Input:** `docs/requirements.yaml`, `docs/business_logic.yaml` → **Output:** `docs/screens_definition.yaml`
+
+**O schema autoritativo de `screens_definition.yaml` é `../.claude/commands/skill06-screen-definition.md` — execute-o integralmente (schema completo, incluindo `screen_type: simulation|approval_queue`, `has_simulation`/`has_approval_flow`, `simulation_panel`/`approval_bar`). O resumo abaixo é operacional, não uma spec alternativa; em caso de divergência, `skill06-screen-definition.md` prevalece.**
 
 Consulte `../.claude/skills/ui-ux-pro-max/SKILL.md` §10 (tabela "Tipo de gráfico → dado") ao definir o `type` de componentes `chart`, e §5 (Layout & Dashboard) para hierarquia visual das seções.
 
-**Use os campos estruturados de `requirements.yaml`** — `screen_type`, `icon`, `kpis`, `charts`, `filters`, `actions` — para gerar a definição com alta fidelidade ao roadmap, sem inferências desnecessárias.
+**Use os campos estruturados de `requirements.yaml`** — `screen_type`, `icon`, `kpis`, `charts`, `filters`, `actions` — para gerar a definição com alta fidelidade ao roadmap, sem inferências desnecessárias. **Antes de decidir `screen_type`/`has_simulation`/`simulation_panel.config`, leia `docs/business_logic.yaml`:**
+- `screen_type: simulation` só é atribuído se existir ≥1 regra `logic_type: interactive_formula` vinculada ao módulo. Sem essa regra, mesmo que o roadmap mencione "simulação", use `screen_type: mixed` e reporte um aviso — não crie uma tela de simulação vazia de fórmula.
+- `simulation_panel.config.params` é preenchido diretamente a partir de `formula.variables[].interactive == true` daquela regra (nome, `unit`, `min`, `max`) — nunca adivinhado.
+- `simulation_panel.config.result_kpis`/`comparativo_columns` vêm de `formula.output_fields`.
+- Colunas de grid cujo valor vem de uma regra `logic_type: derived_field` usam `column.type: computed` com `compute_from: <rule id>` (ver `skill09-aggrid.md`) — nunca assuma que o campo já existe pré-computado no mock.
 
-Uma tela por módulo:
+Uma tela por módulo — resumo do schema completo (ver `skill06-screen-definition.md` para a estrutura integral de `simulation_panel`/`approval_bar`/`workflow`):
 
 ```yaml
 screens:
@@ -137,17 +145,19 @@ screens:
     title: string            # título legível para o header da página
     route: /<slug>           # rotas ÚNICAS
     module: string
-    screen_type: dashboard|grid|form|report|mixed
-    icon: <nome-bootstrap>   # sem prefixo "bi-" — ex: speedometer2, tag, people
+    screen_type: dashboard|grid|form|report|mixed|simulation|approval_queue
+    icon: <nome-bootstrap>   # sem prefixo "bi-" — ex: speedometer2, tag, people, calculator, check2-circle
     data_sources: [<entidades do data_model>]
     access: [{role, permissions: full|[string]}]  # de requirements.yaml
+    has_simulation: bool      # true → invoca skill-simulation.md (ver business_logic.yaml acima)
+    has_approval_flow: bool   # true → invoca skill-approval-flow.md
     kpis:                    # apenas para screen_type: dashboard
       - {id: <screen>-kpi-<slug>, label, metric, format: number|currency|percent}
     charts:
-      - {id: <screen>-chart-<n>, type: bar|line|area|pie|scatter, title, x_field, y_field}
+      - {id: <screen>-chart-<n>, type: bar|line|area|pie|scatter|waterfall|elasticity_curve|scenario_comparison, title, x_field, y_field}
     components:
-      - {type: filter|grid|chart|modal|form|kpi|tabs|card, id: <screen>-<tipo>, label, config}
-    actions: [{id, label, type: button|export|import, color}]
+      - {type: filter|grid|chart|modal|form|kpi|tabs|card|simulation_panel|approval_bar, id: <screen>-<tipo>, label, config}
+    actions: [{id, label, type: button|export|import|simulate|submit_approval|approve|reject, color}]
     filters: [{field, label, type: text|select|date|date_range|number, options}]
 ```
 

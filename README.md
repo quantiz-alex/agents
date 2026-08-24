@@ -51,7 +51,7 @@ FASE 2  frontend-builder ┐  design system → telas → páginas Dash → app 
 cp .env.example .env                  # preencher credenciais (ou manter USE_SQLITE=true p/ dev)
 pip install -r requirements.txt
 uvicorn backend.main:app --reload     # API  → http://localhost:8000
-python frontend/app.py                # UI   → http://localhost:1050
+python -m frontend.app                # UI   → http://localhost:1050
 ```
 
 Apresente o sistema ao cliente. Ajustes de tela? Peça em linguagem natural:

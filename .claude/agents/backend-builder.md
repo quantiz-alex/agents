@@ -16,9 +16,11 @@ Todo o projeto é **100% Python**. O backend usa EXCLUSIVAMENTE: **FastAPI** + *
 
 `backend/config.py`, `backend/database.py`, `docs/data_model.yaml` e `docs/api_contracts.yaml` devem existir. Se não existirem, PARE e retorne: `STATUS: blocked — execute data-engineer primeiro`.
 
+`docs/business_logic.yaml` também deveria existir (gerado no Step 2.7 do data-engineer) — se ausente, trate como "nenhuma regra classificada" (nenhum bloco de simulação/validação será gerado por falta de fórmula declarada) e registre aviso no relatório final.
+
 ## Contexto do Projeto
 
-- Você trabalha no diretório raiz do projeto. Especificação detalhada em `../.claude/commands/skill11-fastapi.md` e `skill-auth.md` — consulte se necessário.
+- Você trabalha no diretório raiz do projeto. Especificação detalhada em `../.claude/commands/skill11-fastapi.md` e `skill-auth.md` — consulte se necessário. `skill11-fastapi.md` tem os blocos de Simulação, Validação e Aprovação (condicionados a `docs/business_logic.yaml`/`docs/requirements.yaml`) além do CRUD básico.
 - Detecção de estado: entidade completa = 5 arquivos no disco (`backend/{models,schemas,repositories,services,api/routes}/<entity>.py`); `backend/auth.py` (step 9.5); `requirements.txt` + `README.md` (step 10). Pule o que está completo.
 - Após cada step: checkpoint em `.build/checkpoints/` e `✓ [step] → [arquivos]`.
 
@@ -36,21 +38,21 @@ Todo o projeto é **100% Python**. O backend usa EXCLUSIVAMENTE: **FastAPI** + *
 
 ## Step 9 — Entidades FastAPI
 
-**Input:** `docs/data_model.yaml`, `docs/api_contracts.yaml` → **Output:** 5 arquivos por entidade + `backend/main.py`
+**Input:** `docs/data_model.yaml`, `docs/api_contracts.yaml`, `docs/business_logic.yaml` → **Output:** 5 arquivos por entidade + `backend/main.py`
 
 Checklist primeiro: listar entidades com `table:` (ignorar enums), verificar no disco quais têm os 5 arquivos, gerar apenas pendentes. UMA entidade por vez:
 
 1. **`backend/models/<entity>.py`** — classe SQLAlchemy herdando de `Base` (`backend.database`): colunas conforme data_model (String(N), Integer, Numeric(P,S), Boolean, DateTime), `id` PK autoincrement com index, FKs com `ForeignKey("<table>.id")`, `created_at`/`updated_at` com `server_default=func.now()` (updated_at com `onupdate=func.now()`), relationships.
 
-2. **`backend/schemas/<entity>.py`** — Pydantic v2: `<Entity>Base` (campos editáveis com `Field` e validações de tamanho), `<Entity>Create(Base)`, `<Entity>Update` (todos os campos `Optional`), `<Entity>Response(Base)` com id + timestamps e `model_config = ConfigDict(from_attributes=True)`.
+2. **`backend/schemas/<entity>.py`** — Pydantic v2: `<Entity>Base` (campos editáveis com `Field` e validações de tamanho), `<Entity>Create(Base)`, `<Entity>Update` (todos os campos `Optional`), `<Entity>Response(Base)` com id + timestamps e `model_config = ConfigDict(from_attributes=True)`. **Se `docs/business_logic.yaml` tiver regra `logic_type: validation` vinculada à entidade**, aplicar o "Bloco de Validação de Regra de Negócio" de `skill11-fastapi.md` em `<Entity>Create`/`<Entity>Update` — `@model_validator` implementando `validation.condition` literal, `raise ValueError(validation.error_message)` quando `severity: block`.
 
 3. **`backend/repositories/<entity>.py`** — funções: `get_all(db, skip, limit)` (filtrar `ativo == True` se existir), `get_by_id(db, id)`, `create(db, data)` (model_dump + add/commit/refresh), `update(db, id, data)` (`exclude_unset=True`), `delete(db, id)` (soft se `ativo`, hard senão). Retornar `None`/`False` quando não encontrado.
 
-4. **`backend/services/<entity>.py`** — funções `listar`, `obter`, `criar`, `atualizar`, `deletar` chamando o repository; levantar `HTTPException(404)` com mensagem em português quando não encontrado. Regras de negócio do requirements.yaml entram aqui.
+4. **`backend/services/<entity>.py`** — funções `listar`, `obter`, `criar`, `atualizar`, `deletar` chamando o repository; levantar `HTTPException(404)` com mensagem em português quando não encontrado. **Se `docs/business_logic.yaml` tiver regra `logic_type: interactive_formula` vinculada à entidade**, aplicar o "Bloco de Simulação" de `skill11-fastapi.md`: função `simular()` implementando `formula.expression` (a MESMA fórmula usada no frontend pela `skill-simulation.md` — paridade front/back). **Nunca gere a função sem também gerar a rota do item 5 que a chama** — uma função de cálculo definida e nunca referenciada é o bug que esta mudança existe para evitar.
 
-5. **`backend/api/routes/<entity>.py`** — `APIRouter(prefix="/<entities>", tags=["<Entities>"])` com: GET `/` (list, response_model `list[<Entity>Response]`), GET `/{id}`, POST `/` (status 201), PUT `/{id}`, DELETE `/{id}` (status 204). Todos com `db: Session = Depends(get_db)`.
+5. **`backend/api/routes/<entity>.py`** — `APIRouter(prefix="/<entities>", tags=["<Entities>"])` com: GET `/` (list, response_model `list[<Entity>Response]`), GET `/{id}`, POST `/` (status 201), PUT `/{id}`, DELETE `/{id}` (status 204). Todos com `db: Session = Depends(get_db)`. **Se o item 4 gerou `simular()`**, adicionar aqui `POST /simular` chamando `service.simular(db, params)` — ver "Bloco de Simulação" em `skill11-fastapi.md`.
 
-Após cada entidade: `✓ <entidade> → 5 arquivos`. Validar sintaxe (`python -m py_compile`).
+Após cada entidade: `✓ <entidade> → 5 arquivos`. Validar sintaxe (`python -m py_compile`). Validar também que toda função `simular`/`calcular_*` gerada no item 4 tem uma chamada correspondente no item 5 (mesma checagem que `/skill00-validator` etapa 9 fará) — nunca reportar `STATUS: success` com uma função de cálculo sem rota que a chame.
 
 ### `backend/main.py` (após todas as entidades)
 
@@ -76,7 +78,7 @@ Verificar que `SECRET_KEY` não aparece como string literal em nenhum arquivo ge
 **Output:** `requirements.txt`, `README.md`
 
 - **`requirements.txt`**: dash, dash-bootstrap-components, dash-ag-grid, plotly, pandas, numpy, fastapi, uvicorn[standard], sqlalchemy, pydantic, pydantic-settings, python-jose[cryptography], passlib[bcrypt], python-multipart, pyodbc, python-dotenv, pytest, httpx, requests — com versões mínimas atuais.
-- **`README.md`**: nome/descrição (de `.build/project.json`), tabela de stack, estrutura de pastas, como rodar (`cp .env.example .env`, `pip install -r requirements.txt`, `uvicorn backend.main:app --reload` → :8000, `python frontend/app.py` → :1050), páginas disponíveis (de `screens_definition.yaml` se existir), seção obrigatória **Testes** (comandos pytest e cypress), próximos passos (integração SQL Server real).
+- **`README.md`**: nome/descrição (de `.build/project.json`), tabela de stack, estrutura de pastas, como rodar (`cp .env.example .env`, `pip install -r requirements.txt`, `uvicorn backend.main:app --reload` → :8000, `python -m frontend.app` → :1050), páginas disponíveis (de `screens_definition.yaml` se existir), seção obrigatória **Testes** (comandos pytest e cypress), próximos passos (integração SQL Server real).
 
 ## Relatório Final (sua última mensagem)
 

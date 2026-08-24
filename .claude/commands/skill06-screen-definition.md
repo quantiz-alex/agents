@@ -1,14 +1,20 @@
 # Skill 06 — Screen Definition Skill
 
-Leia `docs/requirements.yaml` e gere a definição de telas em `docs/screens_definition.yaml`.
+Leia `docs/requirements.yaml` e `docs/business_logic.yaml`, e gere a definição de telas em `docs/screens_definition.yaml`.
+
+**Este é o schema autoritativo de `screens_definition.yaml`** — `frontend-builder.md` Step 6 é apenas um resumo operacional deste arquivo; em caso de divergência, esta skill prevalece.
 
 ## Instruções
 
-1. Leia APENAS `docs/requirements.yaml`.
+1. Leia `docs/requirements.yaml` e `docs/business_logic.yaml` (se este último não existir, trate como "nenhuma regra classificada" — ver passo 6).
 2. Para cada módulo/feature, defina a(s) tela(s) correspondentes.
 3. Especifique os componentes de cada tela com seus dados e comportamentos.
 4. Gere `docs/screens_definition.yaml` com a estrutura abaixo.
 5. Se o arquivo já existir, aplique patch incremental.
+6. **Decisão de `screen_type`/`has_simulation`/`has_approval_flow` a partir de `business_logic.yaml`, não de inferência sobre texto livre:**
+   - `screen_type: simulation` (ou `has_simulation: true`) só quando existir ≥1 regra com `logic_type: interactive_formula` vinculada ao módulo daquela tela. Se o roadmap descrever uma "simulação" mas nenhuma regra `interactive_formula` foi extraída (`business_logic.yaml` ausente, ou todas as regras do módulo ficaram `parsed: false`), NÃO atribua `screen_type: simulation` — use `screen_type: mixed` e registre um aviso: "módulo descreve simulação mas nenhuma fórmula pôde ser extraída — revisar `business_rules` no roadmap".
+   - `has_approval_flow: true` quando existir ≥1 regra `logic_type: workflow_rule` com `workflow.trigger_action` em `submit_approval|approve|reject` vinculada ao módulo.
+   - Colunas de grid/report cujo valor vem de uma regra `logic_type: derived_field` usam `column.type: computed` (ver `skill09-aggrid.md`) em vez de assumir que o campo já existe pré-computado em `data_model.yaml`/mock.
 
 ## Estrutura de Saída
 
@@ -92,7 +98,8 @@ config:
   columns:
     - field: string
       header: string
-      type: text | number | date | currency | badge | action
+      type: text | number | date | currency | badge | action | computed
+      compute_from: string  # OBRIGATÓRIO se type: computed — id da regra logic_type:derived_field em business_logic.yaml
       sortable: bool
       filterable: bool
       width: int
@@ -126,21 +133,24 @@ config:
 
 ### simulation_panel
 
+**`params`, `result_kpis` e `comparativo_columns` vêm diretamente da regra `logic_type: interactive_formula` vinculada (em `docs/business_logic.yaml`) — nunca invente nomes de parâmetro genéricos (`margem_desejada`/`desconto_maximo`) quando a regra real do roadmap tiver outras variáveis.**
+
 ```yaml
 config:
-  params:           # campos de parâmetro de entrada
-    - name: string
+  business_logic_rule_id: string  # id da regra em business_logic.yaml que esta tela implementa
+  params:           # 1:1 com formula.variables[] onde interactive: true
+    - name: string        # = variables[].name
       type: number | select | date
       label: string
-      unit: string  # ex.: "%", "R$", "un."
-      min: number
-      max: number
+      unit: string  # = variables[].unit — ex.: "%", "R$", "un."
+      min: number   # = variables[].min
+      max: number   # = variables[].max
       required: bool
-  result_kpis:      # KPIs calculados a exibir no resultado
+  result_kpis:      # 1:1 com formula.output_fields[]
     - label: string
-      source_field: string   # campo do resultado calculado
+      source_field: string   # = output_fields[].name
       format: number | currency | percent
-  comparativo_columns:  # colunas da tabela comparativa
+  comparativo_columns:  # colunas da tabela comparativa — inclui ao menos os output_fields
     - field: string
       header: string
       type: text | number | currency | percent | delta

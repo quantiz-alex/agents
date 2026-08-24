@@ -250,6 +250,11 @@ def layout():
 | Relação entre duas variáveis | Dispersão | `px.scatter` |
 | KPI único | `dbc.Card` com número grande | — |
 | Funil de processo | Funil | `px.funnel` |
+| Impacto em cascata (custo→markup→preço→receita) — telas de simulação | Waterfall/Bridge | `go.Waterfall` (`waterfall_chart()` em `charts.py`) |
+| Sensibilidade preço × volume/receita (simulação com elasticidade) | Curva de elasticidade | `go.Scatter` linha + `add_vline` (`elasticity_curve()`) |
+| Comparação de N cenários salvos lado a lado | Barras agrupadas multi-cenário | `go.Bar` por cenário (`scenario_comparison_chart()`) |
+
+As três últimas linhas são acionadas por `ui.chart_hint` (`waterfall`/`elasticity_curve`/`scenario_comparison`) de uma regra `logic_type: interactive_formula` em `docs/business_logic.yaml` — ver `skill-simulation.md`.
 
 - `plotly-template` — Sempre `template="plotly_white"` e `paper_bgcolor="rgba(0,0,0,0)"`, `plot_bgcolor="rgba(0,0,0,0)"`
 - `plotly-height` — Default `height=300`; gráficos de destaque podem usar `height=400`
@@ -279,6 +284,7 @@ def layout():
 | Tabela de dados | `dash_ag_grid.AgGrid` | `dbc.Table`, `html.Table`, `DataTable` |
 | Gráfico | `plotly.express.*` ou `go.Figure` | `matplotlib`, `seaborn`, `bokeh` |
 | Input texto | `dbc.Input` | `html.Input` raw |
+| Parâmetro numérico contínuo com faixa conhecida (simulação) | `dcc.Slider` (`param_slider()` em `ui_components.py`) | `dbc.Input` isolado quando `min`/`max` já são conhecidos em `business_logic.yaml` |
 | Dropdown | `dcc.Dropdown` | `dbc.Select` para > 5 opções |
 | Data | `dcc.DatePickerSingle` / `dcc.DatePickerRange` | `html.Input(type="date")` |
 | Modal | `dbc.Modal` | `html.Dialog` |

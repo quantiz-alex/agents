@@ -62,6 +62,8 @@ def update_grid(n_clicks: int, filtro1, filtro2, ...) -> tuple:
 
 Aplicar quando `actions` contiver `type: simulate`. O cálculo fica em `_queries.py` — o callback apenas orquestra. O resultado é exibido em uma seção inicialmente oculta (`display: none`) que se torna visível após a simulação.
 
+**A lista de `State(...)` do callback NÃO é genérica** (`param1`, `param2` abaixo são só ilustrativos) — gerar um `State("<pagina>-param-<name>", "value")` para CADA `formula.variables[]` com `interactive: true` da regra `logic_type: interactive_formula` vinculada em `docs/business_logic.yaml` (a mesma regra referenciada em `simulation_panel.config.business_logic_rule_id` de `screens_definition.yaml`). O corpo do callback chama `calcular_simulacao()` de `_queries.py` passando exatamente esses parâmetros pelo nome — ver `skill-simulation.md`.
+
 ```python
 from dash import Input, Output, State, callback, no_update
 import dash_bootstrap_components as dbc

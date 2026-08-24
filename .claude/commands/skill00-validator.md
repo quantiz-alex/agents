@@ -55,6 +55,23 @@ Valida a consistência e integridade entre todos os artefatos gerados antes de p
 
 ---
 
+### Etapa 2.7 — Validação de Business Logic
+
+**Input:** `docs/requirements.yaml`, `docs/data_model.yaml`
+**Output:** `docs/business_logic.yaml`
+
+**Checks:**
+1. ✓ YAML válido
+2. ✓ Toda regra tem `logic_type` em `validation | derived_field | interactive_formula | workflow_rule`
+3. ✓ Toda regra `logic_type: interactive_formula` tem `formula.expression` E ≥1 `formula.variables[]` com `interactive: true`
+4. ✓ Toda regra `logic_type: validation` tem `validation.condition` E `validation.error_message`
+5. ✓ `entity` e `variables[].field`/`output_fields[].name` referenciam campos reais de `data_model.yaml`
+6. ⚠ Se `confidence_summary.needs_review` não estiver vazio → warning (reportar ao usuário, não bloqueia)
+
+**Output:** `validation_reports/step2_7_business_logic.yaml`
+
+---
+
 ### Etapa 3 — Validação de SQL
 
 **Input:** `docs/data_model.yaml`  
@@ -135,6 +152,9 @@ Valida a consistência e integridade entre todos os artefatos gerados antes de p
 8. ✓ Colunas de grid referenciam campos existentes na entidade
 9. ✓ Charts têm campos x/y válidos
 10. ✓ Filtros referenciam campos existentes
+11. ✓ Toda página `screen_type: simulation` (ou `has_simulation: true`) tem ≥1 regra em `docs/business_logic.yaml` com `logic_type: interactive_formula` vinculada ao seu módulo — se não houver, ERRO: "tela de simulação sem fórmula real declarada — provável fallback ao placeholder genérico"
+12. ✓ `simulation_panel.config.params` corresponde 1:1 a `formula.variables[].name` onde `interactive: true` da regra vinculada (mesmos nomes, mesma quantidade)
+13. ✓ Colunas de grid marcadas `type: computed` referenciam uma regra `logic_type: derived_field` existente em `business_logic.yaml`
 
 **Output:** `validation_reports/step6_screens.yaml`
 
@@ -156,6 +176,10 @@ Valida a consistência e integridade entre todos os artefatos gerados antes de p
 8. ✓ Design system está aplicado (className corretas)
 9. ✓ Tipagem Python presente em todas as funções
 10. ✓ Não usa `dbc.Container` como raiz do layout
+11. ✓ Para páginas vinculadas a uma regra `interactive_formula` em `business_logic.yaml`: `<pagina>_page.py` ou `<pagina>_components.py` contém um `dcc.Slider`/`param_slider(...)`/`dbc.Input(type="number")` com `id` casando `<pagina>-param-<variable.name>` para CADA `formula.variables[].interactive: true` — senão ERRO: "parâmetro interativo declarado sem controle de UI correspondente"
+12. ✓ `<pagina>_queries.py` contém uma função cujo corpo referencia (grep textual) os nomes de `formula.variables[]`/`output_fields[]` combinados por um operador (não apenas retorna uma coluna já existente do CSV sem transformação) — heurística "fórmula é calculada, não copiada"
+13. ✓ `<pagina>_callbacks.py` chama essa função dentro de um `@callback` disparado por `Input("<pagina>-btn-simular", "n_clicks")` (ou id equivalente) — a função de cálculo é EXECUTADA por uma ação do usuário, não apenas definida
+14. ✓ Para entidades com regra `derived_field` exibida em grid/relatório da página: `<pagina>_queries.py` calcula o campo via pandas ao carregar os dados (grep de atribuição `df["<output_field>"] = ...`) — não apenas lê a coluna do `mock_data/*.csv` como se já viesse pronta
 
 **Output:** `validation_reports/step7_frontend.yaml`
 
@@ -195,6 +219,9 @@ Valida a consistência e integridade entre todos os artefatos gerados antes de p
 7. ✓ Tipagem Python presente
 8. ✓ `main.py` importa e registra todos os routers
 9. ✓ Tratamento de erros com HTTPException
+10. ✓ Para entidades com regra `interactive_formula` em `business_logic.yaml`: existe rota `POST /<entidade>s/simular` (ou `/calcular`) em `backend/api/routes/<entidade>.py`
+11. ✓ Essa rota chama uma função de `backend/services/<entidade>.py` que implementa a fórmula — E essa função é de fato referenciada em algum lugar do projeto (grep: toda função `def calcular_*`/`def simular*` definida em `services/` deve ter ≥1 chamada correspondente fora da própria definição, seja em `api/routes/` ou nos scripts de mock). Se a função existir mas nenhuma chamada for encontrada → ERRO CRÍTICO: "função de cálculo definida em services/<entidade>.py nunca é chamada — código morto, fórmula não está em uso"
+12. ✓ Para entidades com regra `validation` (`severity: block`): `backend/schemas/<entidade>.py` tem um `@field_validator`/`@model_validator` implementando `validation.condition` e levantando erro com `validation.error_message`
 
 **Output:** `validation_reports/step9_backend.yaml`
 

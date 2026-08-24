@@ -90,6 +90,7 @@ def build_grid() -> dbc.Card:
 | date      | `valueFormatter: {"function": "params.value?.split('T')[0]"}` |
 | badge     | `cellRenderer: "agCellRendererHtml"` com classe Bootstrap |
 | action    | `cellRenderer` com botões edit/view/delete                |
+| computed  | Coluna cujo valor vem de uma regra `logic_type: derived_field` em `docs/business_logic.yaml` (`compute_from: <rule id>`). A coluna em si não tem formatação especial de `columnDefs` além do `type` real do campo (currency/number/etc.) — o que muda é a ORIGEM do dado: ver regra em `skill07-dash-page.md` (`_queries.py` calcula via pandas, nunca lê a coluna pronta do CSV mock). |
 
 ## Restrições
 

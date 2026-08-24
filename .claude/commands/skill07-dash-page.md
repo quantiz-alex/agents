@@ -201,6 +201,16 @@ DATA_DIR = Path("mock_data")
 # NÃO conectar ao banco
 ```
 
+**Campos derivados/computados (`logic_type: derived_field` em `docs/business_logic.yaml`):** se a página exibe (em grid, KPI ou relatório) um campo marcado `type: computed` em `screens_definition.yaml`, `_queries.py` DEVE calcular esse campo via pandas ao carregar o DataFrame — nunca assumir que a coluna já vem pronta de `mock_data/<entidade>.csv` (o mock nunca contém essa coluna pré-computada, ver `skill04-mock-data.md`):
+
+```python
+def carregar_<entidade>() -> pd.DataFrame:
+    df = pd.read_csv(DATA_DIR / "<entidade>.csv")
+    # Campo derivado — implementa formula.expression da regra vinculada (ex.: margem = preco - custo)
+    df["margem"] = df["preco"] - df["custo"]
+    return df
+```
+
 ### `_callbacks.py`
 
 ```python

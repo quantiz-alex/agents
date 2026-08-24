@@ -72,6 +72,12 @@ TODO: Quem são os usuários? (ex: analistas de pricing, gestores comerciais, co
 
 **Regras de negócio:**
 - [RN-002]: TODO (ex: preço não pode ser menor que custo + margem mínima de 10%)
+  <!-- OPCIONAL: se já souber a fórmula/condição exata, detalhe abaixo — reduz ambiguidade.
+       Se omitido, o pipeline tenta extrair a fórmula automaticamente do texto acima. -->
+  - Tipo: validação | campo_derivado | fórmula_interativa | regra_workflow
+  - Fórmula/condição: TODO (ex.: "preco >= custo * (1 + margem_minima)" ou "margem = preco - custo")
+  - Variáveis de entrada: TODO (ex.: "margem_minima (number, %, constante = 10)")
+  - Campos de saída: TODO (ex.: "margem (currency)")
 
 **Acesso por role:**
 - admin: full
@@ -133,9 +139,9 @@ TODO: Quem são os usuários? (ex: analistas de pricing, gestores comerciais, co
   - Ações: [submit_approval]
 
 **Regras de negócio:**
-- [RN-SIM-001]: TODO — ex: preço simulado não pode ser inferior ao custo + margem mínima de 10%
-- [RN-SIM-002]: TODO — ex: desconto máximo não pode exceder a política comercial vigente
-- [RN-SIM-003]: Cálculo nunca persiste automaticamente — analista escolhe explicitamente salvar
+- [RN-SIM-001]: TODO — ex: preço simulado = custo × (1 + markup_novo) — este é o `logic_type: fórmula_interativa` do módulo; detalhe a fórmula completa aqui (é o texto que a skill de análise de lógica de negócio usa para gerar o cálculo real da tela — quanto mais precisa esta linha, menos chance de a tela sair com um cálculo genérico/placeholder)
+- [RN-SIM-002]: TODO — ex: desconto máximo não pode exceder a política comercial vigente (Tipo: validação)
+- [RN-SIM-003]: Cálculo nunca persiste automaticamente — analista escolhe explicitamente salvar (Tipo: regra_workflow)
 
 **Acesso por role:**
 - admin: full

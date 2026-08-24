@@ -8,6 +8,10 @@ NOVO: Componentes de workflow disponíveis em workflow_components.py:
 - workflow_breadcrumb() — Breadcrumb de progresso no fluxo
 - workflow_context_actions() — Botões de próximos passos contextuais
 - workflow_status_card() — Card com status do workflow ativo
+
+NOVO: Telas de simulação (skill-simulation.md) usam param_slider(...) para parâmetros
+com min/max conhecidos (formula.variables[] em docs/business_logic.yaml) — nunca
+dbc.Input isolado quando a faixa já é conhecida.
 """
 from typing import Any
 
@@ -486,6 +490,52 @@ def filter_card(filters: list, button_id: str = "btn-filtrar") -> dbc.Card:
             className="py-2",
         ),
         className="shadow-sm border-0 mb-3",
+    )
+
+
+def param_slider(
+    id: str,
+    label: str,
+    unit: str = "",
+    min: float = 0,
+    max: float = 100,
+    step: float = 1,
+    default: float = 0,
+    md: int = 3,
+) -> dbc.Col:
+    """
+    Controle de parâmetro interativo para painéis de simulação (skill-simulation.md) —
+    use SEMPRE em vez de dbc.Input isolado quando a variável (formula.variables[] em
+    docs/business_logic.yaml) tem min/max conhecidos. Tooltip mostra o valor ao vivo
+    enquanto o usuário arrasta — é o que dá o efeito visual de "simulador" em vez de
+    "formulário" numa demonstração para cliente.
+
+    Args:
+        id: id do dcc.Slider (padrão <pagina>-param-<variable.name>)
+        label: Rótulo exibido acima do slider (ex.: "Markup novo")
+        unit: Unidade exibida no rótulo (ex.: "%", "R$")
+        min, max, step, default: faixa e valor inicial do slider
+        md: largura em colunas Bootstrap
+    """
+    marks = {min: f"{min}{unit}", max: f"{max}{unit}"}
+    return dbc.Col(
+        [
+            dbc.Label(
+                f"{label} ({unit})" if unit else label,
+                className="small fw-semibold",
+            ),
+            dcc.Slider(
+                id=id,
+                min=min,
+                max=max,
+                step=step,
+                value=default,
+                marks=marks,
+                tooltip={"placement": "top", "always_visible": True},
+                className="pt-1",
+            ),
+        ],
+        md=md,
     )
 
 

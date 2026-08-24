@@ -285,6 +285,7 @@ best_practices:
   - "NUNCA mostrar valor solto sem baseline e delta"
   - "SEMPRE usar mono tabular para números em tabelas"
   - "SEMPRE usar badges coloridos para status (não texto simples)"
+  - "Em telas de simulação, usar param_slider() em vez de dbc.Input isolado quando a variável tiver min/max conhecidos (business_logic.yaml) — dá o efeito de simulador ao vivo, não de formulário"
 
 # ============================================================================
 # BIBLIOTECAS DE COMPONENTES REUTILIZÁVEIS
@@ -305,6 +306,7 @@ component_libraries:
       - "button(label, primary, icon_key)"
       - "filter_card(filters, button_id)"
       - "icon(icon_name, size)"
+      - "param_slider(id, label, unit, min, max, step, default, md)"  # simulação — sempre que a variável tiver min/max conhecidos (business_logic.yaml)
     helpers:
       - "status_badge_style(kind)"
       - "format_currency(value, decimals)"
@@ -328,6 +330,9 @@ component_libraries:
       - "area_chart(x, y, title, x_label, y_label, height)"
       - "scatter_chart(x, y, title, x_label, y_label, height)"
       - "histogram(values, title, x_label, y_label, height, nbins)"
+      - "waterfall_chart(labels, values, measure, value_fmt, title, height)"  # simulação — ui.chart_hint: waterfall
+      - "elasticity_curve(preco_range, volume_estimado, preco_atual, preco_simulado, title, x_label, y_label, height)"  # ui.chart_hint: elasticity_curve
+      - "scenario_comparison_chart(cenarios, metric_field, label_field, value_fmt, title, height)"  # ui.chart_hint: scenario_comparison
     helpers:
       - "set_primary_color(color)"
       - "get_empty_state_message(chart_type)"

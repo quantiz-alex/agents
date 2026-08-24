@@ -20,6 +20,7 @@ Leia `docs/requirements.yaml` e `docs/data_model.yaml` para gerar `docs/api_cont
 2. Leia `docs/data_model.yaml` para obter entidades, campos, tipos e relacionamentos.
 3. Gere `docs/api_contracts.yaml` com contratos completos para cada entidade.
 4. Se o arquivo já existir, aplique patch incremental para entidades novas/alteradas.
+5. **Se `docs/business_logic.yaml` já existir** (gerado no Step 2.7 — pode não existir ainda na primeira passada, já que a ordem padrão do pipeline é 2.6 antes de 2.7; nesse caso, esta skill roda de novo em modo patch incremental após o Step 2.7 completar): para cada entidade com regra `logic_type: interactive_formula` vinculada, adicionar o contrato `POST /<entidade>/simular` (ver estrutura abaixo); para cada regra `logic_type: validation` com `severity: block`, documentar `422` em `POST`/`PUT` com o `error_message` literal da regra.
 
 ---
 
@@ -91,7 +92,7 @@ endpoints:
         body: <Entidade>Create
       response:
         201: <Entidade>Response
-        422: "Dados inválidos (detalhes dos campos com erro)"
+        422: "Dados inválidos (detalhes dos campos com erro) — inclui error_message de regras logic_type:validation vinculadas, se houver"
 
     PUT /<entidade>/{id}:
       description: "Atualiza um registro existente"
@@ -113,6 +114,16 @@ endpoints:
       response:
         204: "Deletado com sucesso"
         404: "Registro não encontrado"
+
+    # Presente SOMENTE se houver regra logic_type:interactive_formula vinculada em business_logic.yaml
+    POST /<entidade>/simular:
+      description: "Calcula o cenário de simulação sem persistir — request body = formula.variables[interactive=true]"
+      auth_required: true
+      request:
+        body: SimulacaoRequest   # campos 1:1 com formula.variables[] da regra vinculada
+      response:
+        200: SimulacaoResponse   # kpis/comparativo/resumo = formula.output_fields[]
+        422: "Parâmetros de simulação inválidos"
 
 schemas:
   <Entidade>Base:

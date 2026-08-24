@@ -4,7 +4,7 @@ Leia `docs/data_model.yaml` e gere dados fictícios realistas para todas as enti
 
 ## Instruções
 
-1. Leia APENAS `docs/data_model.yaml`.
+1. Leia `docs/data_model.yaml` (e `docs/business_logic.yaml`, se existir).
 2. Extraia todas as entidades que possuem `table:` (ignorar enums).
 3. **ANTES de gerar qualquer dado**, monte e exiba um checklist das entidades:
    ```
@@ -40,6 +40,7 @@ mock_data/
 - Campos de FK: usar IDs que existam na entidade referenciada.
 - Campos booleanos: `true`/`false` (JSON) e `1`/`0` (CSV).
 - Enums: usar apenas valores definidos em `enums` do data_model.yaml.
+- **NUNCA gere no mock um campo marcado `logic_type: derived_field` em `docs/business_logic.yaml`** (ex.: `margem`, `preco_novo`, qualquer `output_field` de uma regra `derived_field`/`interactive_formula` com `persist: false`). Gerar esse valor pronto no CSV/JSON esconderia a ausência do cálculo real no frontend/backend — o campo deve ser SEMPRE calculado em runtime (pandas em `_queries.py`, serviço em `services/<entidade>.py`), nunca lido de um dado pré-computado. Se a entidade tiver esses campos listados em `data_model.yaml`, omita-os do mock e registre um aviso: "campo <nome> é derivado — não incluído no mock, calculado em runtime".
 
 ## Formato CSV
 

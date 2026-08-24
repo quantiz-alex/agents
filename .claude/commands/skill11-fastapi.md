@@ -175,25 +175,26 @@ def health() -> dict:
     return {"status": "ok", "db": health_check()}
 ```
 
-## Endpoints especializados — Simulação e Aprovação
+## Endpoints especializados — Simulação, Validação e Aprovação
 
-Além do CRUD básico, verificar em `docs/api_contracts.yaml` e `docs/requirements.yaml` se a entidade requer:
-- `has_simulation: true` → gerar bloco de simulação
+Além do CRUD básico, verificar em `docs/api_contracts.yaml`, `docs/requirements.yaml` e **`docs/business_logic.yaml`** se a entidade requer:
+- `has_simulation: true` (ou ≥1 regra `logic_type: interactive_formula` vinculada) → gerar bloco de simulação
+- ≥1 regra `logic_type: validation` vinculada → gerar bloco de validação
 - `has_approval_flow: true` → gerar bloco de aprovação
 
 ### Bloco de Simulação
 
-Quando `has_simulation: true`, adicionar ao `schemas/<entidade>.py`:
+Quando houver uma regra `logic_type: interactive_formula` vinculada à entidade, adicionar ao `schemas/<entidade>.py`. **Os campos de `SimulacaoRequest` NÃO são fixos** — `margem_desejada`/`desconto_maximo` abaixo é só a FORMA do modelo Pydantic; os campos reais são gerados 1:1 a partir de `formula.variables[]` onde `interactive: true` (mesmo nome, mesmo `min`/`max` da regra em `business_logic.yaml`) — a MESMA fórmula e os MESMOS parâmetros que `skill-simulation.md` usa no frontend (paridade front/back):
 
 ```python
 from pydantic import BaseModel, Field
 from typing import Any
 
 class SimulacaoRequest(BaseModel):
-    """Parâmetros de entrada do cenário de simulação."""
+    """Parâmetros de entrada do cenário de simulação — um campo por formula.variables[interactive=true]."""
     margem_desejada:  float | None = Field(None, ge=0, le=100, description="Margem desejada em %")
     desconto_maximo:  float | None = Field(None, ge=0, le=100, description="Desconto máximo em %")
-    # demais parâmetros conforme requirements.yaml
+    # demais parâmetros conforme business_logic.yaml (fallback acima apenas se business_logic.yaml não existir)
 
 class SimulacaoKpi(BaseModel):
     label: str
@@ -216,11 +217,12 @@ def simular(
 ) -> SimulacaoResponse:
     """
     Executa o cálculo do cenário sem persistir.
-    Regras de negócio de simulação ficam aqui.
+    Implementa formula.expression da regra logic_type:interactive_formula
+    vinculada em docs/business_logic.yaml — a mesma fórmula do frontend.
     """
     registros = self.repo.get_all(db, skip=0, limit=10000)
 
-    # --- Lógica de cálculo ---
+    # --- Lógica de cálculo (substituir pela formula.expression real de business_logic.yaml) ---
     comparativo = []
     receita_atual = receita_simulada = 0.0
 
@@ -273,6 +275,33 @@ def simular_cenario(
     """Calcula o resultado do cenário sem persistir. Disponível para analista+."""
     return service.simular(db, params)
 ```
+
+---
+
+### Bloco de Validação de Regra de Negócio
+
+Para cada regra `logic_type: validation` em `docs/business_logic.yaml` vinculada à entidade, adicionar ao `schemas/<entidade>.py` (em `<Entidade>Create`/`<Entidade>Update`) um validador Pydantic v2 implementando `validation.condition` literalmente:
+
+```python
+from pydantic import BaseModel, field_validator, model_validator
+
+class ProdutoCreate(BaseModel):
+    preco: float
+    custo: float
+    # ... demais campos
+
+    @model_validator(mode="after")
+    def validar_preco_minimo(self) -> "ProdutoCreate":
+        """RN-XXX: <validation.error_message literal de business_logic.yaml>."""
+        # condição = validation.condition da regra (ex.: preco >= custo * (1 + margem_minima))
+        if self.preco < self.custo * 1.10:
+            raise ValueError("<validation.error_message>")
+        return self
+```
+
+- `severity: block` → `raise ValueError(...)` (o FastAPI converte automaticamente em `422 Unprocessable Entity` na resposta do `POST`/`PUT`).
+- `severity: warn` → NÃO levantar erro; em vez disso, o `service.criar`/`service.atualizar` calcula a condição e retorna um `avisos: list[str]` adicional na resposta (não bloqueia a escrita).
+- Nunca reescrever a mensagem — usar `validation.error_message` literal do roadmap, para o erro exibido ao usuário final ser exatamente o que o cliente definiu como regra de negócio.
 
 ---
 

@@ -43,6 +43,7 @@ docs/design-system.yaml      → etapa 1.5 concluída
 docs/data_model.yaml         → etapa 2 concluída
 backend/config.py            → etapa 2.5 concluída
 docs/api_contracts.yaml      → etapa 2.6 concluída
+docs/business_logic.yaml     → etapa 2.7 concluída
 database/schema.sql          → etapa 3 concluída
 mock_data/                   → etapa 4 INCOMPLETA — verificar se CADA entidade de data_model.yaml tem AMBOS .csv E .json em mock_data/. Se faltar qualquer um dos dois para qualquer entidade, retomar a geração apenas das entidades faltantes.
 database/seed.sql            → etapa 5 concluída
@@ -267,6 +268,23 @@ Executar `/skill-api-contracts`. Gera os contratos de todos os endpoints REST (r
 2. Verificar que toda entidade do data model tem contrato
 3. Criar checkpoint step2_6 e avançar
 4. **Descarte** `data_model.yaml` da memória
+
+Avance para Etapa 2.7.
+
+---
+
+## Etapa 2.7 — Business Logic Analysis
+
+**Input:** `docs/requirements.yaml`, `docs/data_model.yaml` (+ `roadmap.md` como fallback)
+**Output:** `docs/business_logic.yaml`
+
+Executar `/skill-business-logic`. Classifica cada `business_rule`/feature em `validation | derived_field | interactive_formula | workflow_rule`, extraindo fórmula/variáveis/campos de saída de forma estruturada — em vez de deixar as etapas 6, 7, 9 reinterpretarem o texto livre cada uma por conta própria (o que hoje faz várias delas caírem no mesmo cálculo-placeholder genérico em vez da fórmula real do roadmap).
+
+**Pós-processamento:**
+1. Executar `/skill00-validator step2_7`
+2. Se `confidence_summary.needs_review` não vier vazio → reportar ao usuário quais regras não puderam ser extraídas com confiança (aviso — não bloqueia)
+3. Se validação estrutural falhar → PARAR e reportar
+4. Se validação passar → Criar checkpoint step2_7 e avançar
 
 Avance para Etapa 3.
 
@@ -749,7 +767,7 @@ Requerem o app rodando em `http://localhost:1050`.
 \`\`\`bash
 # 1. Iniciar o backend e o frontend
 uvicorn backend.main:app --reload &
-python frontend/app.py &
+python -m frontend.app &
 
 # 2. Instalar dependências do Cypress (apenas na primeira vez)
 cd tests/frontend
@@ -828,6 +846,7 @@ Após concluir todas as etapas, exiba:
 ✓ Etapa 2   — docs/data_model.yaml
 ✓ Etapa 2.5 — backend/config.py + backend/database.py + .env.example
 ✓ Etapa 2.6 — docs/api_contracts.yaml
+✓ Etapa 2.7 — docs/business_logic.yaml (<N> regras: <N> validação, <N> campo derivado, <N> fórmula interativa, <N> workflow)
 ✓ Etapa 3   — database/ (schema, views, procedures)
 ✓ Etapa 4   — mock_data/ (<N> entidades)
 ✓ Etapa 5   — database/seed.sql
@@ -844,5 +863,5 @@ Próximos passos:
   1. cp .env.example .env  →  preencher credenciais
   2. pip install -r requirements.txt
   3. uvicorn backend.main:app --reload  →  API em http://localhost:8000
-  4. python frontend/app.py             →  UI em http://localhost:1050
+  4. python -m frontend.app             →  UI em http://localhost:1050
 ```

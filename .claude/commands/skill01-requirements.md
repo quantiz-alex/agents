@@ -39,6 +39,13 @@ business_rules:
   - id: string
     description: string
     module: string
+    # NOVOS campos opcionais — preencher SOMENTE se o roadmap.md tiver a sub-seção
+    # estruturada (Tipo/Fórmula/Variáveis de entrada/Campos de saída). Copiar
+    # literalmente, sem reformular — a classificação/normalização final é
+    # responsabilidade da skill skill-business-logic (Step 2.7), não desta skill.
+    logic_type: validation | derived_field | interactive_formula | workflow_rule | null
+    formula_hint: string | null       # cópia literal da linha "Fórmula:" do roadmap, se existir
+    variables_hint: [string] | null   # cópia literal de "Variáveis de entrada:", se existir
 
 integrations:
   - name: string
@@ -57,6 +64,7 @@ non_functional:
 - NÃO gere código — apenas o YAML estruturado.
 - NÃO invente requisitos — extraia somente o que está explícito.
 - Se um campo não estiver no roadmap, deixe como `null` ou omita.
+- Se o roadmap tiver a sub-seção estruturada de uma regra (Tipo/Fórmula/Variáveis de entrada/Campos de saída), copie literalmente para `logic_type`/`formula_hint`/`variables_hint` — NÃO reformule nem infira fórmula a partir de texto livre aqui; isso é responsabilidade da skill `skill-business-logic` (Step 2.7).
 - Contexto máximo: **8.000 tokens** de saída (anteriormente 2.000).
 - Se exceder 8.000 tokens, dividir em chunks com continuação automática.
 

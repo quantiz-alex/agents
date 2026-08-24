@@ -9,7 +9,7 @@ Você é o **Agente de Dados** do pipeline Lighthouse. Sua responsabilidade excl
 ## Contexto do Projeto
 
 - Você trabalha no diretório raiz de um projeto gerado (onde está o `roadmap.md`).
-- Especificações detalhadas das skills estão em `../.claude/commands/` (skill01 a skill05, skill-env, skill-api-contracts) — consulte se precisar de detalhes além deste prompt.
+- Especificações detalhadas das skills estão em `../.claude/commands/` (skill01 a skill05, skill-env, skill-api-contracts, skill-business-logic) — consulte se precisar de detalhes além deste prompt.
 - Limite de contexto por step: 8.000 tokens de saída. Se exceder, divida em chunks.
 
 ## Protocolo
@@ -20,6 +20,7 @@ Você é o **Agente de Dados** do pipeline Lighthouse. Sua responsabilidade excl
    - `docs/data_model.yaml` → step 2 ok
    - `backend/config.py` → step 2.5 ok
    - `docs/api_contracts.yaml` → step 2.6 ok
+   - `docs/business_logic.yaml` → step 2.7 ok
    - `database/schema.sql` → step 3 ok
    - `mock_data/` → step 4 INCOMPLETO se qualquer entidade não tiver AMBOS `.csv` e `.json`
    - `database/seed.sql` → step 5 ok
@@ -89,11 +90,13 @@ modules:
     access:
       - role: string
         permissions: full | [string]
-    business_rules: [{id: RN-001, description}]
+    business_rules: [{id: RN-001, description, logic_type: null, formula_hint: null, variables_hint: null}]
 entities: [{name, description, module, fields: [{name, type, nullable, notes}], relationships: [string]}]
-business_rules: [{id: RN-001, description}]
+business_rules: [{id: RN-001, description, logic_type: null, formula_hint: null, variables_hint: null}]
 non_functional: {security, performance, scalability, availability}
 ```
+
+`logic_type`/`formula_hint`/`variables_hint` são opcionais: preencher SOMENTE se o roadmap tiver a sub-seção estruturada de uma regra (Tipo/Fórmula/Variáveis de entrada/Campos de saída — ver `roadmap-template.md`). Copiar literalmente, sem reformular — a normalização e a extração de fórmula a partir de texto livre são responsabilidade do Step 2.7 (`skill-business-logic`), não deste step.
 
 **Fallbacks** para campos ausentes no roadmap antigo: `screen_type: mixed`, `icon: grid`, `kpis: []`, `charts: []`, `filters: []`, `roles: [{name: admin, permissions: full}, {name: supervisor, permissions: [visualizar, exportar-excel, aprovar, rejeitar]}, {name: analista, permissions: [visualizar, criar, editar, exportar-excel, enviar-para-aprovacao]}]`.
 
@@ -137,6 +140,16 @@ enums:
 **Input:** `docs/requirements.yaml`, `docs/data_model.yaml` → **Output:** `docs/api_contracts.yaml`
 
 Por entidade: resource plural kebab-case, operações list (GET com skip/limit), get (GET /{id}, 404), create (POST 201, 422), update (PUT /{id}), delete (DELETE 204, soft delete via `ativo=false` quando o campo existir). Mais endpoints de auth: POST `/auth/login` (sem auth) e POST `/auth/refresh`. Base URL `/api/v1`, auth Bearer JWT. Validar que toda entidade do data model tem contrato.
+
+## Step 2.7 — Business Logic Analysis
+
+**Input:** `docs/requirements.yaml`, `docs/data_model.yaml` (+ `roadmap.md` como fallback) → **Output:** `docs/business_logic.yaml`
+
+Delegar a `../.claude/commands/skill-business-logic.md`. Classifica cada `business_rule`/feature em `validation | derived_field | interactive_formula | workflow_rule`, extraindo fórmula/variáveis/campos de saída de forma estruturada — em vez de deixar cada skill de frontend/backend reinterpretar o texto livre sozinha (o que hoje faz várias delas caírem no mesmo cálculo-placeholder genérico em vez da fórmula real do roadmap).
+
+Se `confidence_summary.needs_review` não vier vazio, reportar ao usuário quais regras não puderam ser extraídas com confiança (aviso — não bloqueia o build).
+
+Checkpoint: `✓ Step 2.7 → business_logic.yaml (<N> regras: <N> validação, <N> campo derivado, <N> fórmula interativa, <N> workflow)`
 
 ## Step 3 — SQL Generation
 
@@ -184,6 +197,7 @@ ARQUIVOS GERADOS:
   - docs/requirements.yaml (<N> módulos)
   - docs/data_model.yaml (<N> entidades, <N> relacionamentos)
   - docs/api_contracts.yaml
+  - docs/business_logic.yaml (<N> regras: <N> validação, <N> campo derivado, <N> fórmula interativa, <N> workflow — <N> needs_review)
   - backend/config.py, backend/database.py, .env.example
   - database/schema.sql, views.sql, procedures.sql, seed.sql
   - mock_data/ (<N> entidades × 2 arquivos)

@@ -450,6 +450,148 @@ def histogram(
     return fig
 
 
+def waterfall_chart(
+    labels: list[str],
+    values: list[float],
+    measure: list[str] | None = None,
+    value_fmt=None,
+    title: str = "",
+    height: int = 320,
+) -> go.Figure:
+    """
+    Gráfico de ponte (waterfall) — mostra a composição de uma variação em etapas
+    (ex.: Preço Atual -> +Δmarkup -> +Δelasticidade -> Preço/Receita Simulada).
+    Use para telas de simulação/interactive_formula (business_logic.yaml) quando
+    ui.chart_hint == "waterfall".
+
+    Args:
+        labels: Rótulo de cada barra/etapa (primeiro e último geralmente são totais)
+        values: Valor de cada etapa (positivo = alta, negativo = queda; totais = valor absoluto)
+        measure: "absolute"|"relative"|"total" por etapa (default: absolute no 1º e último, relative no meio)
+        value_fmt: Função de formatação (default: R$ com separador brasileiro)
+        title: Título do gráfico
+        height: Altura em pixels
+    """
+    if value_fmt is None:
+        value_fmt = lambda v: f"R$ {v:,.0f}".replace(",", ".")
+    if measure is None:
+        measure = ["absolute"] + ["relative"] * (len(labels) - 2) + ["total"]
+
+    fig = go.Figure(
+        go.Waterfall(
+            x=labels,
+            y=values,
+            measure=measure,
+            text=[value_fmt(v) for v in values],
+            textposition="outside",
+            connector=dict(line=dict(color="#cbd5e1", width=1)),
+            increasing=dict(marker=dict(color=COLOR_POSITIVE)),
+            decreasing=dict(marker=dict(color=COLOR_NEGATIVE)),
+            totals=dict(marker=dict(color=CHART_COLORWAY[0])),
+        )
+    )
+
+    fig.update_layout(**_LAYOUT, title=title, height=height, showlegend=False)
+    fig.update_xaxes(showgrid=False)
+    fig.update_yaxes(showgrid=True, gridcolor="#eef2f7", zeroline=False)
+
+    return fig
+
+
+def elasticity_curve(
+    preco_range: list[float],
+    volume_estimado: list[float],
+    preco_atual: float | None = None,
+    preco_simulado: float | None = None,
+    title: str = "",
+    x_label: str = "Preço",
+    y_label: str = "Volume/Receita estimado",
+    height: int = 320,
+) -> go.Figure:
+    """
+    Curva de sensibilidade preço x volume/receita (elasticidade de demanda) —
+    para telas de simulação com ui.chart_hint == "elasticity_curve" em business_logic.yaml.
+    Marca verticalmente o preço atual e/ou o preço simulado sobre a curva.
+
+    Args:
+        preco_range: Sequência de preços testados (eixo X)
+        volume_estimado: Volume/receita projetado para cada preço (eixo Y)
+        preco_atual: Preço vigente — desenha linha vertical de referência
+        preco_simulado: Preço do cenário simulado — desenha linha vertical destacada
+        title: Título do gráfico
+        x_label: Rótulo do eixo X
+        y_label: Rótulo do eixo Y
+        height: Altura em pixels
+    """
+    fig = go.Figure(
+        go.Scatter(
+            x=preco_range,
+            y=volume_estimado,
+            mode="lines",
+            line=dict(color=CHART_COLORWAY[0], width=2),
+        )
+    )
+
+    if preco_atual is not None:
+        fig.add_vline(x=preco_atual, line=dict(color=COLOR_NEUTRAL, width=1, dash="dot"),
+                       annotation_text="Atual", annotation_position="top")
+    if preco_simulado is not None:
+        fig.add_vline(x=preco_simulado, line=dict(color=CHART_COLORWAY[1], width=2, dash="dash"),
+                       annotation_text="Simulado", annotation_position="top")
+
+    fig.update_layout(
+        **_LAYOUT, title=title, xaxis_title=x_label, yaxis_title=y_label, height=height,
+    )
+    fig.update_xaxes(showgrid=True, gridcolor="#eef2f7")
+    fig.update_yaxes(showgrid=True, gridcolor="#eef2f7")
+
+    return fig
+
+
+def scenario_comparison_chart(
+    cenarios: list[dict],
+    metric_field: str,
+    label_field: str = "nome",
+    value_fmt=None,
+    title: str = "",
+    height: int = 320,
+) -> go.Figure:
+    """
+    Barras agrupadas comparando N cenários salvos lado a lado (ui.chart_hint ==
+    "scenario_comparison" em business_logic.yaml) — ex.: comparar receita simulada
+    de vários cenários de precificação salvos pelo analista.
+
+    Args:
+        cenarios: Lista de dicts, um por cenário salvo (ex.: listar_cenarios_salvos())
+        metric_field: Chave numérica de cada dict a comparar (ex.: "receita_simulada")
+        label_field: Chave usada como rótulo de cada barra (default: "nome")
+        value_fmt: Função de formatação (default: número com separador brasileiro)
+        title: Título do gráfico
+        height: Altura em pixels
+    """
+    if value_fmt is None:
+        value_fmt = lambda v: f"{v:,.0f}".replace(",", ".")
+
+    labels = [c.get(label_field, "") for c in cenarios]
+    values = [c.get(metric_field, 0) for c in cenarios]
+
+    fig = go.Figure(
+        go.Bar(
+            x=labels,
+            y=values,
+            marker=dict(color=CHART_COLORWAY[: len(labels)] or CHART_COLORWAY[0]),
+            text=[value_fmt(v) for v in values],
+            textposition="outside",
+        )
+    )
+
+    fig.update_layout(**_LAYOUT, title=title, height=height, showlegend=False)
+    fig.update_xaxes(showgrid=False)
+    fig.update_yaxes(showgrid=True, gridcolor="#eef2f7", zeroline=False)
+
+    return fig
+
+
 # ============================================================================
 # HELPERS DE CONFIGURAÇÃO
 # ============================================================================

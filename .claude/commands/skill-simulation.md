@@ -26,6 +26,16 @@ O cálculo **nunca persiste automaticamente** — é sempre uma operação de le
 
 ---
 
+## Fonte da fórmula — `docs/business_logic.yaml`
+
+**A fórmula usada em `calcular_simulacao()` NUNCA é o exemplo genérico abaixo (`margem_desejada`/`desconto_maximo`) — esse exemplo só existe para ilustrar a FORMA do código.** Antes de gerar `_queries.py`:
+
+1. Leia `docs/business_logic.yaml` e localize a regra `logic_type: interactive_formula` vinculada a esta tela/módulo (via `screens_definition.yaml` → `simulation_panel.config.business_logic_rule_id`).
+2. Os parâmetros de `calcular_simulacao()` são exatamente `formula.variables[].name` onde `interactive: true` — nem mais, nem menos.
+3. O corpo da função implementa literalmente `formula.expression` (e as demais variáveis com `source: entity_field`/`constant` lidas do DataFrame/roadmap).
+4. Os campos retornados em `kpis`/`comparativo`/`resumo` são `formula.output_fields[]` — não invente KPIs genéricos como "Receita Atual/Simulada" se a fórmula real produzir outras grandezas (ex.: margem, volume, desconto efetivo).
+5. Se `docs/business_logic.yaml` não existir (roadmap legado, gerado antes desta skill) — e SOMENTE nesse caso — use o exemplo abaixo como fallback, e registre um aviso no relatório final sugerindo rodar `/skill-business-logic`.
+
 ## Arquivos gerados
 
 ```
@@ -160,6 +170,8 @@ def listar_cenarios_salvos() -> pd.DataFrame:
 ## `_components.py` — Painel de parâmetros + resultado
 
 ### Painel de parâmetros de entrada
+
+**Regra de escolha do controle:** se a variável (`formula.variables[]` em `business_logic.yaml`) tem `min`/`max` conhecidos, use `param_slider(...)` de `frontend/components/ui_components.py` (recalcula com tooltip mostrando o valor ao vivo) em vez de `dbc.Input` — reserve `dbc.Input(type="number")` apenas para variáveis sem faixa conhecida. O exemplo abaixo (`margem`/`desconto` com `dbc.Input`) é só a FORMA do código — os nomes/rótulos reais vêm de `formula.variables[]`, não deste exemplo.
 
 ```python
 def build_painel_parametros(...) -> dbc.Card:
