@@ -21,7 +21,8 @@ Todo o projeto é **100% Python**. O backend usa EXCLUSIVAMENTE: **FastAPI** + *
 ## Contexto do Projeto
 
 - Você trabalha no diretório raiz do projeto. Especificação detalhada em `../.claude/commands/skill11-fastapi.md` e `skill-auth.md` — consulte se necessário. `skill11-fastapi.md` tem os blocos de Simulação, Validação e Aprovação (condicionados a `docs/business_logic.yaml`/`docs/requirements.yaml`) além do CRUD básico.
-- Detecção de estado: entidade completa = 5 arquivos no disco (`backend/{models,schemas,repositories,services,api/routes}/<entity>.py`); `backend/auth.py` (step 9.5); `requirements.txt` + `README.md` (step 10). Pule o que está completo.
+- Detecção de estado: entidade completa = 5 arquivos no disco (`backend/{models,schemas,repositories,services,api/routes}/<entity>.py`); `backend/auth.py` (step 9.5); `backend/services/analytics_<pagina>.py` por tela com KPIs/gráficos (step 9.6); `requirements.txt` + `requirements-dev.txt` + `README.md` (step 10). Pule o que está completo.
+- `docs/screens_definition.yaml` (gerado pelo frontend-builder em paralelo) pode ainda não existir quando você começar. O Step 9.6 depende dele: se ausente ao chegar lá, **aguarde até 3 verificações com intervalo** (`sleep 20`) e, se continuar ausente, gere os endpoints de analytics a partir de `docs/requirements.yaml → modules[].kpis/charts/grid/filters` (mesma informação, sem as flags) e registre aviso.
 - Após cada step: checkpoint em `.build/checkpoints/` e `✓ [step] → [arquivos]`.
 
 ## Padrões Invioláveis
@@ -69,16 +70,25 @@ FastAPI app com `title="{project_name} API"` (de `.build/project.json`), CORSMid
 **Atualizações pós-auth:**
 1. `main.py`: incluir `auth.router` com prefix `/api/v1`.
 2. Todos os routers de entidades: adicionar `current_user = Depends(get_current_user)` nos endpoints.
-3. `frontend/pages/login/login_callbacks.py`: adicionar bloco comentado com o modo real (`requests.post("/api/v1/auth/login")`) — esta é a ÚNICA modificação permitida em frontend/.
+3. `frontend/pages/login/login_callbacks.py`: completar o bloco `# MODO API:` (já previsto pelo frontend-builder) com `from frontend.api_client import login as api_login, use_api` e o `if use_api(): api_login(email, senha)` — esta é a ÚNICA modificação permitida em frontend/. Se o arquivo ainda não existir (frontend em paralelo), pular e registrar aviso.
+4. Senha dos usuários do mock: o seed/mocks gravam `senha_hash` de `"demo"` (bcrypt) para as credenciais de demonstração (`.build/project.json → demo.credentials`), de modo que os chips de login funcionem também em `USE_API=true`.
 
 Verificar que `SECRET_KEY` não aparece como string literal em nenhum arquivo gerado.
 
+## Step 9.6 — Endpoints de Analytics (KPIs + gráficos por tela)
+
+**Input:** `docs/screens_definition.yaml` (fallback: `docs/requirements.yaml`), `docs/business_logic.yaml` → **Output:** `backend/services/analytics_<pagina>.py` + `backend/api/routes/analytics_<pagina>.py` por tela com `kpis[]`/`charts[]`
+
+Aplicar o **"Bloco de Analytics"** de `skill11-fastapi.md`: um service por tela com `kpis()`, `chart_<id>()` (um por gráfico) e `grid()`, calculados com pandas sobre SQLAlchemy usando **as mesmas expressões** de `business_logic.yaml` que o frontend usa em `_queries.py`; rotas `GET /analytics/<pagina>/kpis`, `/charts/<id>`, `/grid` com os filtros da tela como query params. Incluir os routers em `main.py`. Checkpoint `✓ Step 9.6 → analytics (<N> telas, <N> endpoints)`.
+
 ## Step 10 — Requirements + README
 
-**Output:** `requirements.txt`, `README.md`
+**Output:** `requirements.txt`, `requirements-dev.txt`, `README.md`
 
-- **`requirements.txt`**: dash, dash-bootstrap-components, dash-ag-grid, plotly, pandas, numpy, fastapi, uvicorn[standard], sqlalchemy, pydantic, pydantic-settings, python-jose[cryptography], passlib[bcrypt], python-multipart, pyodbc, python-dotenv, pytest, httpx, requests — com versões mínimas atuais.
-- **`README.md`**: nome/descrição (de `.build/project.json`), tabela de stack, estrutura de pastas, como rodar (`cp .env.example .env`, `pip install -r requirements.txt`, `uvicorn backend.main:app --reload` → :8000, `python -m frontend.app` → :1050), páginas disponíveis (de `screens_definition.yaml` se existir), seção obrigatória **Testes** (comandos pytest e cypress), próximos passos (integração SQL Server real).
+- **`requirements.txt`**: dash, dash-bootstrap-components, dash-ag-grid, plotly, pandas, numpy, fastapi, uvicorn[standard], sqlalchemy, pydantic, pydantic-settings, python-jose[cryptography], passlib[bcrypt], python-multipart, pyodbc, python-dotenv, requests — com versões mínimas atuais.
+- **`requirements-dev.txt`**: `-r requirements.txt`, pytest, pytest-cov, httpx, playwright, pytest-playwright (+ comentário `# após instalar: playwright install chromium`). Playwright é **dev-only** — usado pelo `ui-reviewer` e por testes E2E; nunca importado pelo app.
+- **`.env.example`**: garantir as chaves `USE_API=false`, `API_BASE_URL=http://localhost:8000/api/v1` (além das já geradas pelo data-engineer).
+- **`README.md`**: nome/descrição/tagline (de `.build/project.json`), tabela de stack, estrutura de pastas, como rodar (`cp .env.example .env`, `pip install -r requirements.txt`, `python scripts/generate_mock.py` se quiser regerar dados, `uvicorn backend.main:app --reload` → :8000, `python -m frontend.app` → :1050), **credenciais de demo** (`demo.credentials`, senha `demo`), **modo API** (`USE_API=true` + `uvicorn` → as mesmas telas passam a consumir `/api/v1/analytics/...`), páginas disponíveis (de `screens_definition.yaml`), seção **Verificação visual** (`python scripts/ui_smoke.py` → `validation_reports/screenshots/`), seção obrigatória **Testes** (pytest e cypress), próximos passos (integração SQL Server real: `database/schema.sql` + `seed.sql` ou `python database/load_csv.py`).
 
 ## Relatório Final (sua última mensagem)
 
@@ -89,7 +99,8 @@ ARQUIVOS GERADOS:
   - backend/models|schemas|repositories|services|api/routes (<N> entidades × 5)
   - backend/main.py (CORS + <N> routers)
   - backend/auth.py + schemas/token.py + api/routes/auth.py
-  - requirements.txt, README.md
+  - backend/services/analytics_<pagina>.py + api/routes/analytics_<pagina>.py (<N> telas, <N> endpoints)
+  - requirements.txt, requirements-dev.txt, README.md
 STEPS PULADOS: <lista>
 ERROS/AVISOS: <se houver>
 ```

@@ -2,8 +2,52 @@
 # Referenciado por todas as skills de frontend (skill07, skill09, skill10)
 # Baseado no padrão PMZ com tokens detalhados e componentes reutilizáveis
 
-version: "2.0.0"
-last_updated: "2026-07-24"
+version: "4.0.0"
+last_updated: "2026-09-03"
+
+# ============================================================================
+# BRANDING / PALETA (preenchidos por projeto no docs/design-system.yaml)
+# ============================================================================
+# O frontend-builder (Step 0) roda derive_palette(primary, secondary) de ui_components.py
+# e grava os valores em assets/theme.css (:root --pmz-*) e em CHART_COLORWAY.
+branding:
+  primary: "#1045C8"
+  secondary: null          # opcional — 3ª cor do colorway
+  logo: null               # assets/logo.png
+  logo_dark: null          # assets/logo-white.png (painel do login)
+  favicon: null            # assets/favicon.ico
+  display_name: "{project}"
+  tagline: "{primeira frase da descrição}"
+  font: system             # system | inter
+  footer: "Desenvolvido por / Quantiz Pricing Solution"
+palette:                   # saída de derive_palette — só leitura
+  primary: "{primary}"
+  primary_hover: "{primary escurecida 15%}"
+  primary_soft: "{primary clareada 90%}"       # fundo de ícone de página, hover de linha, chips
+  primary_soft_border: "{primary clareada 75%}"
+  primary_dark: "{primary misturada com slate-900}"  # gradiente do login
+  secondary: "{secondary ou primary → âmbar}"
+
+# ============================================================================
+# SHELL DO PRODUTO (skill-shell.md)
+# ============================================================================
+shell:
+  sidebar:
+    groups: true                 # itens agrupados por menu_group com label uppercase
+    user_block: true             # avatar iniciais + nome + badge role + botão Sair (id=btn-logout)
+    pending_badges: true         # nav-badge com contagem (pages[].sidebar_badge)
+    role_filter: true            # telas sem access para o role são omitidas
+    collapse_below_px: 992       # vira barra de ícones
+  home:
+    route: /home                 # destino pós-login
+    sections: [anchors, shortcuts, my_pending, workflow]
+  login:
+    layout: split                # painel de marca (tagline + 3 bullets) + formulário
+    demo_chips: true             # credenciais de demo clicáveis
+  page_header:
+    breadcrumb: [menu_group, title]
+    subtitle: user_goal
+    meta: ["dados até dd/mm/aaaa"]
 
 # ============================================================================
 # TOKENS — Fonte única de verdade
@@ -297,24 +341,42 @@ component_libraries:
     source: ".claude/templates/components-library.py"
     destination: "frontend/components/ui_components.py"
     components:
-      - "app_shell(active_key, icon_key, title, subtitle, content, actions)"
-      - "kpi_card(label, atual, simulado, delta_pct, better)"
-      - "kpi_row(cards)"
-      - "data_table(df, id, numeric_cols, status_col, page_size)"
-      - "page_header(icon_key, title, subtitle, actions)"
-      - "card(title, body, right)"
-      - "button(label, primary, icon_key)"
-      - "filter_card(filters, button_id)"
-      - "icon(icon_name, size)"
-      - "param_slider(id, label, unit, min, max, step, default, md)"  # simulação — sempre que a variável tiver min/max conhecidos (business_logic.yaml)
+      - "app_shell(active_key, icon_key, title, subtitle, content, actions, breadcrumb_items, meta)"
+      - "app_shell_with_workflow(..., workflow_context)"
+      - "page_header(icon_key, title, subtitle, actions, breadcrumb_items, meta)"
+      - "breadcrumb(items)"
+      - "section_title(text, right, icon_key)"
+      - "kpi_card(label, atual, simulado, delta_pct, better, compare_label, icon_key)"   # COMPARAÇÃO
+      - "kpi_simple(label, value, delta_pct, better, trend, icon_key, hint, color)"      # SIMPLES (+ sparkline)
+      - "kpi_row(cards, row_id)"                                                          # responsivo
+      - "data_table(df, id, column_types, headers, row_actions, default_sort, hide_cols, selectable, empty_message)"
+      - "quick_filter_input(grid_id)"
+      - "card(title, body, right, icon_key, body_class, card_id)"
+      - "home_shortcut_card(icon_key, title, description, href, badge)"
+      - "button(label, primary, icon_key, danger, size)"
+      - "filter_card(filters, button_id, show_button, right)"
+      - "filter_select / filter_date_range / filter_text"
+      - "chip(label, value, chip_id) / chips_row(id, chips)"                              # drill-down ativo
+      - "param_slider(id, label, unit, min, max, step, default, md, hint)"
+      - "empty_state(title, hint, icon_key, action, compact)"
+      - "loading(children, id)"
+      - "toast(id, header) + notify(message, kind) → (is_open, children, icon)"
+      - "confirm_modal(id, title, body, confirm_label, danger, with_comment, comment_required)"
+      - "detail_offcanvas(id, title, width) + detail_field(label, value, mono)"
+      - "user_badge(name, role, email, compact)"
+      - "status_badge(value, kind) / stat_pill(text, kind, icon_key)"
+      - "icon(icon_name, size, className)"
     helpers:
+      - "derive_palette(primary, secondary) / set_primary_color(primary, secondary)"
       - "status_badge_style(kind)"
-      - "format_currency(value, decimals)"
+      - "format_currency(value, decimals) / format_compact(value, prefix)"
       - "format_percent(value, decimals, with_sign)"
-      - "format_number(value, decimals)"
+      - "format_number(value, decimals) / format_date(value)"
     tokens:
-      - "COLORS, CHART_COLORWAY, FONT_UI, FONT_NUM"
+      - "COLORS, CHART_COLORWAY, PRIMARY, FONT_UI, FONT_NUM"
       - "RADIUS, SPACE, STATUS_KIND"
+    column_types:   # data_table(column_types={coluna: tipo})
+      - "text | currency | currency0 | number | decimal | percent | pct_delta | date | datetime | bool | badge"
   
   charts:
     source: ".claude/templates/charts-library.py"
@@ -333,9 +395,19 @@ component_libraries:
       - "waterfall_chart(labels, values, measure, value_fmt, title, height)"  # simulação — ui.chart_hint: waterfall
       - "elasticity_curve(preco_range, volume_estimado, preco_atual, preco_simulado, title, x_label, y_label, height)"  # ui.chart_hint: elasticity_curve
       - "scenario_comparison_chart(cenarios, metric_field, label_field, value_fmt, title, height)"  # ui.chart_hint: scenario_comparison
+      - "heatmap(x_labels, y_labels, values, title, value_fmt, height)"          # analytics — matriz 2D (clique → drill-down)
+      - "treemap(labels, parents, values, title, height, value_prefix)"          # participação hierárquica
+      - "combo_bar_line(x, bars, line, bar_name, line_name, title, height)"      # volume × receita
+      - "stacked_bars(x, series, title, height, horizontal, percent)"
+      - "grouped_bars(x, series, title, height)"                                 # atual × simulado por categoria
+      - "funnel(stages, values, title, height)"
+      - "gauge(value, target, min_value, max_value, title, suffix, height, better)"
+      - "sparkline(values, color, height, fill)"                                 # kpi_simple(trend=...) / detalhe
+      - "with_selection(fig, selected_label)"                                    # destaque do item clicado (drill-down)
     helpers:
-      - "set_primary_color(color)"
+      - "set_primary_color(color, secondary)"
       - "get_empty_state_message(chart_type)"
+    layout_defaults: "separators=',.' (pt-BR) · hoverlabel escuro · título alinhado à esquerda 13px"
 
 # ============================================================================
 # PRINCÍPIOS DE UX (do GUIA-VISUAL-PMZ.md)

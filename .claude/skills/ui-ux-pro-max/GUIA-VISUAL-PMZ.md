@@ -217,6 +217,18 @@ frontend/
 - [ ] IDs no padrão `<page>-<component>`.
 - [ ] Tipagem Python em todas as funções.
 
+### Checklist de produto (v4 — "quero comprar")
+- [ ] Tela abre com dados; grids/gráficos nunca vazios com o mock padrão.
+- [ ] KPI de comparação só onde há baseline; senão `kpi_simple` (com sparkline quando há série).
+- [ ] Grid: FK → nome legível, moeda/percentual/data formatados, status como pill, ordenação padrão.
+- [ ] Todo drill-down do roadmap funciona (clique → grid filtrado → chip ✕ para limpar → gráfico destaca a seleção).
+- [ ] Simulação com `recalc_mode: live` reage aos sliders sem botão e abre já calculada.
+- [ ] Detalhe em offcanvas com ficha + relacionados quando há `detalhar`/`detail_panel`.
+- [ ] `empty_state` com texto do roadmap; `loading` em tudo que callback atualiza; `toast` em toda ação; `confirm_modal` em decisões/destrutivas.
+- [ ] Botões restritos somem para roles sem permissão; sidebar mostra só telas acessíveis.
+- [ ] Shell: Home (âncoras, atalhos, pendências), sidebar com grupos + usuário + Sair + badges, login split com chips de demo.
+- [ ] Breadcrumb `Grupo › Tela`, subtítulo = objetivo do usuário, chip "dados até dd/mm/aaaa".
+
 ---
 
 ## 9. Anti-Padrões (NUNCA FAZER)

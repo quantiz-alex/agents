@@ -48,27 +48,47 @@ Para cada bloco funcional identificado (sprint, fase, entregável, requisito fun
 |---|---|
 | importar, upload, ingestão, carga, formulário, cadastrar, configurar, parametrizar | `form` |
 | listar, grid, tabela, CRUD, gerenciar, buscar | `grid` |
+| listar + detalhar item, ficha, "ao clicar abre" | `master_detail` |
 | dashboard, painel, visão geral, KPI, métricas, indicadores | `dashboard` |
+| análise, analítico, evolução, matriz, múltiplos gráficos, drill-down | `analytics` |
 | relatório, exportar, auditoria, rastreabilidade, histórico | `report` |
-| simulação, análise, comparar, impacto, gráfico | `mixed` |
+| simular, cenário, "e se", impacto de parâmetro, elasticidade | `simulation` |
+| aprovar, rejeitar, fila, pendências, workflow de aprovação | `approval_queue` |
+| combinação sem predominância | `mixed` |
 
-**Ícone Bootstrap** — sugestão por tipo de módulo:
+> Lista canônica de `Tipo de tela` (única aceita pelo validador): `dashboard | analytics | grid | master_detail | form | report | mixed | simulation | approval_queue` — igual à do `roadmap-template.md`.
+
+**Ícone Bootstrap** — sugestão por tipo de módulo (alinhado ao template):
 | Tema | Ícone |
 |---|---|
 | Preços / pricing | `tag` |
 | Dashboard / visão geral | `speedometer2` |
-| Simulação / cenários | `sliders` |
-| Relatório / análise | `file-earmark-bar-graph` |
+| Análise / analytics | `bar-chart-line` |
+| Simulação / cenários | `calculator` |
+| Relatório | `file-earmark-bar-graph` |
 | Importação / upload | `cloud-upload` |
-| Tributário / fiscal | `calculator` |
+| Tributário / fiscal | `receipt` |
 | Usuários / acesso | `people` |
 | Configuração / parametrização | `gear` |
 | Produtos / portfólio | `box-seam` |
-| Aprovação / workflow | `check2-square` |
+| Clientes | `person-badge` |
+| Aprovação / workflow | `check2-circle` |
 
-**KPIs** (apenas para `dashboard` e `mixed`): extrair métricas mencionadas explicitamente (ex.: "Volume, Receita NIV, Margem"). Colocar `TODO:` se não mencionado.
+**Grupo de menu**: agrupar módulos por afinidade (ex.: `Visão Geral`, `Pricing`, `Operação`, `Administração`). Se o documento não sugerir, usar: dashboards/analytics → `Visão Geral`; simulação/preços/aprovação → `Pricing`; cadastros → `Cadastros`; usuários/config → `Administração`.
 
-**Gráficos**: inferir tipo a partir do dado (evolutivo/temporal → `line`, comparação entre categorias → `bar`, distribuição → `pie`).
+**Objetivo do usuário** (1 frase, obrigatório): "Como <role>, quero <ação> para <decisão>". Inferir do contexto; marcar `TODO:` se não houver base.
+
+**KPIs** (para `dashboard`, `analytics`, `mixed`, `simulation`): extrair métricas mencionadas explicitamente (ex.: "Volume, Receita NIV, Margem"). Colocar `TODO:` se não mencionado. Indicar se o KPI é `comparação` (atual × simulado/anterior) ou `simples`.
+
+**Gráficos**: inferir tipo a partir do dado — evolutivo/temporal → `line` (ou `combo` se volume + valor), comparação entre categorias → `bar`, ranking → `bar` horizontal, proporção ≤5 → `donut`, matriz 2 dimensões → `heatmap`, hierarquia/participação → `treemap`, etapas → `funnel`, meta × realizado → `gauge`, sensibilidade preço × volume → `elasticity_curve`, ponte de impacto → `waterfall`.
+
+**Layout**: sugerir a DSL do template (`kpis:4 | charts:2col | grid`) a partir dos componentes identificados; se houver mais de 4 gráficos, usar `charts:3col` + `charts:2col`.
+
+**Drill-down**: quando o texto disser "ao clicar em X, ver Y" ou "detalhar por" → `gráfico <X> → filtra grid por <campo>`.
+
+**Volumetria e distribuições** (§ Entidades): extrair números do documento ("1.200 SKUs", "35 fornecedores", "24 meses de histórico", "80% da receita em 20% dos produtos" → `pareto`). Se ausente, deixar `TODO:` — o pipeline assume padrão (dimensão 50–300, fato 2.000–5.000 linhas).
+
+**Contexto de Demonstração** (§ nova seção): persona da demo, cenário narrativo, números-âncora, período de dados. Inferir do público-alvo do documento; marcar `TODO:` o que não houver base.
 
 **Filtros**: inferir a partir de dimensões mencionadas (canal, região, período, produto, status).
 
@@ -81,8 +101,10 @@ Para cada bloco funcional identificado (sprint, fase, entregável, requisito fun
 - "criar", "cadastrar", "novo" → `criar`
 - "editar", "parametrizar", "configurar" → `editar`
 - "excluir", "deletar" → `excluir`
-- "aprovar", "validar" → `aprovar`
-- "simular", "comparar cenários" → `visualizar` + ação personalizada
+- "aprovar", "validar" → `approve`; "rejeitar", "devolver" → `reject`
+- "enviar para aprovação", "submeter" → `submit_approval`
+- "simular", "comparar cenários" → `simulate` (+ `criar` para salvar cenário)
+- "detalhar", "abrir ficha", "ver detalhes" → `detalhar` (offcanvas de detalhe)
 
 **Regras de negócio**: extrair restrições e invariantes mencionados. Preservar IDs se existirem.
 

@@ -14,7 +14,48 @@ Valida a consistência e integridade entre todos os artefatos gerados antes de p
 
 ---
 
+## Listas Canônicas (fonte única — usadas pelas etapas 0, 1 e 6)
+
+```yaml
+screen_types: [dashboard, analytics, grid, master_detail, form, report, mixed, simulation, approval_queue]
+chart_types:  [bar, line, area, pie, donut, scatter, histogram, heatmap, treemap, combo, funnel, gauge, sparkline, waterfall, elasticity_curve, scenario_comparison]
+kpi_kinds:    [comparação, simples]
+kpi_formats:  [currency, percent, number, text]
+layout_tokens: ["kpis:N", "charts:1col", "charts:2col", "charts:3col", "grid", "split:A/B", "tabs:...", "params", "detail"]
+entity_roles: [dimensao, fato, apoio]
+distributions: ["enum(A:x%, B:y%)", "faixa(min–max)", "normal(media, desvio)", "pareto", "sazonal(mensal, pico: ...)", "tendencia(±X% ao ano)", "derivado(<expr>)", "lista(BR:...)"]
+action_types: [visualizar, criar, editar, excluir, desativar, exportar-excel, exportar-pdf, importar-csv, drill-down, detalhar, simulate, submit_approval, approve, reject]
+```
+
+Se algum desses conjuntos precisar crescer, altere AQUI e em `roadmap-template.md` — nunca em apenas um lugar.
+
 ## Validações por Etapa
+
+### Etapa 0 — Validação do Roadmap (antes de qualquer geração)
+
+**Input:** `roadmap.md`
+**Output:** `.build/project.json` + `validation_reports/step0_roadmap.yaml`
+
+**Checks (erro = PARAR):**
+1. ✓ Título `#` na linha 1; seções `## Módulos` (≥1 módulo com ≥1 feature) e `## Entidades de Dados` (≥1 entidade) presentes
+2. ✓ Cada módulo tem `**Tipo de tela**` ∈ `screen_types` (valor fora da lista → erro listando os aceitos)
+3. ✓ Tipos de gráfico mencionados em `**Gráfico...**`/`**Gráficos:**` ∈ `chart_types`
+4. ✓ `**Layout**`, se presente, usa apenas `layout_tokens` separados por `|`
+5. ✓ `**Papel**` das entidades, se presente, ∈ `entity_roles`
+6. ✓ Cor primária em `## Branding` é hex válido (`#RRGGBB`)
+7. ✓ Nenhum `TODO:` em campos obrigatórios: Descrição, Tipo de tela, ≥1 feature por módulo, Campos principais de cada entidade
+
+**Checks (aviso = continuar, reportar):**
+8. ⚠ Módulo sem `**Objetivo do usuário**` (o subtítulo da tela ficará genérico)
+9. ⚠ Módulo sem `**Layout**` (será inferido do tipo de tela)
+10. ⚠ Módulo `dashboard|analytics|report` sem `**Drill-down**` (tela ficará estática)
+11. ⚠ Módulo sem `**Estado vazio**` (usará texto padrão)
+12. ⚠ Entidade sem `**Volumetria de demo**` (dimensão → 100, fato → 3.000 linhas) ou sem `**Distribuições**` (valores uniformes — parecem menos reais)
+13. ⚠ `## Contexto de Demonstração` ausente ou com `TODO:` (Home e mock terão narrativa genérica)
+14. ⚠ Entidade com `**Papel**: fato` sem campo de data (sazonalidade não poderá ser aplicada)
+15. ⚠ Módulo `approval_queue` sem `**Badge na sidebar**` (contador de pendências não será gerado)
+
+---
 
 ### Etapa 1 — Validação de Requirements
 
@@ -29,6 +70,11 @@ Valida a consistência e integridade entre todos os artefatos gerados antes de p
 5. ✓ Todas as entidades têm `name`, `description`, `module`
 6. ✓ Referências de módulos nas entidades existem
 7. ✓ IDs de features e business_rules são únicos
+8. ✓ `modules[].screen_type` ∈ `screen_types`; `modules[].charts[].type` ∈ `chart_types`; `modules[].kpis[].kind` ∈ `kpi_kinds`
+9. ✓ `modules[].layout` (lista de faixas) usa apenas `layout_tokens`; se ausente no roadmap, foi preenchido pelo fallback por `screen_type`
+10. ✓ `modules[].drilldowns[].source_chart` referencia um `charts[].id` do mesmo módulo e `target_field` existe na entidade do grid
+11. ✓ `entities[].demo.volume` é inteiro > 0; `entities[].demo.distributions[].field` existe em `fields[]`
+12. ✓ `demo_context.credentials[]` cobre todos os `roles[]`
 
 **Output:** `validation_reports/step1_requirements.yaml`
 
@@ -91,17 +137,17 @@ Valida a consistência e integridade entre todos os artefatos gerados antes de p
 
 ---
 
-### Etapa 4 — Validação de Mock Data
+### Etapa 4 — Validação de Mock Data (motor volumétrico)
 
-**Input:** `docs/data_model.yaml`  
-**Output:** `mock_data/<entity>.csv` e `mock_data/<entity>.json`
+**Input:** `docs/data_model.yaml`, `docs/mock_spec.yaml` (se existir)
+**Output:** `mock_data/<entity>.csv` e `mock_data/<entity>.json`, `database/seed.sql`
 
 **IMPORTANTE:** Esta validação deve ser feita lendo os arquivos do DISCO, não com base no que foi gerado na sessão atual. Não confie na memória — verifique cada arquivo explicitamente.
 
 **Procedimento obrigatório antes de qualquer check:**
 1. Ler `docs/data_model.yaml` e extrair a lista de entidades com `table:` (ignorar enums)
 2. Para cada entidade, verificar se `mock_data/<entidade>.csv` existe E se `mock_data/<entidade>.json` existe
-3. Exibir resultado por entidade: `✓ entidade (csv ✓ json ✓)` ou `✗ entidade (csv ✗ json ✓)` etc.
+3. Exibir resultado por entidade: `✓ entidade (csv ✓ json ✓, N rows)` ou `✗ entidade (csv ✗ json ✓)` etc.
 4. Se qualquer arquivo estiver faltando → marcar validação como FAILED antes de verificar conteúdo
 
 **Checks de conteúdo (somente para arquivos que existem):**
@@ -113,24 +159,32 @@ Valida a consistência e integridade entre todos os artefatos gerados antes de p
 6. ✓ Foreign keys apontam para IDs que existem nos arquivos das entidades referenciadas
 7. ✓ Campos de texto com vírgula estão entre aspas duplas no CSV
 8. ✓ Valores de enum estão na lista permitida
+9. ✓ **Volume ≥ `mock_spec.yaml → entities[].volume`** (se o spec existir) — demo com volume realista, não brinquedo
+10. ✓ **`database/seed.sql` existe** (gerado pelo motor no Step 4) e tem bloco por entidade
+11. ✓ **Garantias de demo** (se aplicável):
+    - Se houver tela `approval_queue`: ≥ 5 linhas com status `Pendente Aprovação` (ou equivalente) na entidade de aprovação
+    - Toda dimensão usada em filtro `select` (lendo `requirements.yaml → modules[].filters[]`) tem ≥ 4 valores distintos no mock
+    - Fato principal (entidade `role: fato` com campo de data) cobre todos os meses do `demo.period_months` — nenhum mês vazio
+    - Top-N do gráfico de ranking (lendo `requirements.yaml → modules[].charts[]` com type `bar`/`treemap`) tem N itens distintos
 
 **Output:** `validation_reports/step4_mock_data.yaml`
 
 ---
 
-### Etapa 5 — Validação de SQL Seed
+### Etapa 5 — Validação de SQL Seed (gerado pelo motor)
 
-**Input:** `docs/data_model.yaml`, `mock_data/*.json`  
-**Output:** `database/seed.sql`
+**Input:** `docs/data_model.yaml`, `database/seed.sql` (gerado pelo Step 4)
+**Output:** `validation_reports/step5_seed.yaml`
 
 **Checks:**
 1. ✓ Arquivo `seed.sql` existe e não está vazio
-2. ✓ Todas as entidades têm bloco de INSERT
-3. ✓ Ordem de INSERT respeita dependências de FK
-4. ✓ Uso de `SET IDENTITY_INSERT ON/OFF`
-5. ✓ IDs nos INSERTs correspondem aos IDs do mock_data
-6. ✓ Sintaxe SQL é válida
-7. ✓ Strings com aspas simples escapadas corretamente
+2. ✓ Todas as entidades do `data_model.yaml` têm bloco de INSERT (cabeçalho `-- SEED: <entidade>`)
+3. ✓ Ordem de INSERT respeita dependências de FK (ordem topológica)
+4. ✓ Uso de `SET IDENTITY_INSERT ON/OFF` com `GO` entre blocos
+5. ✓ Idempotência: cada bloco usa `IF NOT EXISTS` ou `MERGE` (não duplica em reexecução)
+6. ✓ Sintaxe SQL Server/Fabric válida: aspas escapadas (`''`), datas ISO, decimais com ponto, bits como `1`/`0`
+7. ✓ Nenhum `TRUNCATE`/`DELETE` (compatível com ambiente compartilhado)
+8. ✓ Volume por tabela ≤ `seed_cap` (default 2000) — CSV em `mock_data/` mantém volume completo
 
 **Output:** `validation_reports/step5_seed.yaml`
 

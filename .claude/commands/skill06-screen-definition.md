@@ -18,22 +18,72 @@ Leia `docs/requirements.yaml` e `docs/business_logic.yaml`, e gere a definição
 
 ## Estrutura de Saída
 
+**Copiar de `docs/requirements.yaml → modules[]` (Step 1) sem reinterpretar:** `user_goal`, `menu_group`, `icon`, `layout`, `kpis`, `charts`, `grid`, `drilldowns`, `empty_state`, `filters`, `recalc_mode`, `sidebar_badge`, `detail_panel`. Esta skill acrescenta o que depende de `business_logic.yaml`/`data_model.yaml` (flags, `simulation_panel`, `approval_bar`, `data_sources`, `mock_file`, `computed` columns, `access`).
+
 ```yaml
 pages:
-  <nome_pagina>:
+  <nome_pagina>:              # slug kebab-case = rota sem barra = prefixo dos IDs
     title: string
-    route: string             # ex.: /aprovacao
+    route: string             # ex.: /aprovacao — única
     module: string
     description: string
-    layout: sidebar | topnav | fullscreen
-    screen_type: dashboard | grid | form | report | mixed | simulation | approval_queue
-    # simulation    → tela com painel de parâmetros + resultado calculado + cenários salvos
+    user_goal: string         # subtítulo da tela ("Como <role>, quero ... para ...")
+    menu_group: string        # grupo na sidebar (ordem de aparição = ordem no roadmap)
+    icon: string              # Bootstrap Icons sem "bi-"
+    screen_type: dashboard | analytics | grid | master_detail | form | report | mixed | simulation | approval_queue
+    # analytics      → filtros globais + 4–10 gráficos com drill-down
+    # master_detail  → grid + detail_offcanvas
+    # simulation     → painel de parâmetros + resultado calculado + cenários salvos
     # approval_queue → fila dedicada para supervisor aprovar/rejeitar itens pendentes
+    layout: [string]          # DSL de faixas: kpis:N | charts:1col|2col|3col | grid | split:A/B | tabs:A,B | params | detail (ver skill07)
+    recalc_mode: live | button        # simulation
+    sidebar_badge: string | null      # approval_queue — expressão pandas de contagem (ex.: "status == 'Pendente Aprovação'")
+    empty_state: string               # texto do estado vazio
+    detail_panel: string | null       # master_detail/approval_queue — o que mostrar no offcanvas
+    access: [{role: string, permissions: full | [string]}]   # de requirements.yaml — usado por app.py (_ROUTE_ROLES), sidebar e Padrão 11
     data_sources:             # entidades do data_model.yaml usadas
       - entity: string
         mock_file: string     # ex.: mock_data/clientes.csv
     has_simulation:     bool  # true → gerar bloco de simulação (skill-simulation)
     has_approval_flow:  bool  # true → gerar fluxo de aprovação (skill-approval-flow)
+
+    kpis:
+      - id: string                  # <pagina>-kpi-<slug>
+        label: string
+        kind: comparação | simples  # comparação → kpi_card (precisa de compare_to); simples → kpi_simple
+        metric: string              # expressão/descrição do cálculo (campo real do data_model)
+        format: currency | percent | number | text
+        better: up | down | neutral
+        compare_to: mes_anterior | periodo_anterior | cenario_atual | meta | null
+        trend: bool                 # simples → sparkline dos últimos 12 períodos
+    charts:
+      - id: string                  # usado no dcc.Graph: <pagina>-chart-<id>
+        type: bar | line | area | pie | donut | scatter | histogram | heatmap | treemap | combo | stacked | grouped | funnel | gauge | sparkline | waterfall | elasticity_curve | scenario_comparison
+        title: string
+        entity: string
+        x_field: string
+        y_field: string
+        series_field: string | null # múltiplas séries / segunda dimensão (heatmap y, treemap nível 2)
+        agg: sum | mean | count | weighted_mean
+        top_n: int | null
+        orientation: h | v          # bar
+    grid:
+      entity: string
+      title: string
+      columns:
+        - field: string
+          header: string
+          format: text | currency | currency0 | number | decimal | percent | pct_delta | date | datetime | bool | badge | computed
+          compute_from: string      # OBRIGATÓRIO se format: computed — id da regra derived_field em business_logic.yaml
+      joins: [{entity: string, on: string, bring: [string]}]   # dimensões para trocar FK por nome legível
+      row_actions: [detalhar | editar | excluir | desativar | approve | reject | duplicar]
+      default_sort: {field: string, dir: asc | desc}
+      selectable: bool              # checkbox (aprovação em lote)
+    drilldowns:
+      - source_chart: string        # charts[].id
+        target: grid | <charts[].id>
+        target_field: string        # campo do grid/gráfico alvo filtrado pelo valor clicado
+        description: string
     
     # NOVO: Workflow e navegação contextual
     workflow:
@@ -74,15 +124,17 @@ filters:
 
 ## Mapeamento screen_type → skills invocadas
 
-| screen_type      | Skills extras invocadas pelo frontend-builder       |
-|------------------|-----------------------------------------------------|
-| `dashboard`      | (padrão — nenhuma extra)                            |
-| `grid`           | (padrão — nenhuma extra)                            |
-| `form`           | (padrão — nenhuma extra)                            |
-| `report`         | (padrão — nenhuma extra)                            |
-| `mixed`          | (padrão — nenhuma extra)                            |
-| `simulation`     | `skill-simulation.md` — gera painel + resultado + cenários salvos |
-| `approval_queue` | `skill-approval-flow.md` — gera fila + modais + callbacks de aprovação |
+| screen_type      | Skills extras invocadas pelo frontend-builder       | Padrões skill08 implícitos |
+|------------------|-----------------------------------------------------|----------------------------|
+| `dashboard`      | (padrão)                                            | 1, 6, 7 (+8 se drilldowns) |
+| `analytics`      | (padrão) — filtros `global: true` alimentam todos os gráficos | 1, 6, 7, 8 |
+| `grid`           | (padrão)                                            | 1, 5/10, 6, 7, 11, 13 |
+| `master_detail`  | (padrão) — `detail` no layout                       | 1, 10, 11, 13 |
+| `form`           | (padrão)                                            | 5, 7 |
+| `report`         | (padrão)                                            | 1, 6, 7 |
+| `mixed`          | (padrão)                                            | conforme actions |
+| `simulation`     | `skill-simulation.md` — gera painel + resultado + cenários salvos | 9 (live) ou 2 (button), 3, 7 |
+| `approval_queue` | `skill-approval-flow.md` — gera fila + modais + callbacks de aprovação | 4, 10, 11, 12 |
 
 Se `has_simulation: true` (em qualquer screen_type), também invoca `skill-simulation.md`.
 Se `has_approval_flow: true` (em qualquer screen_type), também invoca `skill-approval-flow.md`.
@@ -187,8 +239,9 @@ config:
 ## Pós-processamento
 
 1. Executar `/skill00-validator step6` automaticamente
-2. Verificar que todas as rotas são únicas
-3. Verificar que data_sources referenciam entidades existentes
+2. Verificar que todas as rotas são únicas; `screen_type`/`charts[].type` nas listas canônicas do validador
+3. Verificar que data_sources referenciam entidades existentes; `grid.columns[].field`, `charts[].x_field/y_field`, `drilldowns[].target_field` existem em `data_model.yaml` (ou em `joins[].bring`, ou são `computed`)
+3.1. Verificar que `layout` consome todos os `charts[]` e que `kpis[]` com `kind: comparação` têm `compare_to`
 4. **NOVO:** Invocar `skill-workflow-definition` para gerar `docs/workflows.yaml` baseado nas telas definidas
 5. **NOVO:** Atualizar `screens_definition.yaml` com campo `workflow` em cada página (mapeamento reverso de `workflows.yaml`)
 6. Se validação falhar → reportar erros e sugestões

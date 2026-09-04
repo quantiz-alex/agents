@@ -18,6 +18,11 @@ Orquestra o build do projeto delegando para subagents especializados via Agent t
    └── FASE 2: Agent(frontend-builder) ┐
                Agent(backend-builder)  ┘   ← EM PARALELO (mesma mensagem, 2 tool calls)
 
+   └── FASE 3: Agent(ui-reviewer)          ← sob demanda: Playwright smoke em runtime
+                                              (exige frontend rodando; captura Traceback no DOM,
+                                               callbacks que estouram, componentes ausentes,
+                                               sidebar sem badge, role restriction não aplicada)
+
    FORA DO FLUXO (sob demanda, não acionar automaticamente):
    ── Agent(test-writer)                   ← pytest + cypress, cobertura ≥85%
 ```
@@ -25,6 +30,8 @@ Orquestra o build do projeto delegando para subagents especializados via Agent t
 Os subagents estão definidos em `.claude/agents/`. Cada um conhece suas regras, detecta o próprio estado no disco e retorna um relatório estruturado com `STATUS:`.
 
 > **test-writer é standalone.** Ele NÃO faz parte do build automático. É invocado separadamente, em geral após a validação do processo com o cliente ou após refatoração/aprovação de telas, para verificar se o projeto está correto — com meta de cobertura ≥85% de linhas. Acione-o apenas quando o usuário pedir explicitamente (ex.: "rode os testes", "gere testes para a página X", "valide o projeto").
+
+> **ui-reviewer (Fase 3) é sob demanda.** Ele NÃO roda automaticamente após Fase 2 — exige que o frontend esteja iniciado (`python -m frontend.app`). Acione quando o usuário pedir "revise a UI", "rode o smoke", "valide o app em execução", ou quando suspeitar de bugs de runtime não capturados pela validação estática.
 
 ---
 
@@ -95,10 +102,28 @@ Aguardar AMBOS. Se qualquer um retornar `failed`/`blocked` → reportar os erros
     3. uvicorn backend.main:app --reload   → API :8000
     4. python -m frontend.app              → UI  :1050
     5. Validar o sistema com o cliente
+       (opcional) "revise a UI em runtime" → Fase 3 (ui-reviewer + Playwright)
     6. Após aprovação → pedir "gere os testes do projeto"
        (test-writer: pytest + cypress, cobertura ≥85%)
 ══════════════════════════════════════════
 ```
+
+### Passo 5 — Fase 3: ui-reviewer (SOB DEMANDA)
+
+**NÃO rodar automaticamente.** Acionar apenas quando o usuário pedir (ex.: "revise a UI", "rode o smoke", "valide o app em execução") ou quando suspeitar de bugs de runtime.
+
+**Pré-requisitos** (verificar antes de delegar):
+- Frontend rodando: `curl -s http://localhost:1050` responde 200. Se não → instruir o usuário a rodar `python -m frontend.app` em outro terminal e PARAR.
+- Playwright instalado (dev-only): se faltar, o próprio ui-reviewer instrui `pip install playwright && playwright install chromium`.
+
+Lançar via Agent tool com `subagent_type: "ui-reviewer"`. Prompt mínimo:
+
+> Execute o smoke test de UI no diretório atual. O frontend deve estar rodando em http://localhost:1050. Retorne o relatório estruturado com STATUS e a lista de arquivos a investigar (não corrija — repasse ao frontend-builder).
+
+Aguardar conclusão. Ler o `STATUS:`:
+- `success` → informar "UI validada em runtime, 0 falhas" e sugerir proximos passos (testes).
+- `partial`/`failed` → exibir as falhas ao usuário, listar arquivos a investigar, e perguntar se deseja delegar ao frontend-builder para corrigir.
+- `blocked` → repassar a instrução ao usuário (ex.: "inicie o frontend com `python -m frontend.app`").
 
 ---
 
@@ -127,7 +152,9 @@ Ele gera testes unitários Pytest (backend + páginas/callbacks/queries do front
 
 ## Execução Direta de Agentes (sem lighthouse)
 
-O usuário também pode pedir um agente avulso em linguagem natural ("regenere o frontend", "adicione a entidade produto no backend") — nesse caso, lance apenas o subagent correspondente com um prompt focado no pedido.
+O usuário também pode pedir um agente avulso em linguagem natural:
+- "regenere o frontend", "adicione a entidade produto no backend" → lance apenas o subagent correspondente com um prompt focado no pedido.
+- "revise a UI", "rode o smoke", "valide o app em execução" → lance `ui-reviewer` (exige frontend rodando).
 
 ## Pipelines Legados (fallback)
 

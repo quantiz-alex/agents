@@ -37,6 +37,7 @@ Criar `../<project_slug>/` com:
   docs/
   database/
   mock_data/
+  scripts/                  ← mock_generator.py, generate_mock.py, ui_smoke.py (copiados nas skills)
   frontend/
     pages/
     components/
@@ -54,6 +55,7 @@ Criar `../<project_slug>/` com:
         e2e/
         fixtures/
         support/
+    frontend_unit/          ← testes unitários Dash (queries/components/callbacks)
     integration/
   validation_reports/
   assets/

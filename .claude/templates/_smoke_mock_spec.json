@@ -1,0 +1,74 @@
+{
+  "seed": 42,
+  "period_months": 24,
+  "seed_cap": 300,
+  "entities": [
+    {"name": "fornecedor", "table": "fornecedor", "role": "dimensao", "volume": 35, "fields": [
+      {"name": "nome", "type": "varchar(120)", "gen": "lista(BR:empresas)"},
+      {"name": "cnpj", "type": "varchar(18)", "gen": "lista(BR:cnpj)"},
+      {"name": "regiao", "type": "varchar(20)", "gen": "enum(Sudeste:45%, Sul:25%, Nordeste:20%, Centro-Oeste:10%)"},
+      {"name": "ativo", "type": "bit", "gen": "enum(1:94%, 0:6%)"},
+      {"name": "created_at", "type": "datetime2", "gen": "audit"},
+      {"name": "updated_at", "type": "datetime2", "gen": "audit"}
+    ]},
+    {"name": "produto", "table": "produto", "role": "dimensao", "volume": 1200, "fields": [
+      {"name": "familia", "type": "varchar(40)", "gen": "enum(Baterias:18%, Filtros:16%, Freios:15%, Suspensão:12%, Iluminação:11%, Lubrificantes:10%, Elétrica:10%, Acessórios:8%)"},
+      {"name": "codigo", "type": "varchar(20)", "gen": "codigo(familia:3)"},
+      {"name": "nome", "type": "varchar(150)", "gen": "lista(BR:produtos:autopecas)"},
+      {"name": "fornecedor_id", "type": "int", "gen": "fk(fornecedor, pareto)"},
+      {"name": "custo", "type": "decimal(15,2)", "gen": "pareto(15, 1800)"},
+      {"name": "preco_atual", "type": "decimal(15,2)", "gen": "derivado(custo * normal(1.38, 0.06))"},
+      {"name": "volume", "type": "int", "gen": "pareto(5, 900)"},
+      {"name": "elasticidade", "type": "decimal(6,3)", "gen": "normal(-1.2, 0.4, -2.5, -0.2)"},
+      {"name": "status", "type": "varchar(10)", "gen": "enum(Ativo:93%, Inativo:7%)"},
+      {"name": "vigencia_inicio", "type": "date", "gen": "faixa(últimos 18 meses)"},
+      {"name": "created_at", "type": "datetime2", "gen": "audit"},
+      {"name": "updated_at", "type": "datetime2", "gen": "audit"}
+    ]},
+    {"name": "cliente", "table": "cliente", "role": "dimensao", "volume": 400, "fields": [
+      {"name": "nome", "type": "varchar(120)", "gen": "lista(BR:empresas)"},
+      {"name": "tipo", "type": "varchar(10)", "gen": "enum(Oficina:55%, Loja:30%, Frota:15%)"},
+      {"name": "cidade", "type": "varchar(80)", "gen": "lista(BR:cidades)"},
+      {"name": "uf", "type": "varchar(2)", "gen": "lista(BR:uf)"},
+      {"name": "regiao", "type": "varchar(20)", "gen": "lista(BR:regiao)"},
+      {"name": "ativo", "type": "bit", "gen": "enum(1:95%, 0:5%)"}
+    ]},
+    {"name": "venda", "table": "venda", "role": "fato", "volume": 6000, "fields": [
+      {"name": "data", "type": "date", "gen": "sazonal(mensal, pico: nov,dez) + tendencia(+8% ao ano)"},
+      {"name": "produto_id", "type": "int", "gen": "fk(produto, pareto)"},
+      {"name": "cliente_id", "type": "int", "gen": "fk(cliente)"},
+      {"name": "canal", "type": "varchar(15)", "gen": "enum(Loja:55%, E-commerce:30%, Atacado:15%)"},
+      {"name": "quantidade", "type": "int", "gen": "normal(6, 3, 1)"},
+      {"name": "preco_unitario", "type": "decimal(15,2)", "gen": "derivado(produto.preco_atual * normal(1, 0.04))"},
+      {"name": "custo_unitario", "type": "decimal(15,2)", "gen": "derivado(produto.custo)"},
+      {"name": "receita", "type": "decimal(15,2)", "gen": "derivado(quantidade * preco_unitario)"},
+      {"name": "custo_total", "type": "decimal(15,2)", "gen": "derivado(quantidade * custo_unitario)"},
+      {"name": "markup", "type": "decimal(8,4)", "gen": "derivado((preco_unitario / custo_unitario - 1) * 100)"}
+    ]},
+    {"name": "usuarios", "table": "usuarios", "role": "apoio", "volume": 12,
+     "fixed_rows": [
+       {"nome": "Administrador", "email": "admin@pricinglab.com", "role": "admin"},
+       {"nome": "Ana Souza", "email": "gerente@pricinglab.com", "role": "gerente"},
+       {"nome": "Bruno Lima", "email": "analista@pricinglab.com", "role": "analista"}
+     ],
+     "fields": [
+      {"name": "nome", "type": "varchar(100)", "gen": "lista(BR:nomes)"},
+      {"name": "email", "type": "varchar(150)", "gen": "email(nome, pricinglab.com)"},
+      {"name": "senha_hash", "type": "varchar(255)", "gen": "bcrypt(demo)"},
+      {"name": "role", "type": "varchar(20)", "gen": "enum(gerente:30%, analista:70%)"},
+      {"name": "ativo", "type": "bit", "gen": "constante(1)"},
+      {"name": "ultimo_acesso", "type": "datetime2", "gen": "faixa(últimos 30 dias)"}
+    ]},
+    {"name": "cenario_simulacao", "table": "cenario_simulacao", "role": "fato", "volume": 30, "fields": [
+      {"name": "nome", "type": "varchar(200)", "gen": "texto(4)"},
+      {"name": "receita_atual", "type": "decimal(15,2)", "gen": "normal(4000000, 600000, 1000000)"},
+      {"name": "variacao_pct", "type": "decimal(8,4)", "gen": "normal(2.5, 4)"},
+      {"name": "receita_simulada", "type": "decimal(15,2)", "gen": "derivado(receita_atual * (1 + variacao_pct/100))"},
+      {"name": "status", "type": "varchar(30)", "gen": "enum(Rascunho:20%, Pendente Aprovação:30%, Aprovado:40%, Rejeitado:10%)"},
+      {"name": "criado_por", "type": "varchar(100)", "gen": "constante(analista@pricinglab.com)"},
+      {"name": "criado_em", "type": "datetime2", "gen": "faixa(últimos 6 meses)"},
+      {"name": "aprovado_por", "type": "varchar(100)", "gen": "se(status == 'Aprovado' or status == 'Rejeitado', constante(gerente@pricinglab.com), null)"},
+      {"name": "parametros", "type": "text", "gen": "json(variacao_pct, status)"}
+    ]}
+  ]
+}

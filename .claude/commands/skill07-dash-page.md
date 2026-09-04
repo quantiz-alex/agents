@@ -1,282 +1,180 @@
-# Skill 07 — Dash Page Generation Skill
+# Skill 07 — Dash Page Generation Skill (v4)
 
-Leia `docs/screens_definition.yaml` e gere os 4 arquivos de uma página Dash com layout sidebar + design clean.
+Leia `docs/screens_definition.yaml` e gere os 4 arquivos de UMA página Dash **exclusivamente com os componentes de `frontend/components/ui_components.py` e `frontend/components/charts.py`**. Nenhum card, KPI, grid ou gráfico é montado "na mão".
 
 ## Argumento obrigatório
 
-Nome da página a gerar: $ARGUMENTS
-
-Exemplo de uso: `/skill07-dash-page aprovacao`
+Nome da página a gerar: $ARGUMENTS — ex.: `/skill07-dash-page simulacao`
 
 ## Instruções
 
-1. Leia `docs/screens_definition.yaml` e extraia APENAS a página solicitada.
-2. Leia `docs/data_model.yaml` para entender os campos disponíveis.
-3. Gere os 4 arquivos da página: `_page.py`, `_components.py`, `_queries.py`, `_callbacks.py`.
-4. Se os arquivos já existirem, aplique patch incremental.
+1. Ler `docs/screens_definition.yaml` → apenas a página solicitada (`pages.<pagina>`), `docs/design-system.yaml`, `docs/business_logic.yaml` (regras vinculadas ao módulo) e `docs/data_model.yaml` (campos reais).
+2. Gerar `frontend/pages/<pagina>/{__init__,<pagina>_queries,<pagina>_components,<pagina>_page,<pagina>_callbacks}.py`. Se existirem, patch incremental.
+3. Traduzir `pages.<pagina>.layout` (DSL) em faixas de componentes — ver tabela abaixo.
+4. Aplicar as skills especializadas conforme `screen_type`/flags (`skill-simulation.md`, `skill-approval-flow.md`) e os padrões de `skill08-dash-callback.md` conforme `actions`, `drilldowns`, `recalc_mode`, `row_actions`.
+5. Validar com `python -m py_compile` e `python -c "import frontend.pages.<pagina>.<pagina>_page"` (a partir da raiz do projeto).
 
 ---
 
-## Design System Obrigatório
+## Design System (referência rápida — fonte: `design-system.yaml` + `theme.css`)
 
-**IMPORTANTE**: Todos os valores de design estão centralizados em `design-system.yaml`.
-Consulte esse arquivo para cores, espaçamentos, componentes e convenções de nomenclatura.
-
-### Tokens de cor (referência rápida)
-
-```
-Sidebar bg:        #1e293b   (slate-800)
-Sidebar active:    #334155   (slate-700)
-Sidebar text:      #cbd5e1   (slate-300)
-Sidebar highlight: #1045C8   (blue-500)
-Page bg:           #f8fafc   (slate-50)
-Card bg:           #ffffff
-Card border:       #e2e8f0   (slate-200)
-Heading:           #1e293b
-Body text:         #374151
-Muted:             #6b7280
-```
-
-### Regras de layout
-
-- O `layout()` retorna `html.Div` com className `"page-wrapper"` — NÃO usa `dbc.Container` como raiz.
-- A sidebar é externa ao layout de cada página — gerada em `frontend/components/sidebar.py` e renderizada em `app.py`.
-- Cada página só gera o conteúdo interno da área principal.
-- Estrutura interna da página:
-
-```
-.page-wrapper
-  └── .page-header        ← título + breadcrumb
-  └── .page-body          ← filtros + conteúdo principal (grids, cards, charts)
-```
-
-### Cards e componentes
-
-- Todo bloco de conteúdo fica dentro de `dbc.Card` com `className="shadow-sm border-0 mb-3"`.
-- Títulos de card: `dbc.CardHeader` com `className="bg-white border-bottom fw-semibold text-slate"`.
-- Filtros: fundo branco, label pequeno, inputs sem border-radius excessivo.
-- KPIs: card com borda esquerda colorida (`border-start border-4 border-primary`).
-- Grids AG Grid: tema `ag-theme-alpine`, altura `500px`, floatingFilter ativo.
-- Gráficos Plotly: `template="plotly_white"`, sem background, `height=300`.
-- Badges de status: `dbc.Badge` com cores semânticas (success/warning/danger/secondary).
-- Botões: `color="primary"`, sem shadow extra, tamanho padrão.
-- Espaçamento: usar `mb-3`, `py-2`, `px-3` do Bootstrap — sem espaços manuais.
+| Elemento | Como fazer |
+|---|---|
+| Raiz da página | `app_shell(...)` / `app_shell_with_workflow(...)` — nunca `dbc.Container`, nunca `html.Div` manual |
+| Sidebar | externa (`app.py`), **branca**, 240px — a página não a renderiza |
+| Cabeçalho | vem do `app_shell`: breadcrumb `[menu_group, title]`, ícone, título, `subtitle = user_goal`, `meta=[stat_pill("dados até dd/mm/aaaa")]` |
+| KPI comparação | `kpi_card(label, atual, simulado, delta_pct, better, compare_label)` |
+| KPI simples | `kpi_simple(label, value, delta_pct=None, trend=None, hint=None)` — nunca passar o mesmo valor 2x no `kpi_card` |
+| Linha de KPIs | `kpi_row(cards, row_id="<pagina>-kpis-row")` |
+| Card | `card(title, body, right=None, icon_key=None)` |
+| Grid | `data_table(df, "<pagina>-grid", column_types={...}, headers={...}, row_actions=[...], default_sort=(...), hide_cols=["id"])` |
+| Gráfico | helper de `charts.py` dentro de `dcc.Graph(id="<pagina>-chart-<id>", figure=..., config={"displayModeBar": False})` envolvido em `loading()` |
+| Filtros | `filter_card([filter_select(...), filter_date_range(...), filter_text(...)], "<pagina>-btn-filtrar", right=chips_row("<pagina>-chips"))` |
+| Parâmetros de simulação | `param_slider(...)` para variáveis com min/max; `filter_select` para categóricas |
+| Vazio | `empty_state(title=<empty_state do YAML>, hint=...)` no lugar do grid/gráfico quando `df.empty` |
+| Feedback | `toast("<pagina>-toast")` no layout + `notify()` no callback; `confirm_modal()` antes de ações destrutivas/decisões |
+| Detalhe | `detail_offcanvas("<pagina>-detail")` |
+| Cores | nunca hex em páginas — classes `text-primary`, `status_badge()`, tokens `COLORS` |
+| IDs | `<pagina>-<componente>` (`-grid`, `-btn-filtrar`, `-filtro-<campo>`, `-chart-<id>`, `-kpis-row`, `-btn-<acao>`, `-param-<var>`, `-detail`, `-toast`, `-drill`, `-chips`) |
+| Tipagem | obrigatória em todas as funções |
 
 ---
 
-## Estrutura dos Arquivos Gerados
+## DSL de layout → componentes
+
+`pages.<pagina>.layout` é uma lista de faixas, de cima para baixo. Filtros (`filter_card`) vêm SEMPRE antes da primeira faixa (exceto em `simulation`, onde `params` faz esse papel).
+
+| Token | Renderização em `_page.py` |
+|---|---|
+| `kpis:N` | `kpi_row([...N cards...], row_id="<pagina>-kpis-row")` — cards de `kpis[]` (kind → `kpi_card`/`kpi_simple`) |
+| `charts:1col` | `card(chart.title, loading(dcc.Graph(...)))` ocupando `dbc.Col(md=12)` |
+| `charts:2col` | `dbc.Row([dbc.Col(card(...), md=6), dbc.Col(card(...), md=6)], className="g-3")` consumindo os próximos 2 `charts[]` |
+| `charts:3col` | idem com `md=4` e 3 gráficos (o último pode ficar `md=12` se sobrar 1) |
+| `grid` | `card(grid.title or "Detalhamento", [quick_filter_input + botão exportar à direita], body=loading(html.Div(data_table(...), id="<pagina>-grid-wrapper")))` |
+| `split:A/B` | `dbc.Row([dbc.Col(<próximo chart>, md=A), dbc.Col(<próximo chart ou grid>, md=B)])` |
+| `tabs:A,B` | `dbc.Tabs([dbc.Tab(<conteúdo>, label="A"), ...])` — cada aba consome as faixas seguintes até o próximo `tabs`/fim |
+| `params` | painel de parâmetros da simulação (`skill-simulation.md`): `card("Parâmetros do cenário", dbc.Row([param_slider(...), filter_select(...)]), right=dbc.Switch(id="<pagina>-auto", value=True, label="Ao vivo"))` |
+| `detail` | `detail_offcanvas("<pagina>-detail", title=<entidade>)` declarado no layout (fora do fluxo visual) |
+
+Gráficos são consumidos na ordem de `charts[]`. Se sobrarem gráficos sem faixa, acrescentar `charts:2col` ao final. Se faltar gráfico para uma faixa, a faixa é omitida (nunca gerar card vazio).
+
+### Mapeamento `charts[].type` → helper
+
+| type | helper (`charts.py`) | dado esperado em `_queries.py` |
+|---|---|---|
+| `bar` (horizontal se ranking) | `bar_ranking` / `bar_vertical` | labels, values |
+| `line` | `line_chart` / `multi_line_chart` (com `series_field`) | x, y ou {série: y} |
+| `area` | `area_chart` | x, y |
+| `pie` / `donut` | `donut` (≤5 categorias — senão `bar_ranking`) | labels, values |
+| `scatter` | `scatter_chart` | x, y |
+| `histogram` | `histogram` | values |
+| `heatmap` | `heatmap` | x_labels, y_labels, matriz (pivot) |
+| `treemap` | `treemap` | labels, parents, values (2 níveis) |
+| `combo` | `combo_bar_line` | x, bars, line |
+| `stacked` | `stacked_bars` | x, {série: values} |
+| `grouped` / atual × simulado | `grouped_bars` | x, {"Atual": [...], "Simulado": [...]} |
+| `funnel` | `funnel` | stages, values |
+| `gauge` | `gauge` | value, target |
+| `sparkline` | `sparkline` (dentro de `kpi_simple(trend=...)` ou detalhe) | values |
+| `waterfall` | `waterfall_chart` | labels, values (ponte) |
+| `elasticity_curve` | `elasticity_curve` | preco_range, volume_estimado, preco_atual, preco_simulado |
+| `scenario_comparison` | `scenario_comparison_chart` | lista de cenários |
+
+---
+
+## Estrutura dos 4 arquivos
+
+### `_queries.py` — dados e cálculo (pandas, nunca banco direto)
+
+```python
+from __future__ import annotations
+from pathlib import Path
+import pandas as pd
+from frontend.api_client import use_api, api_get           # modo API opcional (USE_API=true)
+
+DATA_DIR = Path(__file__).resolve().parents[3] / "mock_data"
+
+def carregar_<entidade>(periodo: tuple[str, str] | None = None, <filtro>: str | None = None, **drill: str) -> pd.DataFrame:
+    if use_api():
+        return pd.DataFrame(api_get("/<entidades>", params={...}))
+    df = pd.read_csv(DATA_DIR / "<entidade>.csv", parse_dates=[<colunas de data>])
+    # JOINs com dimensões para trazer nomes legíveis (nunca exibir só FK numérica)
+    dim = pd.read_csv(DATA_DIR / "<dimensao>.csv")[["id", "nome"]].rename(columns={"id": "<dimensao>_id", "nome": "<dimensao>"})
+    df = df.merge(dim, on="<dimensao>_id", how="left")
+    # Campos derivados (business_logic.yaml → derived_field) SEMPRE calculados aqui
+    df["margem_pct"] = (df["receita"] - df["custo_total"]) / df["receita"] * 100
+    # filtros + drill-down (kwargs opcionais)
+    for campo, valor in {**{"<filtro>": <filtro>}, **drill}.items():
+        if valor not in (None, ""):
+            df = df[df[campo] == valor]
+    return df
+
+def calcular_kpis(df: pd.DataFrame, df_anterior: pd.DataFrame) -> dict: ...   # retorna valores numéricos; formatação fica em _components
+def agregar_<chart_id>(df: pd.DataFrame) -> pd.DataFrame: ...                 # uma função por gráfico
+def listar_<dimensao>() -> list[str]: ...                                      # opções dos selects
+def periodo_dados(df: pd.DataFrame) -> str: ...                                # "dados até dd/mm/aaaa" para o meta do header
+```
+
+- KPIs de `kind: comparação` precisam de baseline: `compare_to` (`mes_anterior`, `periodo_anterior`, `cenario_atual`) → `_queries.py` calcula o DataFrame de referência.
+- Performance: vetorizado; `groupby`/`pivot_table`; nunca `iterrows`.
+
+### `_components.py` — builders (recebem DataFrame/dict, devolvem componentes da biblioteca)
+
+`build_filtros(opcoes) -> dbc.Card` · `build_kpis(kpis: dict) -> list` (usa `kpi_card` para comparação e `kpi_simple` para simples, com `format_*`) · `build_chart_<id>(df) -> dcc.Graph | html.Div` (retorna `empty_state(compact=True)` se `df.empty`) · `build_grid(df) -> dag.AgGrid | html.Div` (com `column_types` de `grid.columns[].format`, `row_actions` de `grid.row_actions`, `default_sort`) · `build_detalhe(row, relacionados) -> list` (Padrão 10) · modais/`confirm_modal` conforme `actions`.
 
 ### `_page.py`
 
 ```python
-from dash import html, register_page
-import dash_bootstrap_components as dbc
-from frontend.pages.<pagina>.<pagina>_components import (
-    build_filters,
-    build_kpis,      # se houver KPIs
-    build_grid,      # se houver grid
-    build_charts,    # se houver gráficos
-)
-from frontend.pages.<pagina>.<pagina>_queries import <funcoes_necessarias>
+import dash
+from dash import dcc, html
+from frontend.components.ui_components import app_shell_with_workflow, toast, chips_row, detail_offcanvas, stat_pill, button
+from frontend.pages.<pagina>.<pagina>_queries import ...
+from frontend.pages.<pagina>.<pagina>_components import ...
 
-register_page(__name__, path="/<pagina>", title="<title>", name="<name>")
-
+dash.register_page(__name__, path="/<pagina>", title="<title>", name="<title>")
 
 def layout() -> html.Div:
-    # Carrega dados iniciais para KPIs e select options
-    return html.Div([
-        # Cabeçalho da página
-        html.Div([
-            html.H4("<title>", className="fw-bold mb-0 text-dark"),
-            html.Small("<descrição breve>", className="text-muted"),
-        ], className="page-header d-flex flex-column mb-3"),
-
-        # Filtros (card compacto)
-        build_filters(),
-
-        # KPIs (se a página tiver)
-        dbc.Row([...], id="<pagina>-kpis-row"),
-
-        # Conteúdo principal (grid ou charts)
-        build_grid(),  # ou build_charts()
-
-    ], className="page-wrapper px-4 py-3", style={"background": "#f8fafc", "minHeight": "100vh"})
-```
-
-### `_components.py`
-
-```python
-import dash_bootstrap_components as dbc
-import dash_ag_grid as dag
-import plotly.express as px
-import plotly.graph_objects as go
-from dash import dcc, html
-
-
-# KPI card com borda lateral colorida
-def build_kpi_card(title: str, value: str, color: str = "primary", icon: str = "") -> dbc.Card:
-    return dbc.Card([
-        dbc.CardBody([
-            html.Div([
-                html.P(title, className="text-muted small mb-1 text-uppercase fw-semibold", style={"fontSize": "0.7rem", "letterSpacing": "0.05em"}),
-                html.H4(value, className="fw-bold mb-0"),
-            ])
-        ], className="py-3")
-    ], className=f"shadow-sm border-0 border-start border-4 border-{color} mb-3 h-100")
-
-
-# Painel de filtros compacto
-def build_filters(...) -> dbc.Card:
-    return dbc.Card([
-        dbc.CardBody([
-            dbc.Row([
-                # inputs de filtro
-            ], className="g-2 align-items-end")
-        ], className="py-2")
-    ], className="shadow-sm border-0 mb-3")
-
-
-# Grid AG Grid clean
-def build_grid() -> dbc.Card:
-    column_defs = [...]
-    return dbc.Card([
-        dbc.CardHeader([
-            html.Span("<título>", className="fw-semibold"),
-            # botão exportar à direita
-        ], className="bg-white border-bottom d-flex justify-content-between align-items-center"),
-        dbc.CardBody([
-            dag.AgGrid(
-                id="<pagina>-grid",
-                columnDefs=column_defs,
-                rowData=[],
-                defaultColDef={
-                    "resizable": True,
-                    "sortable": True,
-                    "filter": True,
-                    "floatingFilter": True,
-                    "suppressMenu": True,
-                },
-                dashGridOptions={
-                    "pagination": True,
-                    "paginationPageSize": 20,
-                    "paginationPageSizeSelector": [10, 20, 50, 100],
-                    "animateRows": True,
-                    "rowHeight": 44,
-                    "headerHeight": 44,
-                },
-                className="ag-theme-alpine",
-                style={"height": "500px"},
-                csvExportParams={"fileName": "<pagina>.csv"},
-            )
-        ], className="p-0"),
-    ], className="shadow-sm border-0")
-
-
-# Gráfico clean
-def build_chart(...) -> dbc.Card:
-    fig = px.bar(...)  # ou line, pie, etc.
-    fig.update_layout(
-        template="plotly_white",
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=20, r=20, t=40, b=20),
-        height=300,
-        font=dict(family="system-ui, sans-serif", size=12, color="#374151"),
+    df = carregar_<entidade>(<defaults dos filtros>)                  # tela NUNCA abre vazia
+    conteudo = [
+        build_filtros(...),
+        # ...faixas conforme layout DSL...
+        dcc.Store(id="<pagina>-drill", storage_type="memory"),
+        dcc.Download(id="<pagina>-download"),
+        toast("<pagina>-toast"),
+        detail_offcanvas("<pagina>-detail", title="<Entidade>"),     # se detalhar/detail_panel
+        <confirm_modal(...)>,                                          # se ações destrutivas/decisão
+    ]
+    return app_shell_with_workflow(
+        active_key="<pagina>", icon_key="<icon>", title="<title>", subtitle="<user_goal>",
+        breadcrumb_items=["<menu_group>", "<title>"],
+        meta=[stat_pill(periodo_dados(df), "info", "calendar3")],
+        content=conteudo,
+        actions=[button("Exportar", primary=False, icon_key="download", id="<pagina>-btn-exportar"), <ações primárias da tela>],
+        workflow_context=None,   # preenchido via callback quando a tela participa de workflow
     )
-    return dbc.Card([
-        dbc.CardHeader("<título>", className="bg-white border-bottom fw-semibold"),
-        dbc.CardBody(dcc.Graph(figure=fig, config={"displayModeBar": False}), className="p-2"),
-    ], className="shadow-sm border-0 mb-3")
-```
-
-### `_queries.py`
-
-```python
-import pandas as pd
-from pathlib import Path
-
-DATA_DIR = Path("mock_data")
-
-# Funções de leitura e filtro de mock_data
-# NÃO conectar ao banco
-```
-
-**Campos derivados/computados (`logic_type: derived_field` em `docs/business_logic.yaml`):** se a página exibe (em grid, KPI ou relatório) um campo marcado `type: computed` em `screens_definition.yaml`, `_queries.py` DEVE calcular esse campo via pandas ao carregar o DataFrame — nunca assumir que a coluna já vem pronta de `mock_data/<entidade>.csv` (o mock nunca contém essa coluna pré-computada, ver `skill04-mock-data.md`):
-
-```python
-def carregar_<entidade>() -> pd.DataFrame:
-    df = pd.read_csv(DATA_DIR / "<entidade>.csv")
-    # Campo derivado — implementa formula.expression da regra vinculada (ex.: margem = preco - custo)
-    df["margem"] = df["preco"] - df["custo"]
-    return df
 ```
 
 ### `_callbacks.py`
 
-```python
-from dash import Input, Output, State, callback
-from frontend.pages.<pagina>.<pagina>_queries import <funções>
-
-
-def register_callbacks() -> None:
-
-    @callback(
-        Output("<pagina>-grid", "rowData"),
-        Input("<pagina>-btn-filtrar", "n_clicks"),
-        State(...),
-        prevent_initial_call=False,
-    )
-    def update_grid(...) -> list[dict]:
-        df = get_data(...)
-        return df.to_dict("records")
-```
+`register_callbacks()` com os padrões de `skill08-dash-callback.md` aplicáveis: 1 (filtrar; zera drill), 6 (export), 7 (toast via `notify`), 8 (drill-down), 9 ou 2 (simulação), 3/4 (aprovação), 10 (detalhe), 11 (roles), 13 (busca rápida).
 
 ---
 
-## Padrões de ID
+## Regras
 
-| Elemento          | Padrão de ID                    |
-| ----------------- | ------------------------------- |
-| Grid              | `<pagina>-grid`                 |
-| Botão filtrar     | `<pagina>-btn-filtrar`          |
-| Filtro dropdown   | `<pagina>-filtro-<campo>`       |
-| Filtro período    | `<pagina>-filtro-periodo`       |
-| Gráfico           | `<pagina>-chart-<tipo>`         |
-| Linha de KPIs     | `<pagina>-kpis-row`             |
-| Botão de ação     | `<pagina>-btn-<acao>`           |
-
----
-
-## Autenticação e Avatar
-
-- A sidebar exibe automaticamente o avatar do usuário logado (nome + cargo) no rodapé — gerado via `dcc.Store(id="current-user")`.
-- Cada página NÃO precisa verificar autenticação internamente — o guard de rota em `app.py` redireciona para `/login` se `current-user` estiver vazio.
-- A página `/login` é um caso especial: não usa sidebar, ocupa a tela inteira com fundo degradê escuro e card centralizado.
-- Para exibir nome/cargo do usuário dentro de uma página (ex.: "Olá, Ana"), leia `dcc.Store` via `Input("current-user", "data")` em um callback.
-
-## Branding e Padrão Visual
-
-- O rodapé **"Desenvolvido por / Quantiz Pricing Solution"** é gerado **apenas** em `frontend/components/sidebar.py` — nunca dentro de páginas individuais.
-- Todas as páginas compartilham o mesmo padrão visual definido em `docs/design-system.yaml` — leia esse arquivo antes de gerar qualquer componente.
-- Nomes de projeto, cores, tipografia e configurações de grid/plotly devem vir **exclusivamente** do `design-system.yaml`, nunca hardcoded na página.
-- Esse padrão se aplica a **todos os projetos** — o visual muda apenas via `design-system.yaml`, nunca editando as páginas diretamente.
-
-## Restrições
-
-- NUNCA usar `dbc.Container` como raiz do `layout()` — use `html.Div` com `className="page-wrapper"`.
-- NUNCA usar `dbc.Navbar` dentro de páginas — a navbar/sidebar é responsabilidade do `app.py`.
-- NUNCA usar inline styles para cores — usar className do Bootstrap ou o style dict apenas para valores do design system.
-- NUNCA replicar o footer de branding dentro de páginas — ele existe apenas na sidebar.
-- Tipagem Python obrigatória em todas as funções.
-- Contexto máximo: **8.000 tokens** de saída por arquivo (anteriormente 2.000).
-- Se exceder 8.000 tokens, dividir em chunks com continuação automática.
-- **Consultar `design-system.yaml`** para todos os valores de design.
+- **Tela nunca abre vazia**: `layout()` carrega os dados com filtros padrão; se ainda assim `df.empty`, mostra `empty_state` com o texto de `pages.<pagina>.empty_state`.
+- **Nomes legíveis**: grids mostram `fornecedor`, não `fornecedor_id` (JOIN em `_queries.py`); `hide_cols=["id", "*_id"]`.
+- **Formatos**: toda coluna monetária `currency`, percentual `percent`/`pct_delta`, data `date`, status `badge` — via `column_types`; nunca formatar no pandas para string.
+- **Comparação onde há baseline, simples onde não há** — nunca `kpi_card(x, x, 0)`.
+- **Drill-down declarado é drill-down implementado** (Padrão 8) — não deixar `drilldowns[]` sem callback.
+- **Loading** em tudo que um callback atualiza; **toast** em toda ação; **confirm_modal** em toda ação irreversível ou decisão.
+- Sem `dbc.Container` raiz, sem `dbc.Navbar`, sem hex solto, sem `html.Style`, sem CSS/JS custom.
+- Rodapé "Desenvolvido por / Quantiz" só na sidebar.
+- Contexto máximo **8.000 tokens** por arquivo; dividir em chunks se necessário.
 
 ## Pós-processamento
 
-1. Executar `/skill00-validator step7 --page <page>` automaticamente
-2. Verificar que arquivos Python são válidos (parse)
-3. Verificar que IDs seguem padrão `<page>-<component>`
-4. Verificar que design system está aplicado
-5. Se validação falhar → reportar erros e sugestões
-6. Se validação passar → criar checkpoint parcial e avançar
+1. `python -m py_compile` nos 4 arquivos; `python -c "import frontend.pages.<pagina>.<pagina>_callbacks"`.
+2. Conferir que todo `id` usado em `_callbacks.py` existe em `_page.py`/`_components.py` (grep).
+3. Conferir que cada `charts[]`, `kpis[]`, `drilldowns[]`, `row_actions[]` do YAML tem contraparte no código.
+4. `/skill00-validator step7 --page <pagina>`; checkpoint parcial.

@@ -1,6 +1,6 @@
 # Projetos
 
-Registro de todos os projetos gerenciados pelo pipeline Delegated Lighthouse.
+Registro de todos os projetos gerenciados pelo pipeline Delegated Lighthouse (v4.0.0).
 
 ## Como Usar
 
@@ -14,7 +14,8 @@ cd ../nome-do-projeto
 
 # Ou executar um agente específico em linguagem natural:
 # "gere a camada de dados", "regenere o frontend",
-# "adicione a entidade produto no backend", "crie os testes"
+# "adicione a entidade produto no backend", "revise a UI",
+# "crie os testes"
 ```
 
 ---

@@ -71,23 +71,29 @@ O agente **frontend-builder** deve consultar este guia nos seguintes momentos:
 
 ### Disponíveis em `.claude/templates/`:
 
-**`components-library.py`** → copiar para `frontend/components/ui_components.py`
-- `app_shell(active_key, icon_key, title, subtitle, content, actions)` — Shell completo
-- `kpi_card(label, atual, simulado, delta_pct, better)` — KPI com comparação + delta
-- `kpi_row(cards)` — Row de KPI cards
-- `data_table(df, id, numeric_cols, status_col, page_size)` — AG Grid estilizada
-- `page_header(icon_key, title, subtitle, actions)` — Cabeçalho padrão
-- `card(title, body, right)` — Card genérico
-- `button(label, primary, icon_key)` — Botão padrão
-- `filter_card(filters, button_id)` — Card de filtros compacto
-- Helpers: `format_currency()`, `format_percent()`, `format_number()`, `status_badge_style()`
+**`components-library.py`** → copiar para `frontend/components/ui_components.py` (lista completa em `design-system.yaml → component_libraries`)
+- Estrutura: `app_shell(..., breadcrumb_items, meta)`, `app_shell_with_workflow`, `page_header`, `breadcrumb`, `section_title`
+- KPIs: `kpi_card(label, atual, simulado, delta_pct, better)` (**comparação**) · `kpi_simple(label, value, delta_pct, trend, hint)` (**simples**, com sparkline) · `kpi_row(cards, row_id)`
+- Dados: `data_table(df, id, column_types={col: currency|percent|pct_delta|date|badge|...}, row_actions, default_sort, hide_cols, selectable)` · `quick_filter_input`
+- Filtros: `filter_card(filters, button_id, show_button, right)`, `filter_select/filter_date_range/filter_text`, `chip`/`chips_row` (drill-down ativo), `param_slider`
+- Feedback: `empty_state`, `loading`, `toast` + `notify`, `confirm_modal`, `detail_offcanvas` + `detail_field`
+- Identidade: `user_badge`, `status_badge`, `stat_pill`, `home_shortcut_card`, `card`, `button`, `icon`
+- Helpers: `format_currency/compact/percent/number/date`, `derive_palette`
 
 **`charts-library.py`** → copiar para `frontend/components/charts.py`
-- `bar_ranking()`, `bar_vertical()`, `variation_bars()` — Barras
-- `donut()`, `pie()` — Pizza/rosca
-- `line_chart()`, `multi_line_chart()`, `area_chart()` — Linhas
-- `scatter_chart()`, `histogram()` — Outros
-- Helper: `set_primary_color(color)`, `get_empty_state_message()`
+- Barras: `bar_ranking`, `bar_vertical`, `variation_bars`, `stacked_bars`, `grouped_bars`
+- Proporção: `donut`, `pie`, `treemap`
+- Séries: `line_chart`, `multi_line_chart`, `area_chart`, `combo_bar_line`, `sparkline`
+- Analíticos: `heatmap`, `scatter_chart`, `histogram`, `funnel`, `gauge`
+- Simulação: `waterfall_chart`, `elasticity_curve`, `scenario_comparison_chart`
+- Helpers: `with_selection(fig, label)` (destaque de drill-down), `set_primary_color`, `get_empty_state_message`
+
+### Regras de produto (v4)
+- **KPI certo para o dado**: há baseline (mês anterior, simulado, meta)? → `kpi_card`. Não há? → `kpi_simple`. Nunca `kpi_card(x, x, 0)`.
+- **Grid legível**: FK vira nome (join em `_queries`), `column_types` em toda coluna não-texto, `hide_cols=["id"]`, `default_sort`, `row_actions` para detalhar/editar.
+- **Drill-down declarado = implementado**: gráfico → `Store` → grid + `chips_row` + `with_selection` (skill08 Padrão 8).
+- **Tela nunca abre vazia** (dados padrão no `layout()`); quando vazia por filtro → `empty_state` com o texto do roadmap.
+- **Shell completo** (skill-shell.md): Home, sidebar com grupos/usuário/Sair/badges, login split com chips de demo.
 
 ### Exemplo de uso:
 
@@ -245,7 +251,13 @@ def layout():
 | Comparação entre categorias | Barra vertical | `px.bar` |
 | Ranking / top-N | Barra horizontal | `px.bar(orientation="h")` |
 | Proporção (≤5 categorias) | Pizza/Donut | `px.pie(hole=0.4)` |
-| Proporção (>5 categorias) | Barra empilhada | `px.bar(barmode="stack")` |
+| Proporção (>5 categorias) | Barra empilhada | `stacked_bars()` |
+| Participação hierárquica (família > fornecedor) | Treemap | `treemap()` |
+| Matriz 2 dimensões × 1 métrica | Heatmap | `heatmap()` |
+| Volume × valor no tempo | Combo barra+linha | `combo_bar_line()` |
+| Etapas de processo | Funil | `funnel()` |
+| Realizado × meta | Gauge | `gauge()` |
+| Tendência compacta em KPI/detalhe | Sparkline | `sparkline()` / `kpi_simple(trend=)` |
 | Distribuição | Histograma | `px.histogram` |
 | Relação entre duas variáveis | Dispersão | `px.scatter` |
 | KPI único | `dbc.Card` com número grande | — |

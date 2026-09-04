@@ -416,9 +416,75 @@ def rejeitar(
 
 ---
 
+## Bloco de Analytics — KPIs e gráficos por tela (v4)
+
+**Quando:** para cada `pages.<pagina>` em `docs/screens_definition.yaml` com `screen_type ∈ {dashboard, analytics, report, master_detail}` ou com `kpis[]`/`charts[]` não vazios. Gera **um módulo de agregação por tela**, espelhando as funções de `frontend/pages/<pagina>/<pagina>_queries.py` (mesmos nomes, mesmas fórmulas de `business_logic.yaml`) — é o que permite ao frontend trocar CSV por API com `USE_API=true` sem mudar nenhuma tela.
+
+**Arquivos:**
+- `backend/services/analytics_<pagina>.py`
+- `backend/api/routes/analytics_<pagina>.py` → `APIRouter(prefix="/analytics/<pagina>", tags=["Analytics · <Título>"])`
+
+**Padrão do service** (pandas sobre SQLAlchemy — mesma lógica vetorizada do frontend):
+
+```python
+"""analytics_<pagina>.py — agregações da tela <Título> (paridade com frontend/pages/<pagina>/<pagina>_queries.py)."""
+from __future__ import annotations
+from datetime import date
+import pandas as pd
+from sqlalchemy.orm import Session
+from backend.models.<fato> import <Fato>
+from backend.models.<dimensao> import <Dimensao>
+
+def _base(db: Session, inicio: date | None, fim: date | None, **filtros: str | None) -> pd.DataFrame:
+    q = db.query(<Fato>, <Dimensao>.nome.label("<dimensao>")).join(<Dimensao>, <Fato>.<dimensao>_id == <Dimensao>.id)
+    if inicio: q = q.filter(<Fato>.data >= inicio)
+    if fim:    q = q.filter(<Fato>.data <= fim)
+    for campo, valor in filtros.items():
+        if valor: q = q.filter(getattr(<Fato>, campo) == valor)
+    df = pd.read_sql(q.statement, db.bind)
+    # campos derivados — MESMA expressão de business_logic.yaml usada no frontend
+    df["margem_pct"] = (df["receita"] - df["custo_total"]) / df["receita"] * 100
+    return df
+
+def kpis(db: Session, inicio, fim, **filtros) -> dict:            # 1:1 com pages.<pagina>.kpis[]
+    df = _base(db, inicio, fim, **filtros)
+    ant = _base(db, <inicio - delta>, <fim - delta>, **filtros)     # baseline p/ kind: comparação
+    return {"receita": {"valor": float(df.receita.sum()), "anterior": float(ant.receita.sum())}, ...}
+
+def chart_<id>(db: Session, inicio, fim, **filtros) -> list[dict]:  # 1:1 com pages.<pagina>.charts[]
+    df = _base(db, inicio, fim, **filtros)
+    return df.groupby("<x_field>", as_index=False)["<y_field>"].sum().sort_values("<y_field>", ascending=False).head(<top_n>).to_dict("records")
+
+def grid(db: Session, inicio, fim, skip: int = 0, limit: int = 500, **filtros) -> list[dict]:
+    df = _base(db, inicio, fim, **filtros)
+    return df.iloc[skip: skip + limit].to_dict("records")
+```
+
+**Padrão das rotas:**
+
+```python
+router = APIRouter(prefix="/analytics/<pagina>", tags=["Analytics · <Título>"])
+
+@router.get("/kpis")
+def get_kpis(inicio: date | None = None, fim: date | None = None, <filtro>: str | None = None,
+             db: Session = Depends(get_db), current_user = Depends(get_current_user)) -> dict:
+    return service.kpis(db, inicio, fim, <filtro>=<filtro>)
+
+@router.get("/charts/<id>")
+def get_chart_<id>(...) -> list[dict]: ...      # um por charts[]
+
+@router.get("/grid")
+def get_grid(...) -> list[dict]: ...
+```
+
+Regras: filtros dos endpoints = `pages.<pagina>.filters[]` (+ `drilldowns[].target_field` como query param opcional); nomes de campos retornados = os mesmos que o CSV/`_queries.py` produz (o frontend faz `pd.DataFrame(api_get(...))` e segue igual); incluir os routers em `main.py`; validar `python -c "import backend.services.analytics_<pagina>"`.
+
+---
+
 ## Restrições
 
 - Endpoints mínimos: GET (lista), GET (por ID), POST, PUT, DELETE.
+- Endpoints de analytics (`/analytics/<pagina>/kpis|charts/<id>|grid`): obrigatórios para toda tela com `kpis[]`/`charts[]` em `screens_definition.yaml`.
 - Endpoints de simulação e aprovação: apenas quando sinalizados em `api_contracts.yaml` ou `requirements.yaml`.
 - `simular` nunca persiste — apenas calcula e retorna.
 - Aprovação exige role check explícito no route — não delegar somente ao JWT.

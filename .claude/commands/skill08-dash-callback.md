@@ -32,6 +32,12 @@ Cada página pode ter um ou mais padrões combinados. Identifique pelos `actions
 | `modal` / row action   | Padrão 5 — Row action → modal           |
 | `download`             | Padrão 6 — Export Excel                 |
 | qualquer ação          | Padrão 7 — Toast de feedback            |
+| `drilldowns[]` na tela | Padrão 8 — Drill-down gráfico → grid    |
+| `recalc_mode: live`    | Padrão 9 — Recálculo ao vivo (sliders)  |
+| `detalhar` / `detail_panel` | Padrão 10 — Detalhe em offcanvas   |
+| `actions[].roles` definido | Padrão 11 — UI role-aware           |
+| `sidebar_badge` (app.py) | Padrão 12 — Contador de pendências     |
+| `quick_filter_input`   | Padrão 13 — Busca rápida no grid        |
 
 ---
 
@@ -337,7 +343,168 @@ dbc.Toast(
 ```python
 Output("<pagina>-toast", "is_open"),
 Output("<pagina>-toast", "children"),
-Output("<pagina>-toast", "color"),   # "success" | "warning" | "danger" | "info"
+Output("<pagina>-toast", "icon"),   # "success" | "warning" | "danger" | "info"
+```
+
+Preferir `toast("<pagina>-toast")` da biblioteca no layout e `notify("Mensagem", "success")` no callback — retorna exatamente a tupla `(is_open, children, icon)` dos 3 Outputs.
+
+---
+
+## Padrão 8 — Drill-down: clique no gráfico filtra o grid
+
+Aplicar para cada item em `pages.<pagina>.drilldowns[]` (`source_chart`, `target`, `target_field`). O gráfico é a fonte, o grid (ou outro gráfico) é o alvo; um `dcc.Store` guarda a seleção ativa e um `chips_row` mostra o filtro com ✕ para limpar. O gráfico-fonte destaca a barra clicada com `with_selection()`.
+
+```python
+from frontend.components.ui_components import chip, chips_row, empty_state   # chips_row já está no _page.py: chips_row("<pagina>-chips")
+from frontend.components.charts import with_selection
+
+# 1) Clique no gráfico → seleção (heatmap: usar point["x"] e point["y"]; treemap: point["label"])
+@callback(
+    Output("<pagina>-drill", "data"),
+    Input("<pagina>-chart-<source>", "clickData"),
+    Input({"type": "<pagina>-chip", "field": ALL}, "n_clicks"),
+    State("<pagina>-drill", "data"),
+    prevent_initial_call=True,
+)
+def set_drill(click_data, chip_clicks, current):
+    trig = ctx.triggered_id
+    if isinstance(trig, dict):                      # ✕ no chip → limpa aquele campo
+        current = dict(current or {}); current.pop(trig["field"], None); return current
+    if not click_data:
+        return no_update
+    point = click_data["points"][0]
+    value = point.get("y") if point.get("orientation") == "h" else point.get("x")   # bar_ranking é horizontal → categoria em y
+    value = point.get("label", value)                                                # treemap/pie
+    return {**(current or {}), "<target_field>": value}
+
+# 2) Seleção → grid + chips + destaque no gráfico (o callback de filtro (Padrão 1) também recebe State("<pagina>-drill","data"))
+@callback(
+    Output("<pagina>-grid", "rowData", allow_duplicate=True),
+    Output("<pagina>-chips", "children"),
+    Output("<pagina>-chart-<source>", "figure", allow_duplicate=True),
+    Input("<pagina>-drill", "data"),
+    State("<pagina>-chart-<source>", "figure"),
+    State("<pagina>-filtro-<campo1>", "value"), ...,
+    prevent_initial_call=True,
+)
+def apply_drill(drill, fig, filtro1, ...):
+    df = carregar_<entidade>(filtro1=filtro1, ..., **(drill or {}))
+    chips = [chip("<Label do campo>", v, {"type": "<pagina>-chip", "field": k}) for k, v in (drill or {}).items()]
+    fig = with_selection(go.Figure(fig), (drill or {}).get("<target_field>"))
+    return df.to_dict("records"), chips, fig
+```
+
+Regras: `dcc.Store(id="<pagina>-drill", storage_type="memory")` no `_page.py`; funções de `_queries.py` aceitam os campos de drill como kwargs opcionais; ao trocar filtros principais, o Padrão 1 zera o drill (`Output("<pagina>-drill","data")` = `{}` com `allow_duplicate=True`).
+
+---
+
+## Padrão 9 — Recálculo ao vivo (telas `simulation` com `recalc_mode: live`)
+
+Sliders (`param_slider`) e selects de parâmetro entram como **`Input`** (não `State`); o botão "Simular" deixa de existir ou vira "Recalcular" opcional. Um `dbc.Switch(id="<pagina>-auto", value=True, label="Recalcular ao vivo")` permite desligar o modo ao vivo quando o cálculo for pesado.
+
+```python
+@callback(
+    Output("<pagina>-store-resultado", "data"),
+    Output("<pagina>-kpis-row", "children"),
+    Output("<pagina>-chart-principal", "figure"),
+    Output("<pagina>-chart-secundario", "figure"),
+    Output("<pagina>-grid", "rowData"),
+    Output("<pagina>-resultado", "style"),
+    Input("<pagina>-param-<var1>", "value"),        # sliders como Input
+    Input("<pagina>-param-<var2>", "value"),
+    Input("<pagina>-filtro-<select>", "value"),
+    Input("<pagina>-btn-simular", "n_clicks"),      # fallback quando auto=False
+    State("<pagina>-auto", "value"),
+    prevent_initial_call=False,                     # calcula já na abertura com os defaults → tela nunca abre vazia
+)
+def recalcular(v1, v2, sel, n, auto):
+    if not auto and ctx.triggered_id != "<pagina>-btn-simular":
+        return (no_update,) * 6
+    df = carregar_base_simulacao(filtros={"<select>": sel or None})
+    r = calcular_simulacao(df, <var1>=v1, <var2>=v2)          # fórmula literal de business_logic.yaml
+    return r, build_kpis_resultado(r), build_chart_principal(r), build_chart_secundario(r), r["comparativo"], {"display": "block"}
+```
+
+Regras: sliders com `step` ≥ 0,5 para evitar tempestade de callbacks; `_queries.py` deve rodar < 300 ms para ≤ 5.000 linhas (usar pandas vetorizado, nunca `iterrows`); envolver KPIs/gráficos em `loading()`. Quando `recalc_mode: button`, usar o Padrão 2 clássico.
+
+---
+
+## Padrão 10 — Detalhe em offcanvas (`detalhar` / `detail_panel`)
+
+Clique na coluna de ação `acao_detalhar` (ou em qualquer célula, se a tela for `master_detail` sem coluna de ação) abre `detail_offcanvas("<pagina>-detail")` com a ficha do registro + relacionados.
+
+```python
+from frontend.components.ui_components import detail_field, section_title, data_table, empty_state
+from frontend.components.charts import sparkline
+
+@callback(
+    Output("<pagina>-detail", "is_open"),
+    Output("<pagina>-detail", "title"),
+    Output("<pagina>-detail-body", "children"),
+    Input("<pagina>-grid", "cellClicked"),
+    prevent_initial_call=True,
+)
+def abrir_detalhe(cell):
+    if not cell or cell.get("colId") not in ("acao_detalhar", <colunas clicáveis>):
+        return no_update, no_update, no_update
+    row = obter_<entidade>(cell["rowId"] or cell["value"])   # id da linha: use hide_cols=["id"] no data_table e rowId
+    hist = carregar_historico_<entidade>(row["id"])          # relacionados (últimos N)
+    body = [
+        dbc.Row([dbc.Col(detail_field("Nome", row["nome"]), md=8), dbc.Col(detail_field("Status", status_badge(row["status"])), md=4)]),
+        dbc.Row([dbc.Col(detail_field("Preço atual", format_currency(row["preco_atual"], 2), mono=True), md=6), ...]),
+        section_title("Tendência 12 meses"),
+        dcc.Graph(figure=sparkline(hist["valor"].tolist(), height=80), config={"displayModeBar": False}, style={"height": "80px"}),
+        section_title("Últimos registros"),
+        data_table(hist.tail(10), "<pagina>-detail-grid", column_types={...}, page_size=10, height="320px") if not hist.empty else empty_state(compact=True),
+    ]
+    return True, row["nome"], body
+```
+
+Para `approval_queue`, o body inclui parâmetros do item, KPIs de impacto (`kpi_card`) e o gráfico comparativo; os botões Aprovar/Rejeitar do Padrão 4 podem viver no rodapé do offcanvas.
+
+---
+
+## Padrão 11 — UI role-aware (`actions[].roles`)
+
+Botões/ações com `roles` em `screens_definition.yaml` são **ocultados** (não desabilitados) para quem não tem permissão. Um callback por página, disparado por `current-user`:
+
+```python
+@callback(
+    Output("<pagina>-btn-approve", "style"), Output("<pagina>-btn-reject", "style"), Output("<pagina>-btn-novo", "style"),
+    Input("current-user", "data"),
+)
+def aplicar_roles(user):
+    role = (user or {}).get("role")
+    show = lambda roles: {} if role in roles else {"display": "none"}
+    return show(["admin", "gerente"]), show(["admin", "gerente"]), show(["admin", "analista"])
+```
+
+As colunas de ação do grid (`row_actions`) também obedecem: passe `row_actions=[a for a in acoes if role in roles_da_acao]` ao montar o `data_table` no callback de filtro (Padrão 1 recebe `State("current-user","data")`). O backend valida de novo — a UI só esconde.
+
+---
+
+## Padrão 12 — Contador de pendências na sidebar (`sidebar_badge`) — vive em `app.py`
+
+```python
+from frontend.pages.<fila>.<fila>_queries import contar_pendentes   # uma função por tela com sidebar_badge
+
+@callback(Output("sidebar-badges", "data"), Input("url", "pathname"), Input("current-user", "data"))
+def compute_badges(pathname, user):
+    if not user:
+        return {}
+    return {"/<fila>": contar_pendentes(role=user.get("role"))}      # {route: int}; 0 → sem badge
+```
+
+`build_sidebar(pathname, user, badges)` renderiza `html.Span(str(n), className="nav-badge")` para rotas com `n > 0`. Recalcula a cada navegação (após aprovar, o número cai sem reload).
+
+---
+
+## Padrão 13 — Busca rápida no grid (`quick_filter_input`)
+
+```python
+@callback(Output("<pagina>-grid", "dashGridOptions"), Input("<pagina>-grid-quick", "value"), State("<pagina>-grid", "dashGridOptions"))
+def quick_filter(text, opts):
+    return {**(opts or {}), "quickFilterText": text or ""}
 ```
 
 ---
@@ -364,7 +531,12 @@ def register_callbacks() -> None:
     # [Padrão 4] Aprovar / Rejeitar     — se actions tiver approve/reject
     # [Padrão 5] Row action → modal     — se actions tiver modal/edit
     # [Padrão 6] Export Excel           — se actions tiver download
-    # Toast é implícito — sempre incluir dbc.Toast no layout
+    # [Padrão 8] Drill-down             — se drilldowns[] não vazio
+    # [Padrão 9] Recálculo ao vivo      — se recalc_mode == live (substitui o Padrão 2)
+    # [Padrão 10] Detalhe offcanvas     — se row_actions tiver detalhar ou detail_panel definido
+    # [Padrão 11] Role-aware            — se algum actions[].roles definido
+    # [Padrão 13] Busca rápida          — se a página usar quick_filter_input
+    # Toast é implícito — sempre incluir toast("<pagina>-toast") no layout e usar notify()
 ```
 
 ---
