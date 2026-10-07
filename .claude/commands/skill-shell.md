@@ -9,15 +9,20 @@ Especificação autoritativa do **shell do produto**: bibliotecas, tema, sidebar
 
 ## Step 0 — Bibliotecas + tema (uma vez por projeto)
 
-Pular se `frontend/components/ui_components.py` já existir.
+Copiar arquivos faltantes; em projeto existente, aplicar patches incrementais preservando customizações. Não pular atualização de branding ou cenário apenas porque ui_components.py existe.
 
 1. Copiar `../.claude/templates/components-library.py` → `frontend/components/ui_components.py`
 2. Copiar `../.claude/templates/charts-library.py` → `frontend/components/charts.py`
 3. Copiar `../.claude/templates/workflow_components.py` → `frontend/components/workflow_components.py`
 4. Copiar `../.claude/templates/dash-starter/assets/theme.css` → `assets/theme.css`
 5. Copiar `../.claude/templates/api_client.py` → `frontend/api_client.py`
+   - Assistente habilitado por padrão: copiar pricing_assistant.py para services/ e pricing_assistant_components.py para components/; gerar catálogo/handlers/callbacks conforme skill-pricing-assistant.md. Montar assistant_panel uma vez no shell, oculto no login. Não alterar o fluxo de login para esta integração.
+   - Se houver arquitetura/simulação compartilhada, copiar `../.claude/templates/demo_scenario.py` → `frontend/components/demo_scenario.py` e seguir `skill-demo-scenario.md` para stores, motor e dispatcher. Em modo mock, operar sem API.
 6. Criar `frontend/__init__.py`, `frontend/components/__init__.py`, `frontend/pages/__init__.py` (vazios) e `assets/icons/`
 7. **Aplicar o branding** (ler `.build/project.json → branding`):
+   - Resolver a cor primária antes de derivar a paleta: valor explicitamente informado no roadmap/configuração > cor estimada do logo > fallback `#1045C8`. Não considerar o default copiado de design-system.yaml como escolha explícita do cliente.
+   - Detectar `assets/logo.png` mesmo com `branding.logo` vazio. Copiar `templates/scripts/brand_palette.py` para `scripts/` e executar com Pillow no ambiente de build se não houver cor explícita. Registrar `primary_source: explicit|logo|fallback` e a cor resolvida em `.build/project.json` e `docs/design-system.yaml`; se logo neutro/ausente, registrar fallback e motivo. Não inventar a cor oficial da empresa. Rodar novamente o Step 0 após adicionar/trocar logo para atualizar a paleta.
+   - Sincronizar CSS, `ui_components.PRIMARY`, ambos os `CHART_COLORWAY`, cores de foco e botões. Conferir contraste do texto branco nos botões/painel; escurecer o tom de superfície quando necessário, preservando a cor original como referência da marca. Não recolorir o arquivo de logo; usar `logo_dark` (variante para fundo escuro) quando fornecido.
    - Calcular a paleta com a MESMA lógica de `derive_palette(primary, secondary)` de `ui_components.py` (execute `python -c "from frontend.components.ui_components import derive_palette; print(derive_palette('<primary>', <secondary|None>))"`).
    - Em `assets/theme.css`, substituir os valores de `--pmz-primary`, `--pmz-primary-hover`, `--pmz-primary-soft`, `--pmz-primary-soft-border`, `--pmz-primary-dark`, `--pmz-secondary` no bloco `:root`.
    - Em `ui_components.py` e `charts.py`, substituir `"#1045C8"` (primeiro item de `CHART_COLORWAY`) pela cor primária; se houver secundária, substituir o terceiro item (`"#f59e0b"`) por ela.
@@ -51,7 +56,7 @@ Estrutura (de cima para baixo):
 │ ADMINISTRAÇÃO                │
 │  ☺ Usuários                  │  só aparece para roles com access à tela
 ├──────────────────────────────┤
-│ (AS) Ana Souza       [Sair]  │  .sidebar-user → user_badge(nome, role, email) + botão id="btn-logout"
+│ (AS) Ana Souza       [Sair]  │  .sidebar-user → user_badge(nome, role, email) + botão id={"type": "btn-logout", "index": "sidebar"}
 │      gerente · ana@…         │
 │ Desenvolvido por             │  .sidebar-footer — 2 linhas + "v{version}"
 │ Quantiz Pricing Solution     │
@@ -86,12 +91,14 @@ O `layout()` da Home lê `current-user` via callback (`Output("home-content","ch
 html.Div([
     # Painel de marca (esquerda) — some em telas < 992px
     html.Div([
-        html.Div([<logo_dark ou brand-mark branco>, html.Span(display_name, className="fw-bold ms-2")], className="d-flex align-items-center"),
         html.Div([
+            login_brand_logo(_ASSETS, display_name, branding.get("logo_dark") or branding.get("logo")),
+            html.Div([
             html.H1(branding.tagline),
             html.P(<descrição do projeto — 1ª frase>, className="lead"),
             *[html.Div([html.I(className="bi bi-check-circle-fill"), html.Span(b)], className="bullet") for b in <3 bullets>],
-        ]),
+            ]),
+        ], className="login-brand-content"),
         html.Div("Quantiz Pricing Solution", style={"opacity": 0.7, "fontSize": "0.8rem"}),
     ], className="login-brand"),
     # Formulário (direita)
@@ -108,6 +115,7 @@ html.Div([
 ], className="login-wrap")
 ```
 
+- Importar `login_brand_logo` de `ui_components.py`. Ele usa o arquivo configurado ou `assets/logo.png` e preserva proporções, grande e centralizado no painel. Sem arquivo, exibir nome centralizado. Não substituir logo por iniciais pequenas. Detectar o arquivo ao construir o layout para reconhecer logo adicionado depois do build.
 - **3 bullets** do painel: derivar dos `user_goal` dos 3 módulos `priority: high` (encurtar para ≤ 60 caracteres).
 - **Demo chips**: um por `demo_context.credentials[]` → `html.Div([user_badge(nome, role, compact=True), html.Div([html.Div(nome, className="fw-semibold"), html.Div(email, className="text-muted")]), html.Span("usar", className="ms-auto text-primary fw-semibold")], id={"type": "login-demo-chip", "email": email}, className="demo-chip", n_clicks=0)`. Callback com pattern-matching preenche `login-email` e `login-senha` ("demo") e dispara o login.
 - Sem "dica de modo dev" em texto corrido — os chips substituem.
@@ -122,20 +130,20 @@ html.Div([
 ```python
 import os, json
 import dash, dash_bootstrap_components as dbc
-from dash import Input, Output, State, callback, dcc, html, no_update
+from dash import ALL, Input, Output, State, callback, dcc, html, no_update
 from frontend.components.sidebar import CONTENT_FULL_STYLE, CONTENT_STYLE, build_sidebar, register_sidebar_callbacks
 
 _ASSETS = os.path.join(os.path.dirname(__file__), "..", "assets")
 with open(os.path.join(os.path.dirname(__file__), "..", ".build", "project.json"), encoding="utf-8") as f:
     PROJECT = json.load(f)
 
-app = dash.Dash(__name__, use_pages=True, pages_folder="pages", assets_folder=_ASSETS,
+app = dash.Dash(__name__, use_pages=False, assets_folder=_ASSETS,
     external_stylesheets=[dbc.themes.BOOTSTRAP, "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"],
     suppress_callback_exceptions=True, title=PROJECT["branding"]["display_name"],
     meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}])
 server = app.server
 
-# imports de layouts APÓS app (dash.register_page exige app instanciado)
+# imports canônicos de layouts APÓS app; sem register_page no roteamento explícito
 from frontend.pages.login.login_page import layout as login_layout          # noqa: E402
 from frontend.pages.home.home_page import layout as home_layout             # noqa: E402
 # ... uma linha por página
@@ -148,6 +156,7 @@ from frontend.pages.login.login_callbacks import register_callbacks as login_reg
 app.layout = html.Div([
     dcc.Store(id="current-user", storage_type="session"),
     dcc.Store(id="workflow-context", storage_type="session"),
+    # Quando houver cenários: demo-scenario (session), demo-active (memory), conforme skill-demo-scenario.md.
     dcc.Store(id="sidebar-badges", storage_type="memory"),
     dcc.Location(id="url", refresh=False),
     html.Div(id="sidebar-wrapper"),
@@ -156,21 +165,24 @@ app.layout = html.Div([
 
 login_register(); home_register(); <page>_register(); ...; register_sidebar_callbacks()
 
-@callback(Output("page-content", "children"), Input("url", "pathname"), State("current-user", "data"))
-def render_page_content(pathname, user):
+@callback(Output("page-content", "children"), Input("url", "pathname"), Input("current-user", "data"), State("workflow-context", "data"))
+def render_page_content(pathname, user, workflow_context):
+    if not user and pathname != "/login":
+        return login_layout()
     layout_fn = _PAGE_LAYOUTS.get(pathname)
     if layout_fn is None:
         return <empty_state("Página não encontrada", f"A rota {pathname} não existe.", icon_key="signpost-split", action=dcc.Link(button("Ir para o início", primary=True), href="/home"))>
     if user and pathname in _ROUTE_ROLES and user.get("role") not in _ROUTE_ROLES[pathname]:
         return <empty_state("Sem permissão", "Seu perfil não tem acesso a esta tela.", icon_key="shield-lock")>
-    return layout_fn() if callable(layout_fn) else layout_fn
+    context = workflow_context if (workflow_context or {}).get("target") == pathname.lstrip("/") else None
+    return layout_fn(workflow_context=context) if callable(layout_fn) else layout_fn
 
 # ÚNICO callback que escreve em url.pathname (inclui logout)
 @callback(Output("url", "pathname"), Output("current-user", "data", allow_duplicate=True),
-          Input("url", "pathname"), Input("current-user", "data"), Input("btn-logout", "n_clicks"),
+          Input("url", "pathname"), Input("current-user", "data"), Input({"type": "btn-logout", "index": ALL}, "n_clicks"),
           prevent_initial_call="initial_duplicate")
 def guard_routes(pathname, user, logout_clicks):
-    if dash.ctx.triggered_id == "btn-logout" and logout_clicks:
+    if isinstance(dash.ctx.triggered_id, dict) and dash.ctx.triggered_id.get("type") == "btn-logout" and any(logout_clicks or []):
         return "/login", None
     if pathname in ("/", None):
         return ("/home" if user else "/login"), no_update
@@ -197,7 +209,12 @@ if __name__ == "__main__":
 
 Regras críticas:
 - `dash.page_container` **PROIBIDO**; layouts importados **após** `app = dash.Dash(...)`; rodar com `python -m frontend.app`.
-- `btn-logout` existe apenas quando a sidebar está renderizada → o callback usa `suppress_callback_exceptions=True` (já setado) e trata `n_clicks=None`.
+- Logout dinâmico: usar ID `{"type": "btn-logout", "index": "sidebar"}` e Input com `ALL` (lista vazia quando ausente), conforme o callback acima. Não confiar em `suppress_callback_exceptions` para dependências ausentes em runtime.
+- Roteamento explícito exige `use_pages=False`, sem `register_page` nem descoberta automática. Importar por `frontend.pages.*` e registrar cada conjunto de callbacks exatamente uma vez, fora de `layout()`.
+- Projetos com cenários seguem `skill-demo-scenario.md`: roteador recebe demo-active como Input e demo-scenario como State, passando `scenario_state` ao layout. Editar não remonta a página; aplicar/reset atualizam consumidores. Login/logout limpam estado da persona anterior. Botão Restaurar demonstração fica disponível na área autenticada, com confirmação.
+- Todo `layout(workflow_context=None)` aceita contexto e passa valores iniciais aos builders dos filtros/stores. Não gerar callback de montagem com `Input("<pagina>-drill", "id")` ou `Input("<pagina>-filtro-*", "id")`, nem Outputs locais disparados por Inputs globais. O contexto entra pelo roteador e não precisa ser apagado por cada página.
+- Escritas em `workflow-context.data` devem ter um único dono no shell: eventos de navegação com IDs de dicionário e `ALL`, incluindo um nonce/context_id por evento. O mesmo callback navega e publica o contexto; combinar essa responsabilidade com o dono de `url.pathname` (guard_routes), sem criar outro writer de URL. Não usar callbacks concorrentes para consumir/apagar contexto. Autorização de rota continua obrigatória.
+- `validation_layout` serve para validação estática, não monta componentes no navegador. `prevent_initial_call` e `allow_duplicate` não corrigem IDs ausentes. Callbacks exclusivamente locais só devem depender de componentes locais presentes juntos; globais usam pattern matching `ALL` quando o alvo é dinâmico.
 - `main-content` usa **className** (`main-content` / `main-content full`) — o CSS responsivo em `theme.css` cuida do `margin-left`; `CONTENT_STYLE` é mantido só por compatibilidade.
 - Pós-login sempre `/home` (não mais direto para o dashboard).
 

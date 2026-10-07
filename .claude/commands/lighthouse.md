@@ -53,6 +53,8 @@ Você (contexto principal) NÃO gera código do projeto — apenas valida, deleg
    ```
 3. Informar ao usuário quais fases serão executadas e quais serão puladas.
 
+   - O frontend só está completo, quando assistente habilitado (default), se catálogo, handlers, painel/callbacks e integração no shell existirem e corresponderem ao hash das fontes. Sem esses artefatos ou com roadmap/regras alterados, executar frontend-builder para atualização incremental, mesmo com app.py existente, conforme `skill-pricing-assistant.md`. O assistente é parte da Fase 2, sem terceiro comando do usuário, sem agente adicional e sem API de IA.
+
 ### Passo 2 — Fase 1: data-engineer
 
 Lançar via Agent tool com `subagent_type: "data-engineer"`. Prompt mínimo:

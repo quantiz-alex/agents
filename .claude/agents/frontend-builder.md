@@ -32,6 +32,7 @@ O objetivo não é "uma tela que funciona" — é **um produto que o cliente que
 | Gráficos Plotly | `../.claude/commands/skill10-plotly.md` |
 | Simulação / Aprovação | `../.claude/commands/skill-simulation.md`, `skill-approval-flow.md` |
 | Workflows entre telas | `../.claude/commands/skill-workflow-definition.md`, `../.claude/templates/workflows-template.yaml` |
+| Assistente local gerado do roadmap | `../.claude/commands/skill-pricing-assistant.md` |
 | Princípios/checklist visual | `../.claude/skills/ui-ux-pro-max/GUIA-VISUAL-PMZ.md`, `SKILL.md` |
 | Tokens | `../.claude/design-system.yaml` |
 | Bibliotecas | `../.claude/templates/components-library.py`, `charts-library.py`, `workflow_components.py`, `api_client.py`, `dash-starter/assets/theme.css` |
@@ -85,7 +86,13 @@ Executar **`skill06-screen-definition.md` integralmente** (schema autoritativo).
 
 **Output:** `docs/workflows.yaml` + campo `workflow` em cada página. Executar `skill-workflow-definition.md` (detectar simulação → aprovação → dashboard; agrupar por categoria). Checkpoint.
 
+## Step 6.6 — Assistente local adaptado ao projeto
+
+Executar `../.claude/commands/skill-pricing-assistant.md` automaticamente: ler roadmap, funcionalidades, campos e regras; gerar catálogo e handlers de análises locais, perguntas sugeridas e ações específicas. Habilitado por padrão; não requer API de IA nem comando adicional. Gerar `docs/assistant_catalog.yaml`, serviços/loader/registry e painel/callbacks. Análises compartilhadas usam scenario_engine; não duplicar fórmulas. Se scenario_dependencies for necessário, gerá-lo antes deste step. Registrar capacidades excluídas por falta de dados/regra. Integrar painel no Step 8 e executar checks puros + fixtures calculadas do projeto; runtime de UI segue sob demanda. Não pular esta etapa só porque páginas/app.py existem; comparar inputs e atualizar incrementalmente.
+
 ## Step 7 — Páginas (4 arquivos cada)
+
+Antes das páginas, se parâmetros de arquitetura/configuração afetarem outras telas, executar `../.claude/commands/skill-demo-scenario.md`: gerar `docs/scenario_dependencies.yaml`, copiar `demo_scenario.py`, gerar motor puro compartilhado e integrar stores/eventos no shell. Demo usa estado por sessão, sem escrever CSV ou exigir API/banco. Não pular essa integração porque app.py já existe; aplicar patch preservando customizações.
 
 **Input:** `docs/screens_definition.yaml`, `docs/design-system.yaml`, `docs/business_logic.yaml` → **Output:** `frontend/pages/<page>/{__init__,_queries,_components,_page,_callbacks}.py`
 
@@ -95,6 +102,7 @@ Para cada página pendente (checar disco primeiro), **uma por vez**, executar `s
 3. `_page.py` — `layout` DSL → faixas; tela abre com dados; `toast`, `chips_row`, `Store` de drill, `detail_offcanvas`, `confirm_modal` conforme a tela.
 4. `_callbacks.py` — padrões de `skill08` conforme `actions`/`drilldowns`/`recalc_mode`/`row_actions`/`roles`.
 5. Skills especializadas: `simulation` → `skill-simulation.md` (com Padrão 9 se `recalc_mode: live`); `approval_queue`/`has_approval_flow` → `skill-approval-flow.md`.
+   - Arquitetura/configuração com impacto: comparativo Atual × Simulado na própria tela; detalhe preserva chave, view, escopo e revisão; Aplicar/Descartar/Restaurar demonstração conforme `skill-demo-scenario.md`. Todos os consumidores usam o motor compartilhado antes de agregar; não copiar números entre páginas.
 6. Validar: `python -m py_compile` nos 4 arquivos e `python -c "import frontend.pages.<page>.<page>_callbacks"`; grep de IDs entre `_callbacks` e `_page`/`_components`; cada `charts[]`/`kpis[]`/`drilldowns[]` do YAML tem contraparte no código.
 
 `✓ <page> → 4 arquivos (<N> KPIs, <N> gráficos, <N> drill-downs, padrões: …)`.
@@ -103,7 +111,11 @@ Para cada página pendente (checar disco primeiro), **uma por vez**, executar `s
 
 Executar `skill-shell.md` §8.1–8.4: `sidebar.py` (grupos, usuário, Sair, badges, filtro por role), `frontend/pages/home/` (números-âncora, atalhos, pendências para o role, workflow), `frontend/pages/login/` (split-screen, chips de demo), `app.py` (render explícito, `guard_routes` único com logout, `_ROUTE_ROLES`, `sidebar-badges` via Padrão 12, `main-content` por className).
 
+Integrar o painel global do assistente e registrar `frontend.assistant_callbacks` uma vez, conforme skill-pricing-assistant.md. Login oculta painel; análise usa contexto atual e cenário da sessão. Apenas Abrir/Simular proposta; nunca aplicar silenciosamente. Relatório final inclui quantidade de análises, fontes, limitações e estado da validação.
+
 Validar: `python -c "import frontend.app"` a partir da raiz do projeto (não pode lançar exceção); nenhum `sidebar.css` residual; `theme.css` com `--pmz-primary` do branding.
+
+Revisar também o grafo de callbacks: roteamento explícito com `use_pages=False`; registro único fora dos layouts; nenhum callback de inicialização por `Input(..., "id")`; contexto aplicado na montagem via `layout(workflow_context=None)`; nenhum Input global dispara Outputs locais desmontados. `allow_duplicate=True` não resolve registro repetido ou escritores concorrentes de contexto. Login não deve acionar callbacks de páginas protegidas. Conferir navegação direta, login/logout, Fila → Elasticidade, voltar e filtros vazios. Import bem-sucedido sozinho não comprova isso.
 
 ## Pré-Entrega (antes do relatório final)
 

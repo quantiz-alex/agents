@@ -1,5 +1,7 @@
 # Sistema Lighthouse — Geração Automática de Aplicações Full-Stack
 
+O build também gera automaticamente um **Assistente de Pricing local**, adaptado ao roadmap de cada projeto: catálogo de análises, cálculos Python sobre dados mock, perguntas sugeridas e ações para abrir detalhes ou simular propostas. Não exige API de IA nem comando adicional. As análises usam apenas campos/fórmulas disponíveis; limitações são registradas. O cenário só muda após aplicação explícita. Configuração opcional em `## Assistente de Pricing` do roadmap; geração descrita em `.claude/commands/skill-pricing-assistant.md`.
+
 Pipeline orquestrado por **subagents especializados** que gera aplicações completas (Dash + FastAPI + SQL Server) a partir de um único arquivo `roadmap.md`. **v4.0.0** — mock data volumétrico, app shell completo, interatividade real, fidelidade ao roadmap e verificação de UI em runtime.
 
 ---

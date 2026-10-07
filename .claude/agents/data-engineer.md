@@ -31,6 +31,8 @@ Você é o **Agente de Dados** do pipeline Lighthouse. Sua responsabilidade excl
 
 ## Step 0 — Validação do Roadmap
 
+Contrato adicional para demos com arquitetura compartilhada: extrair a seção Cenário compartilhado dos módulos para `modules[].scenario` em requirements.yaml, com key, scope_fields, dependencies [{parameter, rule_ids, output_fields, consumer_pages}], detail_target e requires_approval. Preservar os nomes/fórmulas reais em business_logic.yaml; não inventar efeito para parâmetro sem regra. O frontend gera scenario_dependencies.yaml conforme `skill-demo-scenario.md`. Demo local não exige conexão de banco/API para essas interações.
+
 **Input:** `roadmap.md` → **Output:** `.build/project.json`, estrutura de diretórios
 
 1. Validar `roadmap.md` aplicando **integralmente a Etapa 0 de `../.claude/commands/skill00-validator.md`** (listas canônicas de `screen_types`, `chart_types`, `layout_tokens`, `entity_roles`; checks de erro e de aviso). Gravar `validation_reports/step0_roadmap.yaml` com erros e avisos.
@@ -196,6 +198,8 @@ Por entidade: resource plural kebab-case, operações list (GET com skip/limit),
 Delegar a `../.claude/commands/skill-business-logic.md`. Classifica cada `business_rule`/feature em `validation | derived_field | interactive_formula | workflow_rule`, extraindo fórmula/variáveis/campos de saída de forma estruturada — em vez de deixar cada skill de frontend/backend reinterpretar o texto livre sozinha (o que hoje faz várias delas caírem no mesmo cálculo-placeholder genérico em vez da fórmula real do roadmap).
 
 Se `confidence_summary.needs_review` não vier vazio, reportar ao usuário quais regras não puderam ser extraídas com confiança (aviso — não bloqueia o build).
+
+Assistente local: preservar em requirements.yaml a configuração `assistant.enabled` (default true), objetivos das funcionalidades, campos, hipóteses, unidades e regras usadas para análises. Não preencher ganhos/elasticidade ausentes para viabilizar respostas. O frontend-builder gera catálogo e cálculos automaticamente conforme skill-pricing-assistant.md, sem endpoint de IA. Manter as lacunas em business_logic para que capacidades não suportadas sejam excluídas explicitamente.
 
 Checkpoint: `✓ Step 2.7 → business_logic.yaml (<N> regras: <N> validação, <N> campo derivado, <N> fórmula interativa, <N> workflow)`
 

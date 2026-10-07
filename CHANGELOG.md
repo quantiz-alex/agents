@@ -1,5 +1,16 @@
 # Changelog
 
+## Não lançado — 2026-10-07
+
+- Assistente de Pricing local gerado automaticamente do roadmap: catálogo de capacidades, handlers calculados, perguntas contextuais e propostas de simulação sem API de IA.
+- Runtime conservador por catálogo, histórico por sessão e rejeição de ações de respostas antigas por cenário/filtros/produto; verificações em `check_pricing_assistant.py`.
+
+- Cenários mock conectados: estado puro por sessão com baseline/aplicado/rascunho, simulação atômica, aplicação explícita, descarte e reset.
+- Mapeamento declarativo de parâmetros, regras e telas consumidoras; motor compartilhado para comparativo inline, detalhe e dashboards.
+- Contrato Dash para eventos locais e stores globais sem dependências de páginas desmontadas; revisão invalida simulações antigas.
+- Regressões executáveis sem Dash/banco em `check_demo_scenario.py`. Validação visual do app gerado continua necessária.
+- Branding unificado no roadmap, com cor `auto` aceita pelo validador.
+
 ## v4.0.0 — 2025-01
 
 ### Destaque

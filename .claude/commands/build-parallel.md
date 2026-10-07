@@ -2,6 +2,8 @@
 
 Execute o pipeline de geração do projeto com paralelização inteligente de etapas independentes.
 
+Incluir nó de assistente local conforme `skill-pricing-assistant.md`, dependente de roadmap/requirements/data_model/business_logic/screens/workflows e scenario_dependencies quando houver. Executar antes da integração final do shell, com dono frontend único. Default habilitado, sem API de IA ou comando extra. Não gerar catálogo antes das regras/fontes estarem disponíveis; atualizar incrementalmente quando hashes mudarem.
+
 ## Vantagens sobre /build
 
 - **3x mais rápido**: Paraleliza entidades, páginas e componentes independentes

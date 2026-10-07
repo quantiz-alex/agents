@@ -6,6 +6,10 @@ Leia `docs/requirements.yaml` e `docs/business_logic.yaml`, e gere a definição
 
 ## Instruções
 
+Para módulos de arquitetura com impacto em outras telas, incluir `scenario: {key, role: editor|consumer, default_view: draft|applied, scope_fields: [...]}` em cada página relevante, preservando dependências declaradas no roadmap. O editor inclui comparativo inline e ações simulate/apply/discard; reset pertence ao shell. Gerar dependências conforme `skill-demo-scenario.md`; não inferir fórmula apenas porque páginas compartilham entidade.
+
+Assistente: preservar por página os campos/IDs de seleção, filtros e scenario.key para o contexto do assistente global. Catálogo é gerado depois deste YAML conforme `skill-pricing-assistant.md`; perguntas específicas derivam do user_goal, funcionalidades e regras. Não criar uma cópia de chat em cada página.
+
 1. Leia `docs/requirements.yaml` e `docs/business_logic.yaml` (se este último não existir, trate como "nenhuma regra classificada" — ver passo 6).
 2. Para cada módulo/feature, defina a(s) tela(s) correspondentes.
 3. Especifique os componentes de cada tela com seus dados e comportamentos.

@@ -18,6 +18,7 @@ Componentes de workflow (breadcrumb de jornada, próximos passos) vivem em workf
 from __future__ import annotations
 
 from datetime import date, datetime
+from pathlib import Path
 from typing import Any
 
 import dash_ag_grid as dag
@@ -1002,6 +1003,21 @@ def quick_filter_input(grid_id: str, placeholder: str = "Busca rápida na tabela
     Callback (skill08): Output(grid_id, "dashGridOptions") ← Input(f"{grid_id}-quick", "value") → {"quickFilterText": value}
     """
     return dbc.Input(id=f"{grid_id}-quick", type="search", placeholder=placeholder, debounce=True, size="sm", style={"maxWidth": "280px"})
+
+
+def login_brand_logo(assets_dir: str, display_name: str, logo: str | None = None) -> html.Div:
+    """Logo grande do login, detectado em cada montagem; fallback com nome da empresa."""
+    root = Path(assets_dir).resolve()
+    candidates = [logo, "logo.png"]
+    for candidate in candidates:
+        if not candidate:
+            continue
+        relative = str(candidate).replace("\\", "/").removeprefix("/assets/").removeprefix("assets/")
+        path = (root / relative).resolve()
+        if path.is_relative_to(root) and path.is_file():
+            return html.Div(html.Img(src=f"/assets/{path.relative_to(root).as_posix()}", alt=display_name,
+                                     className="login-logo"), className="login-logo-wrap")
+    return html.Div(display_name, className="login-logo-wrap login-logo-fallback")
 
 
 def with_empty_state(component: Any, empty: Any, is_empty: bool) -> html.Div:

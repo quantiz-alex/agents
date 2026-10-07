@@ -84,8 +84,10 @@ Ler `docs/screens_definition.yaml` e `docs/requirements.yaml`.
 
 ### Análise
 
+Antes de definir navegação, mapear dependências de parâmetros conforme `skill-demo-scenario.md`. Gerar `docs/scenario_dependencies.yaml`. Uma conexão entre telas deve transferir chave do cenário, view (draft/applied), revisão e escopo; breadcrumb sozinho não propaga cálculos. Na arquitetura mostrar o impacto principal antes de navegar. Aprovação só quando explicitamente declarada; os exemplos de aprovação abaixo não são obrigatórios para toda simulação.
+
 1. **Identificar fluxos naturais** baseados em:
-   - Telas de simulação → sempre conectam com aprovação
+   - Telas de simulação → conectam com aprovação somente quando declarada; caso contrário aplicar na demo
    - Telas de configuração → conectam com simulação
    - Dashboards → são destino final ou ponto de partida
    - Relatórios → são destino final
@@ -93,7 +95,7 @@ Ler `docs/screens_definition.yaml` e `docs/requirements.yaml`.
 2. **Detectar dependências** entre telas:
    - `data_sources` compartilhados
    - `actions` que referenciam outras telas
-   - `screen_type: simulation` → precede `approval_queue`
+   - `screen_type: simulation` → precede `approval_queue` apenas se o workflow exigir aprovação
    - `screen_type: approval_queue` → precede dashboards
 
 3. **Agrupar por categoria** (metodologia de Pricing & Revenue Management):

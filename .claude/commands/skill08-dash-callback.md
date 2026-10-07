@@ -326,6 +326,15 @@ def exportar_excel(n_clicks: int, filtro) -> dict:
 
 O `dbc.Toast` é um componente global por página, declarado uma vez no `_page.py` e controlado por todos os callbacks via `allow_duplicate=True`.
 
+### Dependências em páginas dinâmicas
+
+- Não usar `Input("<pagina>-drill", "id")` ou IDs de filtros como gatilho de montagem. Aplicar contexto em `layout(workflow_context=None)` pelo roteador de `skill-shell.md`, inicializando os valores antes de inserir a página.
+- Não misturar Input global (`url`, `workflow-context`, `current-user`) com Outputs string de uma página desmontada. `suppress_callback_exceptions` e `validation_layout` não inserem componentes no DOM.
+- Centralizar escrita/navegação de workflow no shell com eventos `ALL`; não apagar `workflow-context` em callbacks de cada página. Contextos devem identificar destino e evento; a página recebe somente contexto destinado a ela.
+- Registrar callbacks uma vez, por caminho de import canônico `frontend.pages.*`. Não registrar dentro de `layout()`, nem habilitar descoberta Pages junto com roteamento explícito.
+- Para Outputs compartilhados que ainda forem necessários, usar `allow_duplicate=True` com `prevent_initial_call=True`. Se os Inputs forem idênticos, combinar callbacks: States diferentes não distinguem a identidade do callback. Não adicionar Inputs fictícios para esconder a colisão.
+- Manter IDs de gráficos/grids com `with_empty_state` quando dependências locais continuam ativas sem dados.
+
 **Declaração no `_page.py`** (adicionar ao layout):
 ```python
 dbc.Toast(

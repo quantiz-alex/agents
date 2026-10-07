@@ -51,6 +51,9 @@ DEFAULT_PASS = "demo"
 REPORT_PATH = Path("validation_reports/ui_smoke.json")
 PAGE_TIMEOUT_MS = 15_000
 CONSOLE_ERROR_PATTERNS = [
+    r"A nonexistent object was used",
+    r"Duplicate callback outputs",
+    r"Output .* is already in use",
     r"Traceback",
     r"TypeError",
     r"ReferenceError",

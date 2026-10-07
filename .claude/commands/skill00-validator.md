@@ -24,7 +24,7 @@ kpi_formats:  [currency, percent, number, text]
 layout_tokens: ["kpis:N", "charts:1col", "charts:2col", "charts:3col", "grid", "split:A/B", "tabs:...", "params", "detail"]
 entity_roles: [dimensao, fato, apoio]
 distributions: ["enum(A:x%, B:y%)", "faixa(min–max)", "normal(media, desvio)", "pareto", "sazonal(mensal, pico: ...)", "tendencia(±X% ao ano)", "derivado(<expr>)", "lista(BR:...)"]
-action_types: [visualizar, criar, editar, excluir, desativar, exportar-excel, exportar-pdf, importar-csv, drill-down, detalhar, simulate, submit_approval, approve, reject]
+action_types: [visualizar, criar, editar, excluir, desativar, exportar-excel, exportar-pdf, importar-csv, drill-down, detalhar, simulate, apply, discard, reset_demo, submit_approval, approve, reject]
 ```
 
 Se algum desses conjuntos precisar crescer, altere AQUI e em `roadmap-template.md` — nunca em apenas um lugar.
@@ -42,7 +42,7 @@ Se algum desses conjuntos precisar crescer, altere AQUI e em `roadmap-template.m
 3. ✓ Tipos de gráfico mencionados em `**Gráfico...**`/`**Gráficos:**` ∈ `chart_types`
 4. ✓ `**Layout**`, se presente, usa apenas `layout_tokens` separados por `|`
 5. ✓ `**Papel**` das entidades, se presente, ∈ `entity_roles`
-6. ✓ Cor primária em `## Branding` é hex válido (`#RRGGBB`)
+6. ✓ Cor primária em `## Branding` é hex válido (`#RRGGBB`) ou `auto`; auto deve produzir cor resolvida e primary_source no design system antes da geração visual
 7. ✓ Nenhum `TODO:` em campos obrigatórios: Descrição, Tipo de tela, ≥1 feature por módulo, Campos principais de cada entidade
 
 **Checks (aviso = continuar, reportar):**
@@ -209,6 +209,8 @@ Se algum desses conjuntos precisar crescer, altere AQUI e em `roadmap-template.m
 11. ✓ Toda página `screen_type: simulation` (ou `has_simulation: true`) tem ≥1 regra em `docs/business_logic.yaml` com `logic_type: interactive_formula` vinculada ao seu módulo — se não houver, ERRO: "tela de simulação sem fórmula real declarada — provável fallback ao placeholder genérico"
 12. ✓ `simulation_panel.config.params` corresponde 1:1 a `formula.variables[].name` onde `interactive: true` da regra vinculada (mesmos nomes, mesma quantidade)
 13. ✓ Colunas de grid marcadas `type: computed` referenciam uma regra `logic_type: derived_field` existente em `business_logic.yaml`
+14. ✓ Se houver cenário compartilhado: `scenario_dependencies.yaml` mapeia parâmetros reais para RN, outputs e consumidores existentes; default_view e escopo explícitos, aprovação somente quando declarada. Contrato e critérios de jornada em `skill-demo-scenario.md`; não declarar propagação validada apenas por existência de arquivos.
+15. ✓ Assistente habilitado (default): catálogo de análises específico do roadmap, handlers registrados, fontes/campos/regras existentes, exclusões justificadas e ações de navegação/simulação válidas. Perguntas sem regra de demanda não geram ganho de volume. Executar validate_catalog e fixtures do projeto; integração/aceite em skill-pricing-assistant.md.
 
 **Output:** `validation_reports/step6_screens.yaml`
 

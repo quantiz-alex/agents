@@ -16,6 +16,8 @@ Exemplo: `/skill-simulation simulacao-preco`
 
 ## O que é uma tela de simulação
 
+Para arquitetura ou parâmetros que impactam outras telas, aplicar `skill-demo-scenario.md` como contrato de estado. Comparativo principal fica na própria tela de edição, mesmo que ela seja `screen_type: form` ou `grid`. Detalhamento é opcional e preserva rascunho. Salvar snapshot não é Aplicar. Aplicar altera somente o estado mock da sessão; nunca CSV/banco automaticamente. Descartar volta ao aplicado; Restaurar demonstração volta ao original. Não exigir aprovação se não declarada no roadmap.
+
 Uma tela de simulação permite ao analista:
 1. **Definir parâmetros** de um cenário (ex.: margem desejada, desconto máximo, volume estimado)
 2. **Executar o cálculo** sem persistir — apenas visualizar o resultado
@@ -51,6 +53,8 @@ frontend/pages/<pagina>/
 ## `_queries.py` — Funções de cálculo
 
 Toda a lógica de cálculo fica em `_queries.py`. O callback chama a função e exibe o resultado.
+
+Exceção para regras compartilhadas por múltiplas páginas: implementar em `frontend/services/scenario_engine.py`; `_queries.py` apenas carrega dados, resolve cenário e chama o motor. A mesma função calcula arquitetura, detalhe e dashboard. Não duplicar fórmulas.
 
 ```python
 import pandas as pd

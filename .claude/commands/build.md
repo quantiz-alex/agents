@@ -2,6 +2,8 @@
 
 Execute o pipeline completo de geração do projeto, passo a passo, de forma automática.
 
+Assistente local faz parte do build: após screens/workflows/business_logic e antes de concluir frontend, executar `skill-pricing-assistant.md` (default habilitado). Gerar catálogo/handlers/painel/callbacks específicos do roadmap e integrar no shell. Cenários compartilhados seguem `skill-demo-scenario.md`. Não exige comando extra ou API de IA. Retomada verifica hashes/artefatos do assistente, não apenas app.py existente.
+
 ## Argumento opcional
 
 `$ARGUMENTS` — etapa inicial (ex.: `skill03` para retomar a partir do SQL). Se vazio, começa do início ou retoma de onde parou.

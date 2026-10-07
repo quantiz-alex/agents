@@ -186,6 +186,17 @@ TODO: Quem são os usuários? (ex: analistas de pricing, gestores comerciais, co
 - TODO_param2 (number, %, faixa 0–30, padrão 0) — ex.: desconto máximo
 - TODO_param3 (select) — ex.: família de produto
 
+**Cenário compartilhado (quando parâmetros impactam outras telas):**
+- Chave da arquitetura: TODO — identificador estável, ex.: arquitetura-precos
+- Escopo: TODO — ex.: categoria_id; vazio significa todas as linhas
+- Dependências: TODO — parâmetro → RN da fórmula → campos de saída → telas consumidoras
+- Comparativo principal: Atual × Simulado na própria tela de edição
+- Detalhamento: TODO — tela de destino, mantendo cenário, escopo e revisão
+- Aplicação: explícita na demo, somente após simular os parâmetros atuais
+- Exige aprovação: não — alterar para sim apenas se fizer parte da apresentação
+- Descartar: volta ao cenário aplicado; Restaurar demonstração: volta ao original
+- Persistência: sessão do navegador, sem alterar CSVs nem exigir banco/API
+
 **Resultado calculado:**
 <!-- KPIs e tabela que aparecem após simular -->
 - **KPIs:** TODO — ex: Receita Atual × Simulada (comparação), Margem Atual × Simulada (comparação), Variação Total (%), Itens Afetados (simples)
@@ -427,14 +438,23 @@ Dashboard (reflete mudanças)
 
 ## Branding
 <!-- Identidade visual do cliente — personaliza design system, login, sidebar e favicon -->
-- **Cor primária**: #1045C8
+- **Cor primária**: auto — hexadecimal oficial, se informado, prevalece sobre a cor estimada do logo
 - **Cor secundária**: (opcional — usada em gráficos e destaques; padrão: derivada da primária)
-- **Logo**: (caminho relativo ex: assets/logo.png — deixar vazio se não tiver; fallback = badge com iniciais)
+- **Logo**: assets/logo.png — grande e centralizado no painel do login; sem arquivo, mostrar nome da empresa
 - **Logo para fundo escuro** (opcional): (ex: assets/logo-white.png — usado no painel do login)
 - **Favicon**: (opcional — ex: assets/favicon.ico)
 - **Nome na sidebar**: (nome curto — padrão: nome do projeto)
 - **Tagline**: TODO — frase curta exibida no login (ex: "Decisões de preço com confiança")
 - **Fonte**: system (padrão) | inter
+
+## Assistente de Pricing (automático)
+<!-- Não é necessário preencher perguntas/respostas: o pipeline descobre análises a partir
+     das funcionalidades, dados e fórmulas reais do roadmap. Sem API de IA em runtime. -->
+- **Habilitado**: sim — padrão; usar não para excluir o assistente deste projeto
+- **Análises**: auto — conforme regras, campos e objetivos dos módulos
+- **Contexto**: tela, filtros, produto selecionado e cenário da sessão
+- **Ações**: abrir detalhe e simular proposta; aplicação sempre explícita pelo usuário
+- **Limitações**: não estimar volume/ótimo de preço sem regra de demanda; informar hipóteses
 
 ---
 
