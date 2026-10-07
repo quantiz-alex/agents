@@ -31,7 +31,7 @@ Nome da página a gerar: $ARGUMENTS — ex.: `/skill07-dash-page simulacao`
 | Gráfico | helper de `charts.py` dentro de `dcc.Graph(id="<pagina>-chart-<id>", figure=..., config={"displayModeBar": False})` envolvido em `loading()` |
 | Filtros | `filter_card([filter_select(...), filter_date_range(...), filter_text(...)], "<pagina>-btn-filtrar", right=chips_row("<pagina>-chips"))` |
 | Parâmetros de simulação | `param_slider(...)` para variáveis com min/max; `filter_select` para categóricas |
-| Vazio | `empty_state(title=<empty_state do YAML>, hint=...)` no lugar do grid/gráfico quando `df.empty` |
+| Vazio | `with_empty_state(component, empty_state(title=<empty_state do YAML>, hint=...), df.empty)` mantém IDs de grids/gráficos no layout para callbacks; alternar visibilidade, sem remover dependências |
 | Feedback | `toast("<pagina>-toast")` no layout + `notify()` no callback; `confirm_modal()` antes de ações destrutivas/decisões |
 | Detalhe | `detail_offcanvas("<pagina>-detail")` |
 | Cores | nunca hex em páginas — classes `text-primary`, `status_badge()`, tokens `COLORS` |
@@ -66,7 +66,7 @@ Gráficos são consumidos na ordem de `charts[]`. Se sobrarem gráficos sem faix
 | `line` | `line_chart` / `multi_line_chart` (com `series_field`) | x, y ou {série: y} |
 | `area` | `area_chart` | x, y |
 | `pie` / `donut` | `donut` (≤5 categorias — senão `bar_ranking`) | labels, values |
-| `scatter` | `scatter_chart` | x, y |
+| `scatter` | `scatter_chart` / `scatter_by_series` (com `series_field`) | x, y ou {série: (x, y)} |
 | `histogram` | `histogram` | values |
 | `heatmap` | `heatmap` | x_labels, y_labels, matriz (pivot) |
 | `treemap` | `treemap` | labels, parents, values (2 níveis) |

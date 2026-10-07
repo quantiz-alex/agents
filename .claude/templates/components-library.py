@@ -260,7 +260,7 @@ def section_title(text: str, right: Any | None = None, icon_key: str | None = No
     left: list = [icon(icon_key, "1rem", "text-primary me-2")] if icon_key else []
     left.append(html.H5(text, className="mb-0 fw-semibold", style={"fontSize": "1rem"}))
     return html.Div(
-        [html.Div(left, className="d-flex align-items-center"), html.Div(right or [])],
+        [html.Div(left, className="d-flex align-items-center"), html.Div(right if right is not None else [])],
         className="d-flex align-items-center justify-content-between mt-2 mb-2",
     )
 
@@ -569,7 +569,7 @@ def card(
     """Card com header (título + conteúdo opcional à direita) e body."""
     header_left: list = [icon(icon_key, "0.9rem", "text-primary me-2")] if icon_key else []
     header_left.append(html.Span(title, className="fw-semibold", style={"fontSize": "0.875rem"}))
-    right_el = html.Span(right, className="text-muted small") if isinstance(right, str) else (right or [])
+    right_el = html.Span(right, className="text-muted small") if isinstance(right, str) else (right if right is not None else [])
     kwargs: dict[str, Any] = {"id": card_id} if card_id else {}
     return dbc.Card(
         [
@@ -629,7 +629,7 @@ def empty_state(
             html.Div(icon(icon_key, "1.75rem" if compact else "2.25rem"), className="empty-icon"),
             html.Div(title, className="fw-semibold mt-2", style={"color": COLORS["text_strong"]}),
             html.Div(hint, className="text-muted", style={"fontSize": "0.85rem", "maxWidth": "360px"}),
-            html.Div(action, className="mt-3") if action else None,
+            html.Div(action, className="mt-3") if action is not None else None,
         ],
         className="empty-state text-center d-flex flex-column align-items-center " + ("py-3" if compact else "py-5"),
     )
@@ -762,7 +762,7 @@ def filter_card(
         dbc.CardBody(
             [
                 dbc.Row(cols, className="g-2 align-items-end"),
-                html.Div(right, className="mt-2") if right else None,
+                html.Div(right, className="mt-2") if right is not None else None,
             ],
             className="py-2",
         ),
@@ -1002,3 +1002,17 @@ def quick_filter_input(grid_id: str, placeholder: str = "Busca rápida na tabela
     Callback (skill08): Output(grid_id, "dashGridOptions") ← Input(f"{grid_id}-quick", "value") → {"quickFilterText": value}
     """
     return dbc.Input(id=f"{grid_id}-quick", type="search", placeholder=placeholder, debounce=True, size="sm", style={"maxWidth": "280px"})
+
+
+def with_empty_state(component: Any, empty: Any, is_empty: bool) -> html.Div:
+    """
+    Mantém `component` (grid/gráfico) SEMPRE no layout e alterna com `empty_state`.
+    Necessário quando o componente é Input/State de callbacks (cellClicked, clickData, dashGridOptions):
+    o dash-renderer falha callbacks com dependências parcialmente ausentes.
+    """
+    return html.Div(
+        [
+            html.Div(empty, style={} if is_empty else {"display": "none"}),
+            html.Div(component, style={"display": "none"} if is_empty else {}),
+        ]
+    )

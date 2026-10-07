@@ -27,6 +27,8 @@ cd ../nome-do-projeto
 | Price2Farm — Sistema de Precificação Agrícola (UPL) | price2farm | 🟢 Build concluído | 2026-06-26 |
 | pmz-agents | pmz-agents | 🟢 Build concluído | 2026-07-24 |
 | OneSpaWorld | onespaworld | 🔵 Build em andamento (dados + backend + motor ML mock ok; frontend pendente) | 2026-08-20 |
+| GM Pricing Software — Arquitetura de Preços (COL & ECU) | gm-vibe-code | 🟢 Build concluído | 2026-09-04 |
+| OneSpaWorld — Cruise Control (rebuild) | onespaworld-vibe-code | 🟢 Build concluído | 2026-10-07 |
 
 
 ---

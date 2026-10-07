@@ -42,6 +42,8 @@ O objetivo não é "uma tela que funciona" — é **um produto que o cliente que
 2. Após cada step: checkpoint em `.build/checkpoints/` e `✓ [step] → [arquivos]`.
 3. Limite de 8.000 tokens de saída por arquivo — divida em chunks.
 4. **Nunca recrie** o que existe em `ui_components.py`/`charts.py`. Se faltar um componente genérico, adicione-o **na biblioteca do projeto** (`frontend/components/`) e registre aviso sugerindo promover ao template.
+   - Consulte `../.claude/templates/chart-selection-guide.md` para justificar a escolha por objetivo e dados. Preserve tipos explícitos do roadmap; registre propostas de mudança.
+   - Componentes Dash opcionais devem ser comparados com `is not None`, nunca por truthiness: componentes vazios podem conter IDs de callbacks. Use `with_empty_state` para manter grids e gráficos no layout sem dados. Para drivers SHAP locais, use `diverging_bars`; para dispersão por grupo, `scatter_by_series`.
 
 ## Regras invioláveis de UI
 

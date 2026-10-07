@@ -862,6 +862,62 @@ def with_selection(fig: go.Figure, selected_label: str | None) -> go.Figure:
 # ============================================================================
 
 
+def diverging_bars(
+    labels: list[str],
+    values: list[float],
+    value_fmt=None,
+    title: str = "",
+    height: int = 240,
+) -> go.Figure:
+    """
+    Barras horizontais divergentes a partir do zero com cor semântica (verde > 0, vermelho < 0)
+    e rótulo livre — ex.: drivers SHAP (feature × impacto). Ordem de entrada preservada (topo = 1º).
+    """
+    if value_fmt is None:
+        value_fmt = lambda v: f"{v:+,.3f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    colors = [COLOR_POSITIVE if v >= 0 else COLOR_NEGATIVE for v in values]
+    fig = go.Figure(
+        go.Bar(
+            x=values, y=labels, orientation="h",
+            marker=dict(color=colors, line=dict(width=0)),
+            text=[value_fmt(v) for v in values], textposition="outside", cliponaxis=False,
+            hovertemplate="%{y}<br>Impacto: %{x:+.3f}<extra></extra>",
+        )
+    )
+    fig.update_layout(**{**_LAYOUT, "margin": dict(l=10, r=40, t=30 if title else 10, b=10)}, title=title, height=height, showlegend=False)
+    fig.update_yaxes(autorange="reversed", showgrid=False)
+    fig.update_xaxes(showgrid=True, gridcolor=GRID_COLOR, zeroline=True, zerolinecolor="#cbd5e1", zerolinewidth=2)
+    return fig
+
+
+def scatter_by_series(
+    series: dict[str, tuple[list, list]],
+    title: str = "",
+    x_label: str = "",
+    y_label: str = "",
+    height: int = 320,
+    x_suffix: str = "",
+    y_prefix: str = "",
+    colors: dict[str, str] | None = None,
+) -> go.Figure:
+    """Dispersão com uma cor por série (ex.: Expansão × Substituição). series = {nome: (x, y)}."""
+    fig = go.Figure()
+    for i, (name, (xs, ys)) in enumerate(series.items()):
+        color = (colors or {}).get(name, CHART_COLORWAY[i % len(CHART_COLORWAY)])
+        fig.add_trace(
+            go.Scattergl(
+                x=xs, y=ys, mode="markers", name=name,
+                marker=dict(color=_rgba(color, 0.55), size=6, line=dict(width=0)),
+                hovertemplate=name + "<br>%{x:.1f}" + x_suffix + " · " + y_prefix + "%{y:,.0f}<extra></extra>",
+            )
+        )
+    fig.update_layout(**_LAYOUT, title=title, xaxis_title=x_label, yaxis_title=y_label, height=height)
+    fig.update_xaxes(showgrid=True, gridcolor=GRID_COLOR, zeroline=False)
+    fig.update_yaxes(showgrid=True, gridcolor=GRID_COLOR, zeroline=False)
+    return fig
+
+
+
 def set_primary_color(color: str, secondary: str | None = None) -> None:
     """
     Define a cor primária (e secundária opcional) do projeto para usar nos gráficos.
