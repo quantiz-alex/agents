@@ -2,26 +2,35 @@
 
 Especificação autoritativa do **shell do produto**: bibliotecas, tema, sidebar com usuário/grupos/badges, Home, login split-screen e `app.py`. É o que faz o app gerado parecer um produto e não um protótipo.
 
-**Inputs:** `.build/project.json` (branding + demo), `docs/design-system.yaml`, `docs/screens_definition.yaml`, `docs/requirements.yaml`
+**Inputs:** `.build/project.json` (branding + demo), `docs/handoff.md`, `docs/design-system.yaml` (só `branding`), `docs/screens_definition.yaml` (só `shell` + título/rota/menu/ícone/access de cada página — Grep, não leitura integral)
 **Outputs:** `frontend/components/{ui_components,charts,workflow_components,sidebar}.py`, `assets/{theme,sidebar}.css`, `frontend/pages/home/*`, `frontend/pages/login/*`, `frontend/app.py`
 
 ---
 
 ## Step 0 — Bibliotecas + tema (uma vez por projeto)
 
-Copiar arquivos faltantes; em projeto existente, aplicar patches incrementais preservando customizações. Não pular atualização de branding ou cenário apenas porque ui_components.py existe.
+Cópias **sempre com `cp` via Bash** (nunca ler e reescrever um template — `core.md` §1). Em projeto existente, `cp -u` ou patch pontual com Edit preservando customizações. Não pular atualização de branding ou cenário apenas porque ui_components.py existe.
 
-1. Copiar `../.claude/templates/components-library.py` → `frontend/components/ui_components.py`
-2. Copiar `../.claude/templates/charts-library.py` → `frontend/components/charts.py`
-3. Copiar `../.claude/templates/workflow_components.py` → `frontend/components/workflow_components.py`
-4. Copiar `../.claude/templates/dash-starter/assets/theme.css` → `assets/theme.css`
-5. Copiar `../.claude/templates/api_client.py` → `frontend/api_client.py`
-   - Assistente habilitado por padrão: copiar pricing_assistant.py para services/ e pricing_assistant_components.py para components/; gerar catálogo/handlers/callbacks conforme skill-pricing-assistant.md. Montar assistant_panel uma vez no shell, oculto no login. Não alterar o fluxo de login para esta integração.
-   - Se houver arquitetura/simulação compartilhada, copiar `../.claude/templates/demo_scenario.py` → `frontend/components/demo_scenario.py` e seguir `skill-demo-scenario.md` para stores, motor e dispatcher. Em modo mock, operar sem API.
+```bash
+T="$LH/templates"; mkdir -p frontend/components frontend/pages frontend/services assets scripts tests/frontend
+cp -n "$T/components-library.py"            frontend/components/ui_components.py
+cp -n "$T/charts-library.py"                frontend/components/charts.py
+cp -n "$T/workflow_components.py"           frontend/components/workflow_components.py
+cp -n "$T/dash-starter/assets/theme.css"    assets/theme.css
+cp -n "$T/api_client.py"                    frontend/api_client.py
+cp -n "$T/page_common.py"                   frontend/pages/_common.py
+# Assistente (todo projeto) — parametrizar/gerar conforme skill-pricing-assistant.md
+cp -n "$T/pricing_assistant.py" "$T/assistant_llm.py" "$T/assistant_detail.py" "$T/assistant_pages.py" frontend/services/
+cp -n "$T/assistant_callbacks.py"           frontend/assistant_callbacks.py
+cp -n "$T/pricing_assistant_components.py"  frontend/components/
+cp -n "$T/tests/conftest.py" tests/ && cp -n "$T/tests/test_pricing_assistant.py" tests/frontend/
+```
+   - Montar `assistant_panel()` uma vez no shell, oculto no login. Não alterar o fluxo de login para esta integração.
+   - Se houver arquitetura/simulação compartilhada: `cp -n "$T/demo_scenario.py" frontend/components/` e seguir `skill-demo-scenario.md` para stores, motor e dispatcher. Em modo mock, operar sem API.
 6. Criar `frontend/__init__.py`, `frontend/components/__init__.py`, `frontend/pages/__init__.py` (vazios) e `assets/icons/`
 7. **Aplicar o branding** (ler `.build/project.json → branding`):
    - Resolver a cor primária antes de derivar a paleta: valor explicitamente informado no roadmap/configuração > cor estimada do logo > fallback `#1045C8`. Não considerar o default copiado de design-system.yaml como escolha explícita do cliente.
-   - Detectar `assets/logo.png` mesmo com `branding.logo` vazio. Copiar `templates/scripts/brand_palette.py` para `scripts/` e executar com Pillow no ambiente de build se não houver cor explícita. Registrar `primary_source: explicit|logo|fallback` e a cor resolvida em `.build/project.json` e `docs/design-system.yaml`; se logo neutro/ausente, registrar fallback e motivo. Não inventar a cor oficial da empresa. Rodar novamente o Step 0 após adicionar/trocar logo para atualizar a paleta.
+   - Detectar `assets/logo.png` mesmo com `branding.logo` vazio. `cp "$T/scripts/brand_palette.py" scripts/` e executar com Pillow no ambiente de build se não houver cor explícita. Registrar `primary_source: explicit|logo|fallback` e a cor resolvida em `.build/project.json` e `docs/design-system.yaml`; se logo neutro/ausente, registrar fallback e motivo. Não inventar a cor oficial da empresa. Rodar novamente o Step 0 após adicionar/trocar logo para atualizar a paleta.
    - Sincronizar CSS, `ui_components.PRIMARY`, ambos os `CHART_COLORWAY`, cores de foco e botões. Conferir contraste do texto branco nos botões/painel; escurecer o tom de superfície quando necessário, preservando a cor original como referência da marca. Não recolorir o arquivo de logo; usar `logo_dark` (variante para fundo escuro) quando fornecido.
    - Calcular a paleta com a MESMA lógica de `derive_palette(primary, secondary)` de `ui_components.py` (execute `python -c "from frontend.components.ui_components import derive_palette; print(derive_palette('<primary>', <secondary|None>))"`).
    - Em `assets/theme.css`, substituir os valores de `--pmz-primary`, `--pmz-primary-hover`, `--pmz-primary-soft`, `--pmz-primary-soft-border`, `--pmz-primary-dark`, `--pmz-secondary` no bloco `:root`.
@@ -177,20 +186,30 @@ def render_page_content(pathname, user, workflow_context):
     context = workflow_context if (workflow_context or {}).get("target") == pathname.lstrip("/") else None
     return layout_fn(workflow_context=context) if callable(layout_fn) else layout_fn
 
-# ÚNICO callback que escreve em url.pathname (inclui logout)
-@callback(Output("url", "pathname"), Output("current-user", "data", allow_duplicate=True),
+# ÚNICO callback que escreve em url.pathname E workflow-context (inclui logout, atalhos entre telas e ações do assistente)
+@callback(Output("url", "pathname"), Output("current-user", "data", allow_duplicate=True), Output("workflow-context", "data"),
           Input("url", "pathname"), Input("current-user", "data"), Input({"type": "btn-logout", "index": ALL}, "n_clicks"),
+          Input({"type": "nav-event", "page": ALL}, "data"), Input("assistant-action-event", "data"), State("workflow-context", "data"),
           prevent_initial_call="initial_duplicate")
-def guard_routes(pathname, user, logout_clicks):
-    if isinstance(dash.ctx.triggered_id, dict) and dash.ctx.triggered_id.get("type") == "btn-logout" and any(logout_clicks or []):
-        return "/login", None
+def guard_routes(pathname, user, logout_clicks, nav_events, assistant_nav, workflow_context):
+    trig = dash.ctx.triggered_id
+    if isinstance(trig, dict) and trig.get("type") == "btn-logout":
+        return ("/login", None, None) if any(logout_clicks or []) else (no_update,) * 3
+    if (isinstance(trig, dict) and trig.get("type") == "nav-event") or trig == "assistant-action-event":
+        ev = assistant_nav if trig == "assistant-action-event" else next((e for e, i in zip(nav_events or [], dash.ctx.inputs_list[3]) if i["id"] == trig), None)
+        if not ev or not user or not ev.get("target"):
+            return (no_update,) * 3
+        wc = {"target": ev["target"], "context": ev.get("context") or {}, "workflow_id": ev.get("workflow_id"), "nonce": ev.get("id") or uuid.uuid4().hex}
+        return f"/{ev['target']}", no_update, wc
     if pathname in ("/", None):
-        return ("/home" if user else "/login"), no_update
+        return ("/home" if user else "/login"), no_update, no_update
     if pathname == "/login":
-        return ("/home" if user else no_update), no_update
+        return ("/home" if user else no_update), no_update, no_update
     if pathname in _PAGE_LAYOUTS and not user:
-        return "/login", no_update
-    return no_update, no_update
+        return "/login", no_update, no_update
+    if trig == "url" and workflow_context and workflow_context.get("target") != (pathname or "").lstrip("/"):
+        return no_update, no_update, None   # saiu da tela de destino: o contexto do atalho (ex.: SKU) não volta a ser aplicado
+    return no_update, no_update, no_update
 
 @callback(Output("sidebar-wrapper", "children"), Output("main-content", "className"),
           Input("url", "pathname"), Input("current-user", "data"), Input("sidebar-badges", "data"))
@@ -216,7 +235,9 @@ Regras críticas:
 - Escritas em `workflow-context.data` devem ter um único dono no shell: eventos de navegação com IDs de dicionário e `ALL`, incluindo um nonce/context_id por evento. O mesmo callback navega e publica o contexto; combinar essa responsabilidade com o dono de `url.pathname` (guard_routes), sem criar outro writer de URL. Não usar callbacks concorrentes para consumir/apagar contexto. Autorização de rota continua obrigatória.
 - `validation_layout` serve para validação estática, não monta componentes no navegador. `prevent_initial_call` e `allow_duplicate` não corrigem IDs ausentes. Callbacks exclusivamente locais só devem depender de componentes locais presentes juntos; globais usam pattern matching `ALL` quando o alvo é dinâmico.
 - `main-content` usa **className** (`main-content` / `main-content full`) — o CSS responsivo em `theme.css` cuida do `margin-left`; `CONTENT_STYLE` é mantido só por compatibilidade.
-- Pós-login sempre `/home` (não mais direto para o dashboard).
+- Pós-login sempre `/home`.
+- **Contexto de atalho é de uso único por visita**: `guard_routes` o limpa quando a URL muda para outra tela; a tela que o recebe mostra banner com "Limpar filtro" (skill08, Padrão 14).
+- Assistente: `assistant_panel()` no layout do app (após `page-content`) e `register_assistant_callbacks()` uma vez (skill-pricing-assistant.md).
 
 ---
 

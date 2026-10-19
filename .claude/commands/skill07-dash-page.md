@@ -1,6 +1,6 @@
 # Skill 07 — Dash Page Generation Skill (v4)
 
-Leia `docs/screens_definition.yaml` e gere os 4 arquivos de UMA página Dash **exclusivamente com os componentes de `frontend/components/ui_components.py` e `frontend/components/charts.py`**. Nenhum card, KPI, grid ou gráfico é montado "na mão".
+Leia o recorte `docs/screens/<pagina>.yaml` e gere os 4 arquivos de UMA página Dash **exclusivamente com os componentes de `frontend/components/ui_components.py` e `frontend/components/charts.py`**. Nenhum card, KPI, grid ou gráfico é montado "na mão".
 
 ## Argumento obrigatório
 
@@ -8,10 +8,10 @@ Nome da página a gerar: $ARGUMENTS — ex.: `/skill07-dash-page simulacao`
 
 ## Instruções
 
-1. Ler `docs/screens_definition.yaml` → apenas a página solicitada (`pages.<pagina>`), `docs/design-system.yaml`, `docs/business_logic.yaml` (regras vinculadas ao módulo) e `docs/data_model.yaml` (campos reais).
+1. Ler **só** `docs/screens/<pagina>.yaml` — recorte autocontido (tela + regras de negócio + entidades usadas), gerado por `split_screens.py`. **Não** reler `screens_definition`, `business_logic`, `data_model` nem `design-system` inteiros por página; para algo fora do recorte, Grep pela chave. Componentes: `$LH/templates/LIBRARY_INDEX.md`.
 2. Gerar `frontend/pages/<pagina>/{__init__,<pagina>_queries,<pagina>_components,<pagina>_page,<pagina>_callbacks}.py`. Se existirem, patch incremental.
 3. Traduzir `pages.<pagina>.layout` (DSL) em faixas de componentes — ver tabela abaixo.
-4. Aplicar as skills especializadas conforme `screen_type`/flags (`skill-simulation.md`, `skill-approval-flow.md`) e os padrões de `skill08-dash-callback.md` conforme `actions`, `drilldowns`, `recalc_mode`, `row_actions`.
+4. Aplicar as skills especializadas conforme `screen_type`/flags (`skill-simulation.md`, `skill-approval-flow.md`) e, de `skill08-dash-callback.md`, **só os Padrões** que a tela usa (`actions`, `drilldowns`, `recalc_mode`, `row_actions`).
 5. Validar com `python -m py_compile` e `python -c "import frontend.pages.<pagina>.<pagina>_page"` (a partir da raiz do projeto).
 
 ---
@@ -33,7 +33,7 @@ Nome da página a gerar: $ARGUMENTS — ex.: `/skill07-dash-page simulacao`
 | Parâmetros de simulação | `param_slider(...)` para variáveis com min/max; `filter_select` para categóricas |
 | Vazio | `with_empty_state(component, empty_state(title=<empty_state do YAML>, hint=...), df.empty)` mantém IDs de grids/gráficos no layout para callbacks; alternar visibilidade, sem remover dependências |
 | Feedback | `toast("<pagina>-toast")` no layout + `notify()` no callback; `confirm_modal()` antes de ações destrutivas/decisões |
-| Detalhe | `detail_offcanvas("<pagina>-detail")` |
+| Detalhe | `detail_offcanvas("<pagina>-detail", title, width, extra=<bloco fixo>)` — **modal central** (lg; `width>=600` → xl) com botão "Perguntar ao Assistente". Conteúdo fixo (botões Aprovar/Rejeitar, simulador) vai em `extra=`; nunca `oc.children = [...]` |
 | Cores | nunca hex em páginas — classes `text-primary`, `status_badge()`, tokens `COLORS` |
 | IDs | `<pagina>-<componente>` (`-grid`, `-btn-filtrar`, `-filtro-<campo>`, `-chart-<id>`, `-kpis-row`, `-btn-<acao>`, `-param-<var>`, `-detail`, `-toast`, `-drill`, `-chips`) |
 | Tipagem | obrigatória em todas as funções |
@@ -54,7 +54,7 @@ Nome da página a gerar: $ARGUMENTS — ex.: `/skill07-dash-page simulacao`
 | `split:A/B` | `dbc.Row([dbc.Col(<próximo chart>, md=A), dbc.Col(<próximo chart ou grid>, md=B)])` |
 | `tabs:A,B` | `dbc.Tabs([dbc.Tab(<conteúdo>, label="A"), ...])` — cada aba consome as faixas seguintes até o próximo `tabs`/fim |
 | `params` | painel de parâmetros da simulação (`skill-simulation.md`): `card("Parâmetros do cenário", dbc.Row([param_slider(...), filter_select(...)]), right=dbc.Switch(id="<pagina>-auto", value=True, label="Ao vivo"))` |
-| `detail` | `detail_offcanvas("<pagina>-detail", title=<entidade>)` declarado no layout (fora do fluxo visual) |
+| `detail` | `detail_offcanvas("<pagina>-detail", title=<entidade>, extra=...)` declarado no layout (modal, fora do fluxo visual) |
 
 Gráficos são consumidos na ordem de `charts[]`. Se sobrarem gráficos sem faixa, acrescentar `charts:2col` ao final. Se faltar gráfico para uma faixa, a faixa é omitida (nunca gerar card vazio).
 
@@ -125,15 +125,16 @@ def periodo_dados(df: pd.DataFrame) -> str: ...                                #
 ### `_page.py`
 
 ```python
-import dash
 from dash import dcc, html
 from frontend.components.ui_components import app_shell_with_workflow, toast, chips_row, detail_offcanvas, stat_pill, button
+from frontend.pages._common import assistant_params_store, event_stores
 from frontend.pages.<pagina>.<pagina>_queries import ...
 from frontend.pages.<pagina>.<pagina>_components import ...
 
-dash.register_page(__name__, path="/<pagina>", title="<title>", name="<title>")
-
-def layout() -> html.Div:
+# Sem dash.register_page: roteamento explícito (use_pages=False) — app.py mapeia rota → layout.
+def layout(workflow_context: dict | None = None, scenario_state: dict | None = None, user: dict | None = None,
+           session: dict | None = None) -> html.Div:
+    ctx = (workflow_context or {}).get("context") or {}               # contexto de atalho (só nesta tela; guard_routes limpa ao sair)
     df = carregar_<entidade>(<defaults dos filtros>)                  # tela NUNCA abre vazia
     conteudo = [
         build_filtros(...),
@@ -141,9 +142,13 @@ def layout() -> html.Div:
         dcc.Store(id="<pagina>-drill", storage_type="memory"),
         dcc.Download(id="<pagina>-download"),
         toast("<pagina>-toast"),
-        detail_offcanvas("<pagina>-detail", title="<Entidade>"),     # se detalhar/detail_panel
+        detail_offcanvas("<pagina>-detail", title="<Entidade>", extra=<bloco fixo ou None>),  # se detalhar/detail_panel
         <confirm_modal(...)>,                                          # se ações destrutivas/decisão
+        dcc.Store(id={"type": "assistant-select", "page": "<pagina>"}, data={}),   # item em foco do Assistente (Detalhar)
+        assistant_params_store("<pagina>"),                            # se a tela tem filtros/parâmetros
+        *event_stores("<pagina>"),
     ]
+    # Se ctx trouxer filtro de atalho (ex.: {"sku": ...}): banner com botão "Limpar filtro" (skill08, Padrão 14).
     return app_shell_with_workflow(
         active_key="<pagina>", icon_key="<icon>", title="<title>", subtitle="<user_goal>",
         breadcrumb_items=["<menu_group>", "<title>"],
@@ -156,7 +161,7 @@ def layout() -> html.Div:
 
 ### `_callbacks.py`
 
-`register_callbacks()` com os padrões de `skill08-dash-callback.md` aplicáveis: 1 (filtrar; zera drill), 6 (export), 7 (toast via `notify`), 8 (drill-down), 9 ou 2 (simulação), 3/4 (aprovação), 10 (detalhe), 11 (roles), 13 (busca rápida).
+`register_callbacks()` com os padrões de `skill08-dash-callback.md` aplicáveis: 1 (filtrar; zera drill), 6 (export), 7 (toast via `notify`), 8 (drill-down), 9 ou 2 (simulação), 3/4 (aprovação), 10 (detalhe + foco do assistente), 11 (roles), 13 (busca rápida), 14 (banner de contexto herdado) e 15 (parâmetros da tela para o assistente).
 
 ---
 
@@ -170,6 +175,7 @@ def layout() -> html.Div:
 - **Loading** em tudo que um callback atualiza; **toast** em toda ação; **confirm_modal** em toda ação irreversível ou decisão.
 - Sem `dbc.Container` raiz, sem `dbc.Navbar`, sem hex solto, sem `html.Style`, sem CSS/JS custom.
 - Rodapé "Desenvolvido por / Quantiz" só na sidebar.
+- **Volume sem arredondar por linha** em `_queries.py` (arredondar só na exibição). Funções de `_queries.py` são públicas e reutilizáveis — o Assistente chama as mesmas.
 - Contexto máximo **8.000 tokens** por arquivo; dividir em chunks se necessário.
 
 ## Pós-processamento
@@ -177,4 +183,4 @@ def layout() -> html.Div:
 1. `python -m py_compile` nos 4 arquivos; `python -c "import frontend.pages.<pagina>.<pagina>_callbacks"`.
 2. Conferir que todo `id` usado em `_callbacks.py` existe em `_page.py`/`_components.py` (grep).
 3. Conferir que cada `charts[]`, `kpis[]`, `drilldowns[]`, `row_actions[]` do YAML tem contraparte no código.
-4. `/skill00-validator step7 --page <pagina>`; checkpoint parcial.
+4. Ao final de todas as páginas: `python "$LH/templates/scripts/validate_project.py" pages` (não ler o skill00); checkpoint parcial.

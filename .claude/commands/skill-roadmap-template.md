@@ -4,7 +4,7 @@ Valida o formato do `roadmap.md` e, se não existir, gera um template preenchív
 
 ## Quando Usar
 
-- Antes de iniciar qualquer pipeline (`/build` ou `/build-parallel`)
+- Antes de iniciar o pipeline (`/lighthouse`)
 - Quando o usuário quer criar um novo projeto do zero
 - Para verificar se um `roadmap.md` existente está no formato correto
 
@@ -159,7 +159,7 @@ Após validação bem-sucedida, salvar em `.build/project.json`:
 ```
 
 Este arquivo é lido por:
-- `build.md` para preencher `app.py`, `backend/main.py`, `sidebar.py`, `README.md`
+- `skill-shell.md` (app.py, sidebar) e `backend-builder` (`backend/main.py`, `README.md`)
 - `skill-env.md` para o `.env`
 - `skill-auth.md` para configurar o app JWT
 

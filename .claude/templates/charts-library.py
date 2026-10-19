@@ -550,12 +550,19 @@ def elasticity_curve(
         )
     )
 
+    # Rótulos das linhas: abrem para lados opostos (o menor preço à esquerda) e viram um só quando as linhas coincidem.
+    xs = [float(v) for v in preco_range] if preco_range is not None and len(preco_range) else []
+    span = (max(xs) - min(xs)) if xs else 0.0
+    ambos = preco_atual is not None and preco_simulado is not None
+    juntos = ambos and abs(float(preco_simulado) - float(preco_atual)) <= max(span * 0.06, 1e-9)
+    sim_a_direita = not ambos or float(preco_simulado) >= float(preco_atual)
     if preco_atual is not None:
-        fig.add_vline(x=preco_atual, line=dict(color=COLOR_NEUTRAL, width=1, dash="dot"),
-                       annotation_text="Atual", annotation_position="top")
+        rotulo = {} if juntos else {"annotation_text": "Atual", "annotation_position": "top left" if sim_a_direita else "top right"}
+        fig.add_vline(x=preco_atual, line=dict(color=COLOR_NEUTRAL, width=1, dash="dot"), **rotulo)
     if preco_simulado is not None:
         fig.add_vline(x=preco_simulado, line=dict(color=CHART_COLORWAY[1], width=2, dash="dash"),
-                       annotation_text="Simulado", annotation_position="top")
+                      annotation_text="Atual = Simulado" if juntos else "Simulado",
+                      annotation_position="top" if juntos else ("top right" if sim_a_direita else "top left"))
 
     fig.update_layout(
         **_LAYOUT, title=title, xaxis_title=x_label, yaxis_title=y_label, height=height,
@@ -942,3 +949,65 @@ def get_empty_state_message(chart_type: str = "gráfico") -> dict:
         color="info",
         className="text-center",
     )
+
+
+# ============================================================================
+# EXTENSÕES PROMOVIDAS AO TEMPLATE (v5, origem: projeto de referência Qwizer)
+# ============================================================================
+
+STRATEGY_COLORS = {"Volume": CHART_COLORWAY[0], "Margem": CHART_COLORWAY[1], "Mercado": CHART_COLORWAY[2]}
+
+
+def bar_colored(labels: list, values: list, colors: list, horizontal: bool = True, value_fmt=None, title: str = "",
+                height: int = 300, customdata: list | None = None, hover_suffix: str = "") -> go.Figure:
+    """Barras com cor por item (ex.: índice de preço por faixa RN-002). Ordem de entrada preservada."""
+    if value_fmt is None:
+        value_fmt = lambda v: f"{v:,.1f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    kw = dict(x=values, y=labels, orientation="h") if horizontal else dict(x=labels, y=values)
+    fig = go.Figure(go.Bar(marker=dict(color=colors, line=dict(width=0)), text=[value_fmt(v) for v in values],
+                           textposition="outside", cliponaxis=False, customdata=customdata,
+                           hovertemplate=("%{y}" if horizontal else "%{x}") + "<br>%{text}" + hover_suffix + "<extra></extra>", **kw))
+    fig.update_layout(**{**_LAYOUT, "margin": dict(l=10, r=40, t=30 if title else 10, b=10)}, title=title, height=height, showlegend=False)
+    if horizontal:
+        fig.update_yaxes(autorange="reversed", showgrid=False)
+        fig.update_xaxes(showgrid=True, gridcolor=GRID_COLOR, zeroline=False)
+    else:
+        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(showgrid=True, gridcolor=GRID_COLOR, zeroline=False)
+    return fig
+
+
+def bubble_by_series(series: dict, title: str = "", x_label: str = "", y_label: str = "", height: int = 320,
+                     colors: dict | None = None, hover: str = "%{text}<br>x: %{x:.2f} · y: %{y:.1f}<extra></extra>",
+                     size_max: float = 34.0) -> go.Figure:
+    """Dispersão com tamanho e cor por série. series = {nome: {"x","y","size","text","customdata","symbol"?}}."""
+    fig = go.Figure()
+    all_sizes = [s for d in series.values() for s in d.get("size", [])] or [1]
+    smax = max(max(all_sizes), 1e-9)
+    for i, (name, d) in enumerate(series.items()):
+        color = (colors or {}).get(name, CHART_COLORWAY[i % len(CHART_COLORWAY)])
+        sizes = [max(7.0, (float(s) / smax) ** 0.5 * size_max) for s in d.get("size", [1] * len(d["x"]))]
+        fig.add_trace(go.Scatter(x=d["x"], y=d["y"], mode="markers", name=name, text=d.get("text"), customdata=d.get("customdata"),
+                                 marker=dict(color=_rgba(color, 0.65), size=sizes, symbol=d.get("symbol", "circle"),
+                                             line=dict(width=1, color=color)), hovertemplate=hover))
+    fig.update_layout(**_LAYOUT, title=title, xaxis_title=x_label, yaxis_title=y_label, height=height)
+    fig.update_xaxes(showgrid=True, gridcolor=GRID_COLOR, zeroline=False)
+    fig.update_yaxes(showgrid=True, gridcolor=GRID_COLOR, zeroline=False)
+    return fig
+
+
+def add_reference_lines(fig: go.Figure, x: list | None = None, y: list | None = None, label: str | None = None) -> go.Figure:
+    for v in x or []:
+        fig.add_vline(x=v, line=dict(color=COLOR_NEUTRAL, width=1, dash="dot"), annotation_text=label or f"{v:g}".replace(".", ","),
+                      annotation_position="top")
+    for v in y or []:
+        fig.add_hline(y=v, line=dict(color=COLOR_NEUTRAL, width=1, dash="dot"), annotation_text=label or f"{v:g}".replace(".", ","),
+                      annotation_position="right")
+    return fig
+
+
+def empty_figure(height: int = 300) -> go.Figure:
+    """Figura neutra usada enquanto o empty_state cobre a área (o ID do gráfico continua no layout)."""
+    fig = go.Figure()
+    fig.update_layout(**_LAYOUT, height=height, xaxis=dict(visible=False), yaxis=dict(visible=False))
+    return fig

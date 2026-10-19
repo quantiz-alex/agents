@@ -30,7 +30,7 @@ Nome da página: $ARGUMENTS
 ### Estrutura de saída
 
 ```
-tests/frontend/
+tests/e2e/
 ├── package.json
 ├── cypress.config.js
 └── cypress/
@@ -48,7 +48,7 @@ tests/frontend/
 
 ---
 
-### `tests/frontend/package.json`
+### `tests/e2e/package.json`
 
 ```json
 {
@@ -68,7 +68,7 @@ tests/frontend/
 
 ---
 
-### `tests/frontend/cypress.config.js`
+### `tests/e2e/cypress.config.js`
 
 ```javascript
 const { defineConfig } = require('cypress')
@@ -98,21 +98,21 @@ module.exports = defineConfig({
 
 ---
 
-### `tests/frontend/cypress/fixtures/usuario.json`
+### `tests/e2e/cypress/fixtures/usuario.json`
 
 Ler `mock_data/usuarios.csv` e pegar o primeiro usuário ativo (`ativo=1`):
 
 ```json
 {
   "email": "<email_do_primeiro_usuario_ativo>",
-  "senha": "senha123",
+  "senha": "demo",
   "nome": "<nome_do_usuario>"
 }
 ```
 
 ---
 
-### `tests/frontend/cypress/support/commands.js`
+### `tests/e2e/cypress/support/commands.js`
 
 ```javascript
 // Comando de login com cache de sessão via cy.session()
@@ -156,7 +156,7 @@ Cypress.Commands.add('aguardarGrid', (gridId) => {
 
 ---
 
-### `tests/frontend/cypress/support/e2e.js`
+### `tests/e2e/cypress/support/e2e.js`
 
 ```javascript
 import './commands'
@@ -171,7 +171,7 @@ Cypress.on('uncaught:exception', (err) => {
 
 ---
 
-### `tests/frontend/cypress/e2e/login.cy.js`
+### `tests/e2e/cypress/e2e/login.cy.js`
 
 ```javascript
 describe('Login', () => {
@@ -205,12 +205,12 @@ describe('Login', () => {
 
 ---
 
-### `tests/frontend/cypress/e2e/<pagina>.cy.js` — um arquivo por página
+### `tests/e2e/cypress/e2e/<pagina>.cy.js` — um arquivo por página
 
 Para cada página em `screens_definition.yaml`, gerar um spec com este padrão:
 
 ```javascript
-// tests/frontend/cypress/e2e/<pagina>.cy.js
+// tests/e2e/cypress/e2e/<pagina>.cy.js
 // Página: <title> — Rota: <rota>
 
 describe('<title>', () => {
@@ -300,7 +300,7 @@ describe('<title>', () => {
 
 ```bash
 # Instalar Cypress (apenas uma vez)
-cd tests/frontend
+cd tests/e2e
 npm install
 
 # Abrir Cypress interativo (requer app rodando)
@@ -317,7 +317,7 @@ npx cypress run --spec "cypress/e2e/cenarios.cy.js"
 
 ## Pós-processamento
 
-1. Verificar que `package.json` e `cypress.config.js` foram criados em `tests/frontend/`
+1. Verificar que `package.json` e `cypress.config.js` foram criados em `tests/e2e/`
 2. Verificar que existe um spec `.cy.js` para cada página em `screens_definition.yaml`
 3. Verificar que `cypress/fixtures/usuario.json` tem email real de `mock_data/usuarios.csv`
 4. Criar checkpoint step12 e avançar

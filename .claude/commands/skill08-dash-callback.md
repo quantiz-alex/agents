@@ -1,6 +1,6 @@
 # Skill 08 — Dash Callback Generation Skill
 
-Leia `docs/screens_definition.yaml` e gere os callbacks de uma página Dash.
+Leia o recorte `docs/screens/<pagina>.yaml` e gere os callbacks de uma página Dash. **Leia deste arquivo só os Padrões que a tela usa** (Grep por "## Padrão N").
 
 ## Argumento obrigatório
 
@@ -10,8 +10,7 @@ Exemplo de uso: `/skill08-dash-callback aprovacao`
 
 ## Instruções
 
-1. Leia `docs/screens_definition.yaml` — extraia APENAS a página solicitada.
-2. Leia `docs/data_model.yaml` para saber os campos disponíveis.
+1. Leia `docs/screens/<pagina>.yaml` (tela + regras + entidades usadas). Não releia `screens_definition`/`data_model` inteiros.
 3. Identifique os `actions` da página para determinar quais padrões de callback aplicar.
 4. Gere APENAS `frontend/pages/<pagina>/<pagina>_callbacks.py`.
 5. Se o arquivo já existir, aplique patch incremental.
@@ -34,10 +33,12 @@ Cada página pode ter um ou mais padrões combinados. Identifique pelos `actions
 | qualquer ação          | Padrão 7 — Toast de feedback            |
 | `drilldowns[]` na tela | Padrão 8 — Drill-down gráfico → grid    |
 | `recalc_mode: live`    | Padrão 9 — Recálculo ao vivo (sliders)  |
-| `detalhar` / `detail_panel` | Padrão 10 — Detalhe em offcanvas   |
+| `detalhar` / `detail_panel` | Padrão 10 — Detalhar (modal) + foco do assistente |
 | `actions[].roles` definido | Padrão 11 — UI role-aware           |
 | `sidebar_badge` (app.py) | Padrão 12 — Contador de pendências     |
 | `quick_filter_input`   | Padrão 13 — Busca rápida no grid        |
+| tela recebe contexto de atalho | Padrão 14 — Banner "Limpar filtro" |
+| tela com filtros/parâmetros | Padrão 15 — Parâmetros da tela → Assistente |
 
 ---
 
@@ -438,9 +439,12 @@ Regras: sliders com `step` ≥ 0,5 para evitar tempestade de callbacks; `_querie
 
 ---
 
-## Padrão 10 — Detalhe em offcanvas (`detalhar` / `detail_panel`)
+## Padrão 10 — Detalhar em modal (`detalhar` / `detail_panel`) + foco do Assistente
 
-Clique na coluna de ação `acao_detalhar` (ou em qualquer célula, se a tela for `master_detail` sem coluna de ação) abre `detail_offcanvas("<pagina>-detail")` com a ficha do registro + relacionados.
+Clique na coluna de ação `acao_detalhar` (ou em qualquer célula, se a tela for `master_detail` sem coluna de ação) abre `detail_offcanvas("<pagina>-detail")` — **modal central** com a ficha do registro + relacionados e o botão "Perguntar ao Assistente". O mesmo callback publica o item como **foco do Assistente** (`assistant_focus`).
+- Título: `Output("<pagina>-detail-title", "children")` (o modal não tem prop `title`).
+- Conteúdo fixo (botões Aprovar/Rejeitar, simulador): declarado no layout com `detail_offcanvas(..., extra=html.Div([...]))` — nunca `oc.children = [...]` (lista aninhada quebra o React).
+- Uma ação só: se o detalhe já traz o simulador, não criar também `acao_simulate`.
 
 ```python
 from frontend.components.ui_components import detail_field, section_title, data_table, empty_state
@@ -448,14 +452,15 @@ from frontend.components.charts import sparkline
 
 @callback(
     Output("<pagina>-detail", "is_open"),
-    Output("<pagina>-detail", "title"),
+    Output("<pagina>-detail-title", "children"),
     Output("<pagina>-detail-body", "children"),
+    Output({"type": "assistant-select", "page": "<pagina>"}, "data", allow_duplicate=True),
     Input("<pagina>-grid", "cellClicked"),
     prevent_initial_call=True,
 )
 def abrir_detalhe(cell):
     if not cell or cell.get("colId") not in ("acao_detalhar", <colunas clicáveis>):
-        return no_update, no_update, no_update
+        return no_update, no_update, no_update, no_update
     row = obter_<entidade>(cell["rowId"] or cell["value"])   # id da linha: use hide_cols=["id"] no data_table e rowId
     hist = carregar_historico_<entidade>(row["id"])          # relacionados (últimos N)
     body = [
@@ -466,10 +471,11 @@ def abrir_detalhe(cell):
         section_title("Últimos registros"),
         data_table(hist.tail(10), "<pagina>-detail-grid", column_types={...}, page_size=10, height="320px") if not hist.empty else empty_state(compact=True),
     ]
-    return True, row["nome"], body
+    foco = assistant_focus("<tipo>", row["id"], row["nome"], product_id=row.get("produto_id"))   # tipo = entidade (produto, pedido, lote, cliente...)
+    return True, row["nome"], body, foco
 ```
 
-Para `approval_queue`, o body inclui parâmetros do item, KPIs de impacto (`kpi_card`) e o gráfico comparativo; os botões Aprovar/Rejeitar do Padrão 4 podem viver no rodapé do offcanvas.
+Para `approval_queue`, o body inclui parâmetros do item, KPIs de impacto (`kpi_card`) e o gráfico comparativo; os botões Aprovar/Rejeitar do Padrão 4 vão em `extra=` do `detail_offcanvas` (o rodapé do modal é do botão do assistente). Quando o número do detalhe depende de controles **não salvos** da tela (ex.: simulação), passe `snapshot={...}` no `assistant_focus` com os valores exibidos.
 
 ---
 
@@ -542,13 +548,51 @@ def register_callbacks() -> None:
     # [Padrão 6] Export Excel           — se actions tiver download
     # [Padrão 8] Drill-down             — se drilldowns[] não vazio
     # [Padrão 9] Recálculo ao vivo      — se recalc_mode == live (substitui o Padrão 2)
-    # [Padrão 10] Detalhe offcanvas     — se row_actions tiver detalhar ou detail_panel definido
+    # [Padrão 10] Detalhar (modal) + foco do assistente — se row_actions tiver detalhar ou detail_panel definido
     # [Padrão 11] Role-aware            — se algum actions[].roles definido
     # [Padrão 13] Busca rápida          — se a página usar quick_filter_input
+    # [Padrão 14] Banner de contexto herdado — se a tela recebe filtro de atalho (workflow_context)
+    # [Padrão 15] Parâmetros → Assistente   — se a tela tem filtros/parâmetros (assistant_params_store no layout)
     # Toast é implícito — sempre incluir toast("<pagina>-toast") no layout e usar notify()
 ```
 
 ---
+
+---
+
+## Padrão 14 — Banner de contexto herdado ("Limpar filtro")
+
+Quando a tela abre por atalho de outra (ex.: Centro de Comando → Tabela com `{"sku": ...}`), o layout aplica o filtro e mostra um banner com botão para removê-lo. O `guard_routes` já limpa o contexto ao trocar de tela; o botão resolve dentro da própria tela.
+
+```python
+# _page.py
+if ctx.get("sku"):
+    banners.append(dbc.Alert(html.Div([html.Span(f"Filtrado pelo SKU {ctx['sku']} vindo de <tela>."),
+                                       dbc.Button("Limpar filtro", id="<pagina>-btn-limpar-sku", size="sm", color="secondary", outline=True)],
+                                      className="d-flex align-items-center justify-content-between gap-2"),
+                             id="<pagina>-banner-sku", color="light", className="py-2 small border"))
+
+# _callbacks.py
+@callback(Output("<pagina>-filtro-busca", "value"), Output("<pagina>-refresh", "data", allow_duplicate=True),
+          Output("<pagina>-banner-sku", "is_open"), Input("<pagina>-btn-limpar-sku", "n_clicks"), prevent_initial_call=True)
+def limpar_sku(n):
+    return ("", uuid.uuid4().hex, False) if n else (no_update,) * 3
+```
+
+---
+
+## Padrão 15 — Parâmetros da tela → Assistente
+
+Telas com filtros ou parâmetros publicam o **estado aplicado** no store `assistant-params` (no layout: `assistant_params_store("<pagina>")`). O gatilho é o mesmo que aplica os filtros na tela — botão Filtrar/Simular, ou os próprios controles quando a tela recalcula ao vivo. Assim o Assistente responde com os mesmos números da tela.
+
+```python
+def _register_assistant_params() -> None:          # chamar no início de register_callbacks()
+    @callback(Output({"type": "assistant-params", "page": SLUG}, "data"), Input(f"{SLUG}-btn-filtrar", "n_clicks"), *FILTERS)
+    def publicar_params(_n, ini, fim, canal, status):
+        return screen_params(inicio=ini, fim=fim, canal_id=opt_value(canal), status=opt_value(status))
+```
+
+Sem `prevent_initial_call` — publica também o estado inicial da tela. Ids `*_id` ganham rótulo legível automaticamente (`screen_params`).
 
 ## Regras
 

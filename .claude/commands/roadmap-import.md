@@ -104,7 +104,7 @@ Para cada bloco funcional identificado (sprint, fase, entregável, requisito fun
 - "aprovar", "validar" → `approve`; "rejeitar", "devolver" → `reject`
 - "enviar para aprovação", "submeter" → `submit_approval`
 - "simular", "comparar cenários" → `simulate` (+ `criar` para salvar cenário)
-- "detalhar", "abrir ficha", "ver detalhes" → `detalhar` (offcanvas de detalhe)
+- "detalhar", "abrir ficha", "ver detalhes" → `detalhar` (modal de detalhe — Detalhar)
 
 **Regras de negócio**: extrair restrições e invariantes mencionados. Preservar IDs se existirem.
 

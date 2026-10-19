@@ -1,5 +1,52 @@
 # Changelog
 
+## v5.0.0 — 2026-10-19 — Paridade com o projeto de referência (Qwizer) + economia de tokens
+
+**Plano e decisões:** `docs/PLANO_MELHORIA_V5.md`.
+
+### Comportamento gerado (portado do Qwizer)
+- **Detalhar:**
+  - vira **modal central** (`detail_offcanvas(..., extra=)`), com título por `Output(id-title, children)` e botão "Perguntar ao Assistente";
+  - conteúdo fixo só via `extra=` (nunca `oc.children=[...]`).
+- **KPIs numa linha** (`kpi_row` com larguras iguais + valor com `clamp`/ellipsis). Células do AG Grid com ellipsis.
+- **`elasticity_curve`:** rótulos não se sobrepõem ("Atual = Simulado" quando coincidem).
+- **Tabela de preços por produto:**
+  - preço base = combinação de referência;
+  - edições por combinação com propagação proporcional (`expandir`);
+  - variações por canal × região × segmento no Detalhar;
+  - uma só ação de linha;
+  - exportação com duas abas.
+- **Volume:** nunca arredondado por linha (preserva a elasticidade; as frações somam o total do produto).
+- **Navegação:**
+  - `guard_routes` é dono de `url` + `workflow-context` e **limpa o contexto de atalho ao trocar de tela**;
+  - banner "Limpar filtro" (skill08, Padrão 14).
+- **Assistente de Pricing v2** em todo projeto:
+  - modo híbrido: Claude via `ANTHROPIC_API_KEY`, motor local como fallback;
+  - análises **por tela**, chamando as mesmas `*_queries.py`;
+  - item em foco do Detalhar (`assistant_focus`);
+  - parâmetros da tela (`screen_params`, Padrão 15);
+  - trava de escopo, catálogo v2 (`pages` explícito, `entity` + `pages`, textos entre aspas) e log de custo.
+- **Templates novos:** `assistant_llm.py`, `assistant_detail.py`, `assistant_pages.py`, `assistant_callbacks.py`, `page_common.py`, `tests/`.
+- **Templates substituídos:** `pricing_assistant.py` e `pricing_assistant_components.py`.
+- **Dependências:** `openpyxl` (Excel), `anthropic` e `pyyaml`. Variáveis do assistente no `.env.example`.
+- **Testes:**
+  - pytest do frontend em `tests/frontend/`, Cypress em `tests/e2e/`;
+  - conftest raiz só com `sys.path`; fixtures de API em `tests/backend/conftest.py`;
+  - sem testes de paridade número a número.
+
+### Economia de tokens
+- **`rules/core.md`:** fonte única de regras e decisões. Resolve 8 contradições antigas (roteamento, rota pós-login, sidebar, credenciais `demo`, estado na sessão em vez de CSV, mock volumétrico).
+- **Cópias de template** sempre com `cp`.
+- **Leitura por resumo e índice:**
+  - `templates/LIBRARY_INDEX.md` (gerado por `build_library_index.py`) substitui a leitura de cerca de 150 KB de código das bibliotecas;
+  - `docs/handoff.md` (data-engineer → frontend/backend) e recortes `docs/screens/<slug>.yaml` (`split_screens.py`) substituem a releitura de cerca de 255 KB de YAMLs por página.
+- **frontend-builder com leitura sob demanda** por passo e por tipo de tela.
+- **Modelo por agente:** Sonnet no data-engineer, backend-builder, ui-reviewer, test-writer e frontend-fixer; Opus no frontend-builder.
+- **`frontend-fixer` (novo):** correções pontuais sem reler as especificações. ui-reviewer sem Write/Edit.
+- **`validate_project.py`:** validação determinística (telas, páginas, app, assistente) no lugar do skill00 executado pelo modelo. seed.sql auditado por grep. Loop do mock limitado a 3 tentativas.
+- **`skill-simulation.md` reescrito como contrato enxuto** (23 KB → cerca de 6 KB), sem o anti-exemplo nem gravação em CSV.
+- **Pipelines arquivados:** `/build`, `/build-parallel` e `/skill-design-system` foram para `.claude/archive/`.
+
 ## Não lançado — 2026-10-07
 
 - Assistente de Pricing local gerado automaticamente do roadmap: catálogo de capacidades, handlers calculados, perguntas contextuais e propostas de simulação sem API de IA.

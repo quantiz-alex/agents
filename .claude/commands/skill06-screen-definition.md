@@ -36,14 +36,14 @@ pages:
     icon: string              # Bootstrap Icons sem "bi-"
     screen_type: dashboard | analytics | grid | master_detail | form | report | mixed | simulation | approval_queue
     # analytics      → filtros globais + 4–10 gráficos com drill-down
-    # master_detail  → grid + detail_offcanvas
+    # master_detail  → grid + Detalhar em modal (detail_offcanvas)
     # simulation     → painel de parâmetros + resultado calculado + cenários salvos
     # approval_queue → fila dedicada para supervisor aprovar/rejeitar itens pendentes
     layout: [string]          # DSL de faixas: kpis:N | charts:1col|2col|3col | grid | split:A/B | tabs:A,B | params | detail (ver skill07)
     recalc_mode: live | button        # simulation
     sidebar_badge: string | null      # approval_queue — expressão pandas de contagem (ex.: "status == 'Pendente Aprovação'")
     empty_state: string               # texto do estado vazio
-    detail_panel: string | null       # master_detail/approval_queue — o que mostrar no offcanvas
+    detail_panel: string | null       # master_detail/approval_queue — o que mostrar no modal de detalhe
     access: [{role: string, permissions: full | [string]}]   # de requirements.yaml — usado por app.py (_ROUTE_ROLES), sidebar e Padrão 11
     data_sources:             # entidades do data_model.yaml usadas
       - entity: string
@@ -74,13 +74,17 @@ pages:
     grid:
       entity: string
       title: string
+      grain: <entidade> | produto   # produto → uma linha por produto mesmo quando o preço existe por combinação (ver skill-simulation "Tabela de preços")
+      reference_combination: {canal: string, regiao: string, segmento: string}   # obrigatório com grain: produto — define o "preço base"
+      variations_in: detail         # com grain: produto — variações por combinação ficam no Detalhar (não viram filtros nem linhas)
+      edit_propagation: proportional  # editar o preço base aplica o mesmo fator a todas as combinações do produto
       columns:
         - field: string
           header: string
           format: text | currency | currency0 | number | decimal | percent | pct_delta | date | datetime | bool | badge | computed
           compute_from: string      # OBRIGATÓRIO se format: computed — id da regra derived_field em business_logic.yaml
       joins: [{entity: string, on: string, bring: [string]}]   # dimensões para trocar FK por nome legível
-      row_actions: [detalhar | editar | excluir | desativar | approve | reject | duplicar]
+      row_actions: [detalhar | editar | excluir | desativar | approve | reject | duplicar]   # 'detalhar' já abre o modal com simulador quando houver — não acrescentar 'simulate' para a mesma coisa
       default_sort: {field: string, dir: asc | desc}
       selectable: bool              # checkbox (aprovação em lote)
     drilldowns:

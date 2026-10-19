@@ -53,6 +53,7 @@ Gera dados de demonstração **em volume e com forma realista** (sazonalidade, P
 | bit sem spec | `enum(1:90%, 0:10%)` |
 | **campo `derived_field`/`output_field` com `persist: false`** | **NÃO incluir** — calculado em runtime (frontend `_queries.py` / backend service). Registrar aviso "campo <nome> é derivado — omitido do mock" |
 | campo derivado **persistido** (ex.: `receita = quantidade * preco_unitario` numa fato) | `derivado(quantidade * preco_unitario)` — usar a mesma expressão de `business_logic.yaml` |
+| pesos/frações (ex.: `volume_peso`, participação) | tipo `decimal` (soma por grupo = 1). Volumes derivados (total × peso) **não** são persistidos como inteiro por linha — calcular em runtime sem arredondar (`core.md` §3) |
 
 ## Volumetria (fallback quando o roadmap não informa)
 

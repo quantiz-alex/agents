@@ -28,7 +28,7 @@ scenarios:
     requires_approval: false
 ```
 
-Cada parâmetro deve apontar para uma regra real, campos calculados e telas consumidoras. Compartilhar entidade não basta para inferir dependência. Se faltar fórmula, registrar lacuna e bloquear Aplicar para esse cálculo; não inventar impacto percentual. Gerar `frontend/services/scenario_engine.py` com funções puras das regras reais. Todas as telas usam esse motor antes de agregar KPIs, gráficos e grids. Recalcular por item antes de somar; preservar unidades, arredondamento e escopo. Fora do escopo, preservar valores aplicados. Esta primeira versão suporta um cenário ativo por arquitetura e um escopo explícito; múltiplas arquiteturas usam stores separados por chave.
+Cada parâmetro deve apontar para uma regra real, campos calculados e telas consumidoras. Compartilhar entidade não basta para inferir dependência. Se faltar fórmula, registrar lacuna e bloquear Aplicar para esse cálculo; não inventar impacto percentual. Gerar `frontend/services/scenario_engine.py` com funções puras das regras reais. Todas as telas usam esse motor antes de agregar KPIs, gráficos e grids. Recalcular por item antes de somar; preservar unidades e escopo. **Nunca arredondar volume por linha/combinação** (o efeito da elasticidade some em volumes pequenos) — arredondar só na exibição; as frações por combinação somam o total do produto. Fora do escopo, preservar valores aplicados. Esta primeira versão suporta um cenário ativo por arquitetura e um escopo explícito; múltiplas arquiteturas usam stores separados por chave.
 
 ## Estado e interação
 

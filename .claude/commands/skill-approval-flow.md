@@ -2,6 +2,12 @@
 
 Gera o padrão completo de ciclo de vida de aprovação: status enum, badges, botões condicionais por role, callbacks de envio, aprovação e rejeição.
 
+> **v5 — prevalece sobre os blocos de código abaixo** (que mostram só a FORMA):
+> - **Estado na sessão, nunca CSV.** Lotes, decisões, estágios e histórico vivem num store de sessão com um **reducer puro** (`frontend/services/session_state.py`: eventos `submit_lote`/`decide_lote` → novo estado; dono único do store no shell via `{"type":"demo-session-event","page":SLUG}`). Onde o código abaixo usar `to_csv`/`read_csv` para gravar decisões, substitua por eventos de sessão. Leitura = CSV do mock + overlay da sessão.
+> - **Layout via `app_shell(...)`** (nunca `html.Div` raiz com hex). Toast via `toast()`/`notify()`.
+> - **Detalhar do lote = modal** (`detail_offcanvas(..., extra=<botões Aprovar/Rejeitar>)`); itens com canal/região/segmento quando o lote é por combinação; o Detalhar publica `assistant_focus("lote", ...)`.
+> - Aprovação aplica preços via overlay da sessão (`aplicar_precos_aprovados`), que todos os consumidores usam antes de agregar.
+
 ## Quando usar
 
 Invocada pelo `frontend-builder` quando:
@@ -496,7 +502,7 @@ def register_callbacks() -> None:
 
 ## Restrições
 
-- `atualizar_status_aprovacao()` sempre lê e reescreve o CSV completo — aceitável em modo mock.
+- Decisões nunca reescrevem CSV: são eventos no estado de sessão (ver nota v5 no topo).
 - Visibilidade de botões por role: SEMPRE via callback + `dcc.Store("current-user")` — nunca hardcodado no layout.
 - `comentario_aprovacao` é obrigatório para rejeição, opcional para aprovação.
 - Aprovador registrado como `user_data["nome"]` — nunca hardcodado.

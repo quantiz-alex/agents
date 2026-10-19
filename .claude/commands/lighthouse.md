@@ -37,12 +37,15 @@ Os subagents estão definidos em `.claude/agents/`. Cada um conhece suas regras,
 
 ## Protocolo do Orquestrador
 
-Você (contexto principal) NÃO gera código do projeto — apenas valida, delega, verifica relatórios e consolida. Mantenha seu contexto leve.
+Você (contexto principal) NÃO gera código do projeto — apenas valida, delega, verifica relatórios e consolida. Mantenha seu contexto leve: não leia YAMLs do projeto nem skills; os agentes fazem isso.
+
+Regras comuns a todos os agentes: `$LH/rules/core.md` (caminho `$LH`, cópias com `cp`, decisões padronizadas, assistente). Modelos por agente: data-engineer, backend-builder, test-writer, ui-reviewer e frontend-fixer usam **Sonnet**; frontend-builder usa **Opus** (definido no frontmatter de cada agente).
 
 ### Passo 1 — Pré-validação (antes de delegar)
 
+0. Resolver `$LH` (pasta `.claude` do framework) conforme `core.md` §1 e repassá-lo no prompt de cada agente ("LH=<caminho>").
 1. Verificar que `roadmap.md` existe no diretório atual.
-   - Se NÃO existir → copiar `../.claude/templates/roadmap-template.md` para `./roadmap.md`, informar o usuário que precisa preenchê-lo e **PARAR**.
+   - Se NÃO existir → `cp "$LH/templates/roadmap-template.md" ./roadmap.md`, informar o usuário que precisa preenchê-lo e **PARAR**.
    - Se existir mas contiver `TODO:` em seções obrigatórias → avisar e perguntar se deve prosseguir mesmo assim.
 2. Detectar estado das fases (cheque rápido, sem ler conteúdo):
    ```
@@ -53,13 +56,13 @@ Você (contexto principal) NÃO gera código do projeto — apenas valida, deleg
    ```
 3. Informar ao usuário quais fases serão executadas e quais serão puladas.
 
-   - O frontend só está completo, quando assistente habilitado (default), se catálogo, handlers, painel/callbacks e integração no shell existirem e corresponderem ao hash das fontes. Sem esses artefatos ou com roadmap/regras alterados, executar frontend-builder para atualização incremental, mesmo com app.py existente, conforme `skill-pricing-assistant.md`. O assistente é parte da Fase 2, sem terceiro comando do usuário, sem agente adicional e sem API de IA.
+   - O frontend só está completo, quando assistente habilitado (default), se catálogo, handlers, painel/callbacks e integração no shell existirem e corresponderem ao hash das fontes. Sem esses artefatos ou com roadmap/regras alterados, executar frontend-builder para atualização incremental, mesmo com app.py existente, conforme `skill-pricing-assistant.md`. O assistente é parte da Fase 2 (modo híbrido: Claude opcional via `ANTHROPIC_API_KEY`, motor local como fallback — `core.md` §4), sem terceiro comando do usuário nem agente adicional.
 
 ### Passo 2 — Fase 1: data-engineer
 
 Lançar via Agent tool com `subagent_type: "data-engineer"`. Prompt mínimo:
 
-> Execute o pipeline de dados no diretório atual. Detecte o estado dos steps no disco e gere apenas o que falta. Ao final, retorne o relatório estruturado com STATUS.
+> LH=<caminho>. Execute o pipeline de dados no diretório atual. Detecte o estado dos steps no disco e gere apenas o que falta. Ao final, grave `docs/handoff.md` e retorne o relatório estruturado com STATUS.
 
 Aguardar conclusão. Ler o `STATUS:` do relatório:
 - `success` → avançar para Fase 2
@@ -70,8 +73,8 @@ Aguardar conclusão. Ler o `STATUS:` do relatório:
 
 **CRÍTICO:** lançar os DOIS Agent calls na MESMA mensagem para execução concorrente.
 
-- `subagent_type: "frontend-builder"` — prompt: "Execute o pipeline de frontend no diretório atual. Detecte o estado no disco e gere apenas o que falta. Retorne o relatório estruturado com STATUS."
-- `subagent_type: "backend-builder"` — prompt: "Execute o pipeline de backend no diretório atual. Detecte o estado no disco e gere apenas o que falta. Retorne o relatório estruturado com STATUS."
+- `subagent_type: "frontend-builder"` — prompt: "LH=<caminho>. Execute o pipeline de frontend no diretório atual, começando por `docs/handoff.md`. Detecte o estado no disco e gere apenas o que falta. Retorne o relatório estruturado com STATUS."
+- `subagent_type: "backend-builder"` — prompt: "LH=<caminho>. Execute o pipeline de backend no diretório atual, começando por `docs/handoff.md`. Detecte o estado no disco e gere apenas o que falta. Retorne o relatório estruturado com STATUS."
 
 Eles não conflitam: frontend escreve em `frontend/` e `docs/{design-system,screens_definition}.yaml`; backend escreve em `backend/`, `requirements.txt` e `README.md`. A única exceção (atualização do `login_callbacks.py` pelo backend no step 9.5) é um bloco comentado adicionado ao final — sem conflito real.
 
@@ -124,7 +127,7 @@ Lançar via Agent tool com `subagent_type: "ui-reviewer"`. Prompt mínimo:
 
 Aguardar conclusão. Ler o `STATUS:`:
 - `success` → informar "UI validada em runtime, 0 falhas" e sugerir proximos passos (testes).
-- `partial`/`failed` → exibir as falhas ao usuário, listar arquivos a investigar, e perguntar se deseja delegar ao frontend-builder para corrigir.
+- `partial`/`failed` → exibir as falhas ao usuário, listar arquivos a investigar, e perguntar se deseja corrigir. Correção = `subagent_type: "frontend-fixer"` (Sonnet, lê só os arquivos apontados) com a lista de falhas/arquivos do relatório. **Não** relançar o frontend-builder para correções pontuais (ele relê todas as especificações).
 - `blocked` → repassar a instrução ao usuário (ex.: "inicie o frontend com `python -m frontend.app`").
 
 ---
@@ -158,6 +161,6 @@ O usuário também pode pedir um agente avulso em linguagem natural:
 - "regenere o frontend", "adicione a entidade produto no backend" → lance apenas o subagent correspondente com um prompt focado no pedido.
 - "revise a UI", "rode o smoke", "valide o app em execução" → lance `ui-reviewer` (exige frontend rodando).
 
-## Pipelines Legados (fallback)
+## Pipelines legados
 
-`/build` e `/build-parallel` continuam disponíveis e inalterados — executam tudo no contexto principal, sem delegação.
+`/build`, `/build-parallel` e `/skill-design-system` foram arquivados em `.claude/archive/` (v5). Use apenas `/lighthouse`.

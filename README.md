@@ -100,12 +100,14 @@ cd tests/frontend && npm install && npm run cy:run
 ```
 projetos/
 ├── .claude/                       ← config compartilhada (este diretório)
-│   ├── agents/                    ← SUBAGENTS (contexto isolado, paralelizáveis)
-│   │   ├── data-engineer.md       ← Fase 1: camada de dados (roadmap → mock volumétrico)
-│   │   ├── frontend-builder.md    ← Fase 2a: UI Dash + app shell         ┐ rodam em
-│   │   ├── backend-builder.md     ← Fase 2b: API FastAPI + JWT + agg     ┘ PARALELO
-│   │   ├── ui-reviewer.md         ← Fase 3: smoke Playwright em runtime (sob demanda)
-│   │   └── test-writer.md         ← STANDALONE: testes sob demanda, cobertura ≥85%
+│   ├── rules/core.md              ← REGRAS CENTRAIS (fonte única; todo agente lê primeiro)
+│   ├── agents/                    ← SUBAGENTS (contexto isolado; modelo no frontmatter)
+│   │   ├── data-engineer.md       ← Fase 1 (Sonnet): dados → mock volumétrico → docs/handoff.md
+│   │   ├── frontend-builder.md    ← Fase 2a (Opus): UI Dash + shell + Assistente  ┐ rodam em
+│   │   ├── backend-builder.md     ← Fase 2b (Sonnet): API FastAPI + JWT + agg     ┘ PARALELO
+│   │   ├── ui-reviewer.md         ← Fase 3 (Sonnet): smoke Playwright em runtime (sob demanda, só reporta)
+│   │   ├── frontend-fixer.md      ← Fase 3 (Sonnet): corrige só os arquivos apontados (sob demanda)
+│   │   └── test-writer.md         ← STANDALONE (Sonnet): testes sob demanda, cobertura ≥85%
 │   ├── commands/
 │   │   ├── lighthouse.md          ← orquestrador (delega via Agent tool, 3 fases)
 │   │   ├── project-init.md        ← cria novo projeto
@@ -116,20 +118,24 @@ projetos/
 │   │   ├── skill-workflow-definition.md ← workflows multi-step
 │   │   ├── skill-api-contracts.md ← contratos de API
 │   │   ├── skill-business-logic.md ← análise de regras de negócio
-│   │   ├── build.md               ← pipeline sequencial legado (fallback)
-│   │   ├── build-parallel.md      ← pipeline paralelo legado (fallback)
 │   │   └── skill0*.md             ← especificações de referência (lidas pelos agentes)
 │   ├── templates/
 │   │   ├── roadmap-template.md    ← fonte única do template de roadmap (schema v4)
 │   │   ├── roadmap-example.md     ← exemplo preenchido
-│   │   ├── components-library.py  ← componentes Dash (kpi/data_table/offcanvas/...)
+│   │   ├── LIBRARY_INDEX.md       ← índice das bibliotecas (agentes leem ISTO, não o código)
+│   │   ├── components-library.py  ← componentes Dash (kpi/data_table/Detalhar em modal/...)
 │   │   ├── charts-library.py      ← gráficos Plotly (heatmap/treemap/combo/...)
 │   │   ├── mock_generator.py      ← motor volumétrico de mock data
 │   │   ├── api_client.py          ← cliente API com flag USE_API (mock/live)
 │   │   ├── workflow_components.py ← componentes de workflow multi-step
-│   │   └── scripts/ui_smoke.py    ← smoke test Playwright (dev-only)
+│   │   ├── page_common.py         ← helpers de página (foco/params do assistente, eventos, Excel)
+│   │   ├── pricing_assistant.py, assistant_llm.py, assistant_detail.py, assistant_pages.py,
+│   │   │   assistant_callbacks.py, pricing_assistant_components.py  ← Assistente híbrido (Claude + local)
+│   │   ├── tests/                 ← conftest + teste genérico do assistente
+│   │   └── scripts/               ← validate_project.py, split_screens.py, build_library_index.py, check_*.py, ui_smoke.py
 │   ├── skills/
 │   │   └── ui-ux-pro-max/         ← guia de UI/UX para Dash (SKILL.md + GUIA-VISUAL-PMZ.md)
+│   ├── archive/                   ← /build, /build-parallel, /skill-design-system (arquivados na v5)
 │   ├── design-system.yaml         ← tokens de design centralizados
 │   └── PROJECTS.md                ← registro de todos os projetos
 │
@@ -142,7 +148,7 @@ projetos/
 │   ├── scripts/                   ← mock_generator.py, generate_mock.py, ui_smoke.py
 │   ├── frontend/                  ← app Dash (app shell + pages/ + components/)
 │   ├── backend/                   ← API FastAPI (5 camadas + auth + agregações)
-│   └── tests/                     ← pytest (backend/, frontend_unit/) + cypress (frontend/)
+│   └── tests/                     ← pytest (backend/, frontend/) + cypress (e2e/)
 └── <projeto-b>/
 ```
 
@@ -153,6 +159,7 @@ projetos/
 | **data-engineer** | Fase 1 do `/lighthouse` | requirements, data model, config/env, api contracts, business logic, SQL, **mock data volumétrico** (motor), seed | frontend/, rotas backend, testes |
 | **frontend-builder** | Fase 2 (paralelo) | design system, screens, 4 arquivos por página, **app shell** (sidebar/login/breadcrumb/user_badge), callbacks (drill-down/live recalc/role-aware) | backend/, SQL, testes |
 | **backend-builder** | Fase 2 (paralelo) | 5 camadas por entidade, **agregações** (KPIs/séries/rankings), main.py, auth JWT completa, requirements.txt, README do projeto | frontend/* (exceto bloco comentado no login), SQL, testes |
+| **frontend-fixer** | **Fase 3 (sob demanda)** | correções pontuais nos arquivos apontados pelo ui-reviewer (lê só esses arquivos) | geração de telas novas |
 | **ui-reviewer** | **Fase 3 (sob demanda)** | relatório de smoke Playwright em runtime (Traceback no DOM, callbacks que estouram, componentes ausentes, sidebar badge, role restriction) | código de produção (falhas são reportadas, não corrigidas) |
 | **test-writer** | **Sob demanda** (fora do fluxo) | pytest unitários (backend + frontend), Cypress E2E, relatório de cobertura | código de produção (bugs são reportados, não corrigidos) |
 
@@ -217,15 +224,12 @@ cd ../<projeto>
 "teste a página dashboard"
 ```
 
-### Pipelines legados (sem delegação — tudo no contexto principal)
+### Validar um projeto sem gastar tokens
 ```
-/build                   # sequencial, 13 etapas com validação e checkpoints
-/build-parallel          # paralelo por DAG de dependências
-/build --rollback step-3 # reverter para checkpoint
-/skill00-validator step2 # validar uma etapa específica
+python ../agent-vibe-code-pricing/.claude/templates/scripts/validate_project.py all   # telas, páginas, app, assistente
 ```
 
-Os comandos legados permanecem 100% funcionais e compatíveis — os checkpoints são o mesmo formato, então é possível começar com `/build` e retomar com `/lighthouse` (e vice-versa).
+Os pipelines antigos (`/build`, `/build-parallel`) foram arquivados em `.claude/archive/` na v5 — use `/lighthouse`.
 
 ---
 
@@ -245,6 +249,13 @@ Os comandos legados permanecem 100% funcionais e compatíveis — os checkpoints
 ---
 
 ## 📝 Changelog
+
+Detalhes completos em `CHANGELOG.md`. Resumo:
+
+### v5.0.0 (2026-10) — Paridade com o projeto de referência + economia de tokens
+- Detalhar em modal central (`extra=`), KPIs numa linha, gráfico de elasticidade sem rótulos sobrepostos, Tabela de preços por produto (preço base + variações no Detalhar), volume sem arredondar por linha, contexto de atalho limpo ao navegar + "Limpar filtro"
+- Assistente de Pricing híbrido em todo projeto: Claude (opcional) + motor local, análises por tela com as mesmas consultas da tela, item em foco (Detalhar), parâmetros da tela, trava de escopo
+- Tokens: `rules/core.md`, `LIBRARY_INDEX.md`, `docs/handoff.md`, recortes `docs/screens/<slug>.yaml`, cópias com `cp`, validação por script, modelo por agente (Sonnet/Opus), `frontend-fixer` para correções, pipelines legados arquivados
 
 ### v4.0.0 (2025-01) — Wow Factor para Demos de Cliente
 - ✨ **Mock data volumétrico**: motor `mock_generator.py` gera milhares de linhas com sazonalidade, Pareto, FKs coerentes, catálogos pt-BR — a partir de `docs/mock_spec.yaml` declarativo (não mais escrito à mão pelo LLM)

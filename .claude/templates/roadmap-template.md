@@ -39,7 +39,7 @@ TODO: Quem são os usuários? (ex: analistas de pricing, gestores comerciais, co
        dashboard      → KPIs + 1–2 gráficos + grid resumo (visão executiva)
        analytics      → filtros globais + muitos gráficos (4–10) com drill-down (visão analítica)
        grid           → tabela + filtros + CRUD em modal
-       master_detail  → grid à esquerda/topo + painel/offcanvas de detalhe do item selecionado
+       master_detail  → grid + Detalhar em modal central com a ficha do item selecionado
        form           → cadastro/parametrização
        report         → filtros + tabela exportável + 1 gráfico
        simulation     → parâmetros (sliders) + resultado calculado + cenários salvos

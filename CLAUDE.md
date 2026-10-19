@@ -1,6 +1,6 @@
-# Lighthouse Pipeline — Workspace
+# Lighthouse Pipeline — Workspace (v5)
 
-Este workspace é o **pipeline de geração automática de aplicações Full-Stack** (Dash + FastAPI + SQL Server) da Quantiz Pricing Solution.
+Este workspace é o **pipeline de geração automática de aplicações Full-Stack** (Dash + FastAPI + SQL Server) da Quantiz Pricing Solution. Projeto de referência: `qwizer-pricing-vibe-code`.
 
 ## Estrutura
 
@@ -8,70 +8,53 @@ Este workspace é o **pipeline de geração automática de aplicações Full-Sta
 agent-vibe-code-pricing/       ← workspace raiz (abrir aqui no Claude Code)
 ├── CLAUDE.md                  ← este arquivo
 ├── README.md                  ← documentação completa do pipeline
-├── skills-lock.json           ← dependências de skills instaladas
+├── docs/PLANO_MELHORIA_V5.md  ← plano e decisões da v5
 │
 ├── .claude/
-│   ├── agents/                ← subagents (descobertos automaticamente pelo Claude Code)
-│   │   ├── data-engineer.md   ← Fase 1: camada de dados (roadmap → mock volumétrico)
-│   │   ├── frontend-builder.md ← Fase 2a: UI Dash (paralelo)
-│   │   ├── backend-builder.md ← Fase 2b: API FastAPI (paralelo)
-│   │   ├── ui-reviewer.md     ← Fase 3: smoke Playwright em runtime (sob demanda)
-│   │   └── test-writer.md     ← STANDALONE: testes pytest+cypress sob demanda
-│   ├── commands/              ← slash commands disponíveis
-│   │   ├── lighthouse.md      ← /lighthouse — orquestrador (3 fases)
-│   │   ├── project-init.md    ← /project-init — criar novo projeto
-│   │   ├── roadmap-import.md  ← /roadmap-import — importar roadmap rico
-│   │   ├── skill-shell.md     ← shell global (sidebar/login/breadcrumb)
-│   │   ├── skill-analytics.md ← agregações/KPIs/charts de analytics
-│   │   ├── skill-auth.md      ← auth JWT completa (registro, reset, roles)
-│   │   ├── skill-workflow-definition.md ← workflows multi-step com navegação contextual
-│   │   ├── skill-api-contracts.md      ← contratos de API
-│   │   ├── skill-business-logic.md     ← análise de regras de negócio
-│   │   ├── build.md           ← /build — pipeline sequencial legado
-│   │   ├── build-parallel.md  ← /build-parallel — pipeline paralelo legado
-│   │   └── skill0*.md         ← especificações de referência (lidas pelos agentes)
-│   ├── templates/
-│   │   ├── roadmap-template.md ← fonte única do template de roadmap
-│   │   ├── roadmap-example.md  ← exemplo de roadmap preenchido
-│   │   ├── components-library.py ← componentes Dash (kpi/data_table/offcanvas/...)
-│   │   ├── charts-library.py    ← gráficos Plotly (heatmap/treemap/combo/...)
-│   │   ├── mock_generator.py    ← motor volumétrico de mock data
-│   │   ├── api_client.py        ← cliente API com flag USE_API (mock/live)
-│   │   ├── workflow_components.py ← componentes de workflow multi-step
-│   │   └── scripts/
-│   │       └── ui_smoke.py      ← smoke test Playwright (dev-only)
-│   ├── skills/
-│   │   └── ui-ux-pro-max/     ← guia de UI/UX para Dash (SKILL.md + GUIA-VISUAL-PMZ.md)
-│   ├── design-system.yaml     ← tokens de design centralizados
-│   └── PROJECTS.md            ← registro de todos os projetos gerados
+│   ├── rules/core.md          ← REGRAS CENTRAIS (fonte única) — todo agente lê primeiro
+│   ├── agents/                ← subagents (modelo definido no frontmatter)
+│   │   ├── data-engineer.md   ← Fase 1 (Sonnet): roadmap → mock volumétrico → docs/handoff.md
+│   │   ├── frontend-builder.md ← Fase 2a (Opus): UI Dash + Assistente de Pricing (paralelo)
+│   │   ├── backend-builder.md ← Fase 2b (Sonnet): API FastAPI (paralelo)
+│   │   ├── ui-reviewer.md     ← Fase 3 (Sonnet, sob demanda): smoke Playwright — só reporta
+│   │   ├── frontend-fixer.md  ← Fase 3 (Sonnet, sob demanda): corrige só os arquivos apontados
+│   │   └── test-writer.md     ← STANDALONE (Sonnet): testes pytest + cypress sob demanda
+│   ├── commands/              ← /lighthouse, /project-init, /roadmap-import + skills de referência
+│   ├── templates/             ← copiados com `cp` para os projetos
+│   │   ├── LIBRARY_INDEX.md   ← índice das bibliotecas (ler ISTO, não o código-fonte)
+│   │   ├── components-library.py, charts-library.py, workflow_components.py, page_common.py, api_client.py
+│   │   ├── pricing_assistant.py, assistant_llm.py, assistant_detail.py, assistant_pages.py,
+│   │   │   assistant_callbacks.py, pricing_assistant_components.py   ← Assistente híbrido (todo projeto)
+│   │   ├── tests/             ← conftest + teste genérico do assistente
+│   │   └── scripts/           ← validate_project.py, split_screens.py, build_library_index.py, check_*.py, ui_smoke.py
+│   ├── skills/ui-ux-pro-max/  ← guia de UI/UX (consultar só o checklist §8 do GUIA)
+│   ├── archive/               ← pipelines antigos (/build, /build-parallel) — não usar
+│   ├── design-system.yaml     ← tokens de design
+│   └── PROJECTS.md            ← registro dos projetos gerados
 │
-└── <projeto-slug>/            ← projetos gerados (criados por /project-init)
-    ├── roadmap.md             ← único arquivo escrito manualmente
-    ├── docs/                  ← YAMLs gerados (requirements, data_model, mock_spec, screens, business_logic, api_contracts)
-    ├── database/              ← SQL gerado (schema, views, procedures, seed)
-    ├── mock_data/             ← dados volumétricos (CSV + JSON por entidade, milhares de linhas)
-    ├── scripts/               ← mock_generator.py, generate_mock.py, ui_smoke.py
-    ├── frontend/              ← UI Dash completa (app shell + páginas + callbacks + queries)
-    ├── backend/               ← API FastAPI (5 camadas + auth JWT + agregações)
-    └── tests/                 ← Pytest (unit + integration) + Cypress (E2E)
+└── <projeto-slug>/            ← projetos gerados (aqui ou em pasta irmã: `.build/project.json → lighthouse_home`)
 ```
 
-## Fluxo Rápido
+## Fluxo rápido
 
 ```
-/project-init Nome do Projeto    # cria estrutura + roadmap template
-# editar <slug>/roadmap.md       # preencher TODOs (ou /roadmap-import para estrutura rica)
+/project-init Nome do Projeto    # cria estrutura + roadmap template + registra lighthouse_home
+# editar <slug>/roadmap.md       # preencher TODOs (ou /roadmap-import)
 cd <slug>
-/lighthouse                      # build completo (dados → front+back em paralelo)
-# (opcional) inicie o frontend e peça "revise a UI" → Fase 3 (ui-reviewer + Playwright)
-# (opcional) após validação com cliente → peça "gere os testes" → test-writer
+/lighthouse                      # dados → front + back em paralelo
+# (opcional) "revise a UI" → ui-reviewer; falhas → frontend-fixer
+# (opcional) após validação com o cliente → "gere os testes" → test-writer
 ```
 
-## Regras do Workspace
-
-- **Stack 100% Python**: Dash 2.14+, FastAPI, SQLAlchemy, Pydantic v2, SQL Server
-- **Projetos ficam DENTRO deste workspace**: cada projeto é um subdiretório
-- **Nunca edite `.claude/` manualmente** exceto para melhorar este pipeline
-- **test-writer é STANDALONE**: não roda automaticamente — solicitar explicitamente após validação com o cliente
-- **ui-reviewer é SOB DEMANDA**: exige frontend rodando (`python -m frontend.app`) — não roda automaticamente após Fase 2
-- **Playwright é dev-only**: NÃO adicionar a `requirements.txt` de produção — apenas `requirements-dev.txt`
+## Regras do workspace
+- **Regras e decisões padronizadas:** `.claude/rules/core.md`. Se outro arquivo contradisser, vale o core.
+- **Economia de tokens:**
+  - Templates sempre copiados com `cp`.
+  - Agentes leem o índice da biblioteca, o `docs/handoff.md` e o recorte `docs/screens/<slug>.yaml`, nunca os YAMLs inteiros por tela.
+  - Validações rodam por script.
+- **Após mudar qualquer template:** `python .claude/templates/scripts/build_library_index.py`.
+- **Execução sob demanda:**
+  - test-writer é standalone.
+  - ui-reviewer exige o frontend rodando.
+  - Correções pontuais ficam com o frontend-fixer, não com o frontend-builder.
+- **Playwright** é dev-only (`requirements-dev.txt`).

@@ -25,7 +25,7 @@ Verificar se o diretório `../<project_slug>/` já existe (relativo ao diretóri
 Se já existir → exibir aviso e **PARAR**:
 ```
 ⚠ Projeto '<project_slug>' já existe em ../<project_slug>/
-  Para retomar o build existente, navegue até o diretório e execute /lighthouse ou /build.
+  Para retomar o build existente, navegue até o diretório e execute /lighthouse.
 ```
 
 ### 3. Criar Estrutura de Diretórios
@@ -49,13 +49,13 @@ Criar `../<project_slug>/` com:
     api/
       routes/
   tests/
-    backend/
-    frontend/
+    backend/                ← pytest da API (conftest próprio com FastAPI/SQLAlchemy)
+    frontend/               ← pytest do Dash (queries/components/callbacks/assistente)
+    e2e/
       cypress/
         e2e/
         fixtures/
         support/
-    frontend_unit/          ← testes unitários Dash (queries/components/callbacks)
     integration/
   validation_reports/
   assets/
@@ -64,22 +64,16 @@ Criar `../<project_slug>/` com:
     checkpoints/
 ```
 
-### 3.5. Copiar Bibliotecas do Dash Starter
+### 3.5. Registrar o caminho do framework
 
-Copiar os arquivos do dash-starter template para o novo projeto:
+Criar `../<project_slug>/.build/project.json` (ou acrescentar ao existente) com `"lighthouse_home": "<caminho absoluto desta pasta .claude>"` — os agentes resolvem `$LH` por ele (`rules/core.md` §1), mesmo quando o projeto fica fora da pasta do framework.
 
-1. Copiar `.claude/templates/components-library.py` para `../<project_slug>/frontend/components/ui_components.py`
-2. Copiar `.claude/templates/charts-library.py` para `../<project_slug>/frontend/components/charts.py`
-3. Copiar `.claude/templates/dash-starter/assets/theme.css` para `../<project_slug>/assets/theme.css`
-4. Criar pasta `../<project_slug>/assets/icons/` (vazia, para ícones Bootstrap Icons)
-
-**Nota:** As cores primárias serão ajustadas pelo frontend-builder no Step 0 ao ler `.build/project.json`.
+Criar a pasta `../<project_slug>/assets/icons/`. **Não copiar bibliotecas aqui**: o frontend-builder copia tudo no Step 0 com `cp` (evita cópia dupla).
 
 ### 4. Gerar `roadmap.md` a partir do Template
 
-1. Ler o template em `.claude/templates/roadmap-template.md` (fonte única — NÃO duplicar o conteúdo aqui).
-2. Substituir `{NOME_DO_PROJETO}` por `project_name`.
-3. Escrever em `../<project_slug>/roadmap.md`.
+1. `cp .claude/templates/roadmap-template.md ../<project_slug>/roadmap.md` (Bash — não ler/reescrever o template).
+2. Substituir `{NOME_DO_PROJETO}` por `project_name` com `sed -i` (ou Edit pontual).
 
 ### 5. Registrar em PROJECTS.md
 
@@ -95,14 +89,11 @@ Ler `.claude/PROJECTS.md` (criar com o cabeçalho padrão se não existir). Adic
 ✅ Projeto '{project_name}' criado!
 
 📁 Localização: ../{project_slug}/
-📚 Bibliotecas UI/UX copiadas: ui_components.py, charts.py, theme.css
 
 Próximos passos:
   1. Editar ../{project_slug}/roadmap.md — preencher todos os TODO
   2. cd ../{project_slug}
-  3. /lighthouse        ← build delegado por subagents (recomendado)
-     /build             ← pipeline sequencial (fallback)
-     /build-parallel    ← pipeline paralelo (fallback)
+  3. /lighthouse        ← build delegado por subagents
 
   Ou pedir um agente específico em linguagem natural:
   "gere a camada de dados", "regenere o frontend", "crie os testes"

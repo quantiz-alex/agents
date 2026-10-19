@@ -546,10 +546,10 @@ def kpi_simple(
 
 
 def kpi_row(cards: list, row_id: str | None = None) -> dbc.Row:
-    """Row responsiva de KPIs: 1 col no mobile, 2 em tablets, N em desktop (mín. 3 cols)."""
+    """Row responsiva de KPIs: 1 col no mobile, 2 em tablets, todos numa linha (largura igual) a partir de lg."""
     n = max(len(cards), 1)
-    md = max(12 // n, 3)
-    cols = [dbc.Col(c, xs=12, sm=6, md=md) for c in cards]
+    md = 12 // n if n <= 4 else 4
+    cols = [dbc.Col(c, xs=12, sm=6, md=md, lg=True, className="kpi-col") for c in cards]
     kwargs: dict[str, Any] = {"id": row_id} if row_id else {}
     return dbc.Row(cols, className="g-3 mb-1 kpi-row", **kwargs)
 
@@ -702,21 +702,31 @@ def confirm_modal(
     )
 
 
-def detail_offcanvas(id: str, title: str = "Detalhe", width: int = 520, placement: str = "end") -> dbc.Offcanvas:
+def assistant_ask_button(source: str) -> dbc.Button:
+    """Abre o Assistente sobre o item deste Detalhar (o item já é o foco do assistente). Callback global em assistant_callbacks."""
+    return dbc.Button([html.I(className="bi bi-stars me-2"), "Perguntar ao Assistente sobre este item"],
+                      id={"type": "assistant-ask", "source": source}, n_clicks=0, color="primary", outline=True, size="sm", className="fw-semibold")
+
+
+def detail_offcanvas(id: str, title: str = "Detalhe", width: int = 520, extra: Any = None) -> dbc.Modal:
     """
-    Painel lateral de detalhe (master_detail / approval_queue / clique em linha).
-    IDs gerados: {id} (offcanvas), {id}-body. No callback: Output(id, "is_open"), Output(id, "title"), Output(f"{id}-body", "children").
+    Modal central de detalhe (master_detail / approval_queue / clique em linha).
+    IDs gerados: {id} (modal), {id}-title, {id}-body.
+    No callback: Output(id, "is_open"), Output(f"{id}-title", "children"), Output(f"{id}-body", "children").
+    `width` legado: >= 600 vira modal "xl", senão "lg". `extra`: conteúdo estático abaixo do corpo (botões de ação, simulador).
     """
-    return dbc.Offcanvas(
-        html.Div(id=f"{id}-body"),
+    return dbc.Modal(
+        [
+            dbc.ModalHeader(dbc.ModalTitle(title, id=f"{id}-title")),
+            dbc.ModalBody([html.Div(id=f"{id}-body"), *([extra] if extra is not None else [])]),
+            dbc.ModalFooter(assistant_ask_button(id)),
+        ],
         id=id,
-        title=title,
         is_open=False,
-        placement=placement,
+        centered=True,
         scrollable=True,
-        backdrop=True,
-        style={"width": f"{width}px"},
-        className="detail-offcanvas",
+        size="xl" if width >= 600 else "lg",
+        className="detail-modal",
     )
 
 
@@ -863,8 +873,8 @@ _JS_FMT = {
     "decimal": "params.value == null ? '' : Number(params.value).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})",
     "percent": "params.value == null ? '' : Number(params.value).toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 1}) + '%'",
     "pct_delta": "params.value == null ? '' : (params.value > 0 ? '+' : '') + Number(params.value).toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 1}) + '%'",
-    "date": "params.value ? new Date(String(params.value).slice(0,10) + 'T00:00:00').toLocaleDateString('pt-BR') : ''",
-    "datetime": "params.value ? new Date(params.value).toLocaleString('pt-BR', {dateStyle: 'short', timeStyle: 'short'}) : ''",
+    "date": "params.value ? String(params.value).slice(8,10) + '/' + String(params.value).slice(5,7) + '/' + String(params.value).slice(0,4) : ''",
+    "datetime": "params.value ? String(params.value).slice(8,10) + '/' + String(params.value).slice(5,7) + '/' + String(params.value).slice(0,4) + ' ' + String(params.value).slice(11,16) : ''",
     "bool": "params.value == null ? '' : ((params.value === true || params.value === 1 || params.value === '1' || params.value === 'true') ? 'Sim' : 'Não')",
 }
 
@@ -930,6 +940,8 @@ def data_table(
     for i, col in enumerate(df.columns):
         ctype = column_types.get(col, "text")
         cdef: dict[str, Any] = {"field": col, "headerName": headers.get(col, _humanize(col)), "hide": col in hide_cols}
+        if ctype == "text":
+            cdef.update({"tooltipField": col, "minWidth": 140})
         if selectable and i == 0:
             cdef.update({"checkboxSelection": True, "headerCheckboxSelection": True, "minWidth": 160})
         if ctype in _NUMERIC_FORMATS:
@@ -937,11 +949,12 @@ def data_table(
             if ctype == "pct_delta":
                 cdef["cellClassRules"] = {"delta-pos": "params.value > 0", "delta-neg": "params.value < 0"}
         elif ctype in ("date", "datetime"):
-            cdef.update({"cellClass": "cell-num", "valueFormatter": {"function": _JS_FMT[ctype]}, "filter": "agDateColumnFilter"})
+            cdef.update({"cellClass": "cell-num", "valueFormatter": {"function": _JS_FMT[ctype]}, "filter": "agDateColumnFilter",
+                         "minWidth": 120 if ctype == "date" else 150})
         elif ctype == "bool":
             cdef.update({"cellClass": "cell-badge", "valueFormatter": {"function": _JS_FMT["bool"]}, "cellClassRules": {"badge-pos": _BADGE_RULES["badge-pos"], "badge-neg": _BADGE_RULES["badge-neg"]}})
         elif ctype == "badge":
-            cdef.update({"cellClass": "cell-badge", "cellClassRules": dict(_BADGE_RULES), "maxWidth": 190})
+            cdef.update({"cellClass": "cell-badge", "cellClassRules": dict(_BADGE_RULES), "minWidth": 170, "maxWidth": 200})
         if default_sort and default_sort[0] == col:
             cdef["sort"] = default_sort[1]
         column_defs.append(cdef)
@@ -955,7 +968,7 @@ def data_table(
                 "valueGetter": {"function": f"'{label}'"},
                 "cellClass": "cell-action" + (" cell-action-danger" if action in ("excluir", "desativar", "reject") else ""),
                 "sortable": False, "filter": False, "resizable": False, "suppressMenu": True,
-                "width": 96, "pinned": "right",
+                "width": 92, "minWidth": 92, "maxWidth": 92, "flex": None, "pinned": "right",
             }
         )
 
@@ -964,6 +977,7 @@ def data_table(
         "paginationPageSize": page_size,
         "paginationPageSizeSelector": [10, 20, 50, 100],
         "animateRows": True,
+        "tooltipShowDelay": 400,
         "rowHeight": 42,
         "headerHeight": 40,
         "domLayout": "normal",
@@ -990,7 +1004,6 @@ def data_table(
         columnDefs=column_defs,
         defaultColDef={"sortable": True, "filter": True, "resizable": True, "floatingFilter": True, "suppressMenu": True, "flex": 1, "minWidth": 110},
         dashGridOptions=grid_options,
-        columnSize="responsiveSizeToFit",
         className="ag-theme-alpine pmz-grid",
         style={"height": height},
         csvExportParams={"fileName": f"{id}.csv"},
@@ -1032,3 +1045,85 @@ def with_empty_state(component: Any, empty: Any, is_empty: bool) -> html.Div:
             html.Div(component, style={"display": "none"} if is_empty else {}),
         ]
     )
+
+
+# ============================================================================
+# EXTENSÕES PROMOVIDAS AO TEMPLATE (v5, origem: projeto de referência Qwizer)
+#   format_value · kpi_from_spec · chart_block/chart_outputs/chart_values · grid_block/grid_outputs/grid_values
+#   Mantêm o ID do gráfico/grid SEMPRE no layout (callbacks continuam válidos) e alternam com empty_state por callback.
+# ============================================================================
+
+
+def format_value(value: float | None, fmt: str, compact: bool = True, suffix: str = "") -> str:
+    """Formata um número conforme o `format` do roadmap: currency | percent | number | text."""
+    if value is None:
+        return "—"
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if v != v:  # NaN
+        return "—"
+    if fmt == "currency":
+        return format_compact(v) if compact and abs(v) >= 10_000 else format_currency(v, 2 if abs(v) < 1000 else 0)
+    if fmt == "percent":
+        return format_percent(v, 1, with_sign=False)
+    if fmt == "decimal":
+        return format_number(v, 2) + suffix
+    return format_number(v, 0) + suffix
+
+
+def kpi_from_spec(spec: dict, value: float | None, baseline: float | None = None, trend: list[float] | None = None,
+                  hint: str | None = None, compare_label: str | None = None, icon_key: str | None = None) -> dbc.Card:
+    """kind: comparação → kpi_card (exige baseline real); simples → kpi_simple. Nunca kpi_card(x, x, 0)."""
+    fmt = spec.get("format", "number")
+    suffix = spec.get("suffix", "")
+    better = spec.get("better", "up")
+    if spec.get("kind") == "comparação" and baseline is not None and value is not None:
+        delta = ((float(value) / float(baseline) - 1) * 100) if float(baseline) else 0.0
+        return kpi_card(spec["label"], format_value(baseline, fmt, suffix=suffix), format_value(value, fmt, suffix=suffix), delta,
+                        better, compare_label or "de", icon_key)
+    return kpi_simple(spec["label"], format_value(value, fmt, suffix=suffix), None, better, trend, icon_key,
+                      hint or spec.get("subtitle") or spec.get("note"))
+
+
+def chart_block(graph_id: str, figure: Any, is_empty: bool, empty_title: str, empty_hint: str = "Ajuste os filtros ou remova a seleção.",
+                height: int = 300) -> html.Div:
+    """Gráfico + empty_state alternáveis por callback (IDs {graph_id}-empty / {graph_id}-wrap)."""
+    return html.Div([
+        html.Div(empty_state(empty_title, empty_hint, icon_key="bar-chart", compact=True), id=f"{graph_id}-empty",
+                 style={} if is_empty else {"display": "none"}),
+        html.Div(loading(dcc.Graph(id=graph_id, figure=figure, config={"displayModeBar": False}, style={"height": f"{height}px"})),
+                 id=f"{graph_id}-wrap", style={"display": "none"} if is_empty else {}),
+    ])
+
+
+def chart_outputs(graph_id: str, allow_duplicate: bool = False) -> list:
+    from dash import Output
+
+    kw = {"allow_duplicate": True} if allow_duplicate else {}
+    return [Output(graph_id, "figure", **kw), Output(f"{graph_id}-empty", "style", **kw), Output(f"{graph_id}-wrap", "style", **kw)]
+
+
+def chart_values(figure: Any, is_empty: bool) -> tuple:
+    return figure, ({} if is_empty else {"display": "none"}), ({"display": "none"} if is_empty else {})
+
+
+def grid_block(grid: Any, grid_id: str, is_empty: bool, empty_title: str, empty_hint: str = "Ajuste os filtros ou amplie o período.") -> html.Div:
+    """Grid + empty_state alternáveis por callback (IDs {grid_id}-empty / {grid_id}-wrap)."""
+    return html.Div([
+        html.Div(empty_state(empty_title, empty_hint), id=f"{grid_id}-empty", style={} if is_empty else {"display": "none"}),
+        html.Div(loading(grid), id=f"{grid_id}-wrap", style={"display": "none"} if is_empty else {}),
+    ])
+
+
+def grid_outputs(grid_id: str, allow_duplicate: bool = False) -> list:
+    from dash import Output
+
+    kw = {"allow_duplicate": True} if allow_duplicate else {}
+    return [Output(grid_id, "rowData", **kw), Output(f"{grid_id}-empty", "style", **kw), Output(f"{grid_id}-wrap", "style", **kw)]
+
+
+def grid_values(df: Any) -> tuple:
+    empty = len(df) == 0
+    return df.to_dict("records"), ({} if empty else {"display": "none"}), ({"display": "none"} if empty else {})

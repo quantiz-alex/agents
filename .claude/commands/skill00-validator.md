@@ -4,7 +4,8 @@ Valida a consistência e integridade entre todos os artefatos gerados antes de p
 
 ## Quando Usar
 
-- Antes de cada etapa do `/build` para garantir que os artefatos de entrada estão corretos
+- Etapa 0 (roadmap) e listas canônicas: lidas pelo data-engineer no Step 0.
+- Etapas de tela/página/app/assistente: **use o script** `python "$LH/templates/scripts/validate_project.py" [screens|pages|app|assistant]` em vez de executar esta skill pelo modelo (economia de tokens).
 - Após modificações manuais em YAMLs para verificar impactos
 - Como diagnóstico quando o build falha
 
@@ -224,7 +225,7 @@ Se algum desses conjuntos precisar crescer, altere AQUI e em `roadmap-template.m
 **Checks:**
 1. ✓ Para cada página existem 4 arquivos: `_page.py`, `_components.py`, `_queries.py`, `_callbacks.py`
 2. ✓ Arquivos Python são válidos (parse sem erros de sintaxe)
-3. ✓ `_page.py` tem `register_page()` e `layout()`
+3. ✓ `_page.py` tem `layout(workflow_context=None, ...)` e NÃO usa `register_page` (roteamento explícito, `use_pages=False`)
 4. ✓ `_callbacks.py` tem `register_callbacks()`
 5. ✓ IDs seguem padrão `<page>-<component>`
 6. ✓ Imports estão corretos (não há imports de módulos inexistentes)
@@ -368,7 +369,7 @@ recommendations:
 
 ## Integração com Build
 
-O `build.md` deve chamar esta skill automaticamente:
+Pipelines antigos (`/build`, arquivado) chamavam esta skill automaticamente — referência histórica:
 
 ```markdown
 ## Antes de cada etapa

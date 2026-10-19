@@ -223,7 +223,7 @@ frontend/
 - [ ] Grid: FK → nome legível, moeda/percentual/data formatados, status como pill, ordenação padrão.
 - [ ] Todo drill-down do roadmap funciona (clique → grid filtrado → chip ✕ para limpar → gráfico destaca a seleção).
 - [ ] Simulação com `recalc_mode: live` reage aos sliders sem botão e abre já calculada.
-- [ ] Detalhe em offcanvas com ficha + relacionados quando há `detalhar`/`detail_panel`.
+- [ ] Detalhar em modal central com ficha + relacionados (e botão do assistente) quando há `detalhar`/`detail_panel`.
 - [ ] `empty_state` com texto do roadmap; `loading` em tudo que callback atualiza; `toast` em toda ação; `confirm_modal` em decisões/destrutivas.
 - [ ] Botões restritos somem para roles sem permissão; sidebar mostra só telas acessíveis.
 - [ ] Shell: Home (âncoras, atalhos, pendências), sidebar com grupos + usuário + Sair + badges, login split com chips de demo.
@@ -258,7 +258,7 @@ kpis = [
     kpi_card("Margem atual × simulada", "R$ 718.005", "R$ 634.452", -11.6, "up"),
 ]
 
-layout = kpi_row(kpis)  # Row com 3 colunas
+layout = kpi_row(kpis)  # Row: todos os KPIs numa linha (larguras iguais a partir de lg)
 ```
 
 ### Data Table com Badges

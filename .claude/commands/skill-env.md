@@ -58,6 +58,12 @@ APP_HOST=0.0.0.0
 APP_PORT=8000
 FRONTEND_URL=http://localhost:1050
 
+# --- Assistente de Pricing (Claude) ---
+# Sem chave, o assistente funciona no modo local (análises do catálogo, sem IA).
+ANTHROPIC_API_KEY=
+ASSISTANT_MODEL=claude-sonnet-5-5     # claude-opus-5-5 para mais qualidade (≈2× o custo)
+ASSISTANT_AI=on                       # off = força o modo local mesmo com chave
+
 # --- CORS ---
 ALLOWED_ORIGINS=http://localhost:1050,http://127.0.0.1:1050
 

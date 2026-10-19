@@ -1,6 +1,6 @@
 # Skill 05 — SQL Seed Validation Skill (v4 — validação/ajuste)
 
-Valida e ajusta `database/seed.sql` **gerado pelo `mock_generator.py`** (Step 4). Em v3 o LLM escrevia INSERTs à mão (limite 8.000 tokens, truncava tabelas grandes). Agora o motor gera o arquivo completo e este skill apenas **audita**.
+Valida e ajusta `database/seed.sql` **gerado pelo `mock_generator.py`** (Step 4). Este skill apenas **audita**.
 
 > Se `database/seed.sql` não existir → voltar ao Step 4 (`/skill04-mock-data`). Este skill **não gera** seed do zero.
 
@@ -8,7 +8,7 @@ Valida e ajusta `database/seed.sql` **gerado pelo `mock_generator.py`** (Step 4)
 
 1. Verificar que `database/seed.sql` existe. Se não → PARAR e reportar "seed.sql ausente — execute Step 4 primeiro".
 2. Ler `docs/data_model.yaml` para obter a estrutura das tabelas e a ordem topológica de FKs.
-3. Ler `database/seed.sql` em blocos (pode ser grande — ler por partes se necessário).
+3. **Não ler o arquivo** (passa de 1 MB). Auditar via Bash: `grep -c "INSERT INTO"`, `grep -n "SET IDENTITY_INSERT\|^GO"`, `grep -o "INSERT INTO [^ (]*" | sort | uniq -c` (ordem/contagem por tabela) e `head -40` para o cabeçalho.
 4. Aplicar os checks abaixo. Se algum falhar → reportar o problema e sugerir correção no **spec** (`docs/mock_spec.yaml`), não no SQL diretamente (o motor regenera a partir do spec).
 
 ## Checks

@@ -29,6 +29,7 @@ cd ../nome-do-projeto
 | OneSpaWorld | onespaworld | 🔵 Build em andamento (dados + backend + motor ML mock ok; frontend pendente) | 2026-08-20 |
 | GM Pricing Software — Arquitetura de Preços (COL & ECU) | gm-vibe-code | 🟢 Build concluído | 2026-09-04 |
 | OneSpaWorld — Cruise Control (rebuild) | onespaworld-vibe-code | 🟢 Build concluído | 2026-10-07 |
+| Qwizer Pricing Tool | qwizer-pricing | 🟢 Build concluído | 2026-10-07 |
 
 
 ---
@@ -58,8 +59,6 @@ cd ../nome-do-projeto
 ├── commands/
 │   ├── lighthouse.md          ← Orquestrador: delega via Agent tool
 │   ├── project-init.md        ← Cria novo projeto a partir do template
-│   ├── build.md               ← Pipeline sequencial legado (fallback)
-│   ├── build-parallel.md      ← Pipeline paralelo legado (fallback)
 │   └── skill*.md              ← Especificações de referência (lidas pelos agentes)
 ├── templates/
 │   └── roadmap-template.md    ← Fonte única do template de roadmap
@@ -77,5 +76,3 @@ cd ../nome-do-projeto
 | `/lighthouse data\|frontend\|backend` | Executa apenas uma fase específica |
 | "gere os testes do projeto" | test-writer standalone: pytest + cypress, cobertura ≥85% (após validação com cliente) |
 | "teste a página `<page>`" | test-writer com escopo de uma página (após refatoração/aprovação) |
-| `/build` | Pipeline sequencial legado (sem delegação) |
-| `/build-parallel` | Pipeline paralelo legado (sem delegação) |

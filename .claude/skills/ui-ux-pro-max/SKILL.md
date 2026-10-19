@@ -76,7 +76,7 @@ O agente **frontend-builder** deve consultar este guia nos seguintes momentos:
 - KPIs: `kpi_card(label, atual, simulado, delta_pct, better)` (**comparação**) · `kpi_simple(label, value, delta_pct, trend, hint)` (**simples**, com sparkline) · `kpi_row(cards, row_id)`
 - Dados: `data_table(df, id, column_types={col: currency|percent|pct_delta|date|badge|...}, row_actions, default_sort, hide_cols, selectable)` · `quick_filter_input`
 - Filtros: `filter_card(filters, button_id, show_button, right)`, `filter_select/filter_date_range/filter_text`, `chip`/`chips_row` (drill-down ativo), `param_slider`
-- Feedback: `empty_state`, `loading`, `toast` + `notify`, `confirm_modal`, `detail_offcanvas` + `detail_field`
+- Feedback: `empty_state`, `loading`, `toast` + `notify`, `confirm_modal`, `detail_offcanvas` (modal central, `extra=`) + `detail_field`
 - Identidade: `user_badge`, `status_badge`, `stat_pill`, `home_shortcut_card`, `card`, `button`, `icon`
 - Helpers: `format_currency/compact/percent/number/date`, `derive_palette`
 
@@ -230,13 +230,13 @@ def layout():
 
 ### 9. Navegação Dash (ALTO)
 
-- `unique-routes` — Toda rota em `dash.register_page(__name__, path="/<slug>")` deve ser única no projeto; valide em `screens_definition.yaml`
+- `unique-routes` — Toda rota em `screens_definition.yaml` (mapeada em `_PAGE_LAYOUTS` do app.py; sem `register_page`) deve ser única no projeto
 - `dcc-location` — Use `dcc.Location(id="url", refresh=False)` no `app.py`; único ponto de controle de URL
 - `guard-routes` — `guard_routes` callback em `app.py` redireciona para `/login` se sem auth, para `/` se autenticado tentando acessar `/login`
 - `sidebar-active` — `dbc.NavLink(active="exact")` para highlight automático de rota ativa
 - `nav-icon-label` — Cada item de sidebar tem ícone Bootstrap Icons + label textual; nunca só ícone
 - `login-fullscreen` — Página de login sem sidebar; usa `CONTENT_FULL_STYLE` com `marginLeft: 0`
-- `page-title-register` — `dash.register_page(__name__, path, title, name)` — `title` aparece na aba do browser
+- `page-title` — título da aba = `display_name` do app (app.py); título da tela vem do `app_shell(title=...)`
 - `no-output-url-login` — `Output("url", "pathname")` existe APENAS no `guard_routes`; callbacks de login NUNCA escrevem nesta Output
 - `sidebar-footer` — Footer da sidebar: "Desenvolvido por / Quantiz Pricing Solution" fixo no bottom
 - `nav-state-active` — Item de navegação da rota atual deve estar visualmente destacado (dbc `active="exact"` já trata)

@@ -18,11 +18,11 @@ Exemplos:
 2. Leia `backend/schemas/<entidade>.py` para ver os campos obrigatórios.
 3. Leia `docs/data_model.yaml` para confirmar campos nullable e tipos.
 4. Gere `tests/backend/test_<entidade>.py`.
-5. Se `tests/conftest.py` não existir, gere-o também.
+5. Fixtures de API vão em `tests/backend/conftest.py` (gere se não existir). O `tests/conftest.py` raiz é só `sys.path` (template `$LH/templates/tests/conftest.py`) para os testes de frontend rodarem sem backend.
 
 ---
 
-## `tests/conftest.py` (gerar apenas se não existir)
+## `tests/backend/conftest.py` (gerar apenas se não existir)
 
 ```python
 import pytest

@@ -2,11 +2,14 @@
 name: test-writer
 description: Agente de Testes STANDALONE — NÃO faz parte do fluxo automático do /lighthouse. Rodar sob demanda, tipicamente após validação do processo com o cliente ou após refatoração/aprovação de telas, para verificar se o projeto está correto. Gera testes unitários Pytest (backend + frontend Dash — páginas, callbacks, queries, conexões) e E2E Cypress, com meta de cobertura ≥85% de linhas. Aceita escopo: projeto inteiro, uma página ou uma entidade.
 tools: Read, Write, Edit, Glob, Grep, Bash
+model: sonnet
 ---
 
 Você é o **Agente de Testes** standalone do pipeline Lighthouse. Você roda FORA do fluxo de build — é invocado sob demanda para auditar e cobrir o código existente com testes. Sua responsabilidade: testes unitários Pytest, testes E2E Cypress e **garantia de cobertura ≥85% de linhas** no escopo solicitado.
 
 Você NÃO modifica código de produção — se encontrar um bug em `backend/` ou `frontend/`, reporte no relatório final em vez de corrigir.
+
+Leia primeiro `$LH/rules/core.md` (caminho `$LH`, decisões padronizadas).
 
 ## Escopo da Execução
 
@@ -43,7 +46,7 @@ Garantir que `pytest-cov` está no `requirements.txt` (adicionar `pytest-cov>=4.
 pytest tests/ --cov=backend --cov=frontend --cov-report=term-missing --cov-fail-under=85 -q
 
 # Página específica
-pytest tests/frontend_unit/test_<page>*.py --cov=frontend/pages/<page> --cov-report=term-missing -q
+pytest tests/frontend/test_<page>*.py --cov=frontend/pages/<page> --cov-report=term-missing -q
 
 # Entidade específica
 pytest tests/backend/test_<entity>.py --cov=backend --cov-report=term-missing -q
@@ -83,7 +86,9 @@ Também cobrir: `backend/auth.py` (hash/verify password, create/decode token, to
 
 ## Step B — Testes Unitários de Frontend (Dash)
 
-**Output:** `tests/frontend_unit/test_<page>_queries.py`, `test_<page>_components.py`, `test_<page>_callbacks.py` por página
+**Output:** `tests/frontend/test_<page>_queries.py`, `test_<page>_components.py`, `test_<page>_callbacks.py` por página (pytest). O `tests/conftest.py` raiz só ajusta o `sys.path` (template `$LH/templates/tests/conftest.py`); fixtures de API ficam em `tests/backend/conftest.py` — testes de frontend não importam FastAPI/SQLAlchemy.
+
+O teste genérico do assistente (`tests/frontend/test_pricing_assistant.py`) já vem do template — não gerar testes de paridade número-a-número com a tela (cada projeto tem suas regras).
 
 Esta camada é essencial para a meta de 85% — Cypress NÃO conta para cobertura de linhas Python.
 
@@ -111,11 +116,11 @@ Cobrir também `frontend/pages/login/login_callbacks.py` (email existente → us
 
 ## Step C — Cypress E2E
 
-**Output:** suite em `tests/frontend/` (setup apenas se não existir)
+**Output:** suite em `tests/e2e/` (setup apenas se não existir)
 
 - `package.json` (`{name_slug}-e2e`, scripts `cy:open`/`cy:run`, cypress ^13)
 - `cypress.config.js` (`baseUrl: http://localhost:1050`, viewport 1280×800, timeout 10s, video false)
-- `cypress/fixtures/usuario.json` (primeiro registro de `mock_data/usuarios.csv` + `"senha": "senha123"`)
+- `cypress/fixtures/usuario.json` (primeiro registro de `mock_data/usuarios.csv` + `"senha": "demo"` — `core.md` §3)
 - `cypress/support/commands.js`: `cy.login()` com `cy.session(..., {cacheAcrossSpecs: true})`, `cy.visitAutenticado(path)`, `cy.aguardarGrid(selector)`
 - `cypress/e2e/login.cy.js`: formulário visível; login válido redireciona; email inválido mostra `#login-alert`
 - `cypress/e2e/<page>.cy.js` por página do escopo: incluir APENAS blocos `it` para componentes que a tela tem em `screens_definition.yaml` — grid (`cy.aguardarGrid`), filtro (preencher + filtrar), KPIs, charts, modais. IDs exatos `<page>-<component>`.
@@ -139,12 +144,12 @@ COBERTURA: <X>% (meta: 85%) — <atingida | NÃO atingida>
 
 TESTES GERADOS:
   tests/backend/        <N> arquivos
-  tests/frontend_unit/  <N> arquivos (queries, components, callbacks)
-  tests/frontend/       <N+1> specs Cypress
+  tests/frontend/  <N> arquivos (queries, components, callbacks)
+  tests/e2e/            <N+1> specs Cypress
 
 BUGS ENCONTRADOS NO CÓDIGO DE PRODUÇÃO: <lista — NÃO corrigidos>
 
 COMO RODAR:
   pytest tests/ --cov=backend --cov=frontend --cov-report=html -v
-  cd tests/frontend && npm install && npm run cy:run
+  cd tests/e2e && npm install && npm run cy:run
 ```
